@@ -19,6 +19,16 @@ html,body,#root{height:100%;background:#020c1a;overflow:hidden}
     z-index:200;}
   .sidebar-panel.hidden{height:0!important;}
   .sidebar-inner{width:100%!important;}
+  .topbar-main{flex-wrap:nowrap!important;overflow-x:auto!important;padding:8px 12px!important;}
+  .topbar-logo{flex-shrink:0;}
+  .topbar-cats{overflow-x:auto!important;flex-wrap:nowrap!important;-webkit-overflow-scrolling:touch;}
+  .topbar-cats::-webkit-scrollbar{display:none!important;}
+  .topbar-right{display:none!important;}
+  .topbar-logo span{font-size:22px!important;}
+  .topbar-logo-title{font-size:16px!important;}
+  .topbar-logo-stats{font-size:11px!important;}
+  .topbar-cat-btn{padding:6px 11px!important;font-size:11px!important;flex-shrink:0;}
+  .globe-legend{display:none!important;}
 }
 </style>
 </head>
@@ -443,30 +453,30 @@ function AtlasMerveilles() {
       `}</style>
 
       {/* ── TOPBAR ── */}
-      <div style={{display:"flex",alignItems:"center",gap:20,padding:"18px 28px",background:"#020e1c",borderBottom:"1px solid #0b1e34",flexShrink:0,flexWrap:"wrap"}}>
-        <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
-          <span style={{fontSize:52}}>🌍</span>
+      <div className="topbar-main" style={{display:"flex",alignItems:"center",gap:24,padding:"24px 36px",background:"#020e1c",borderBottom:"1px solid #0b1e34",flexShrink:0,flexWrap:"wrap"}}>
+        <div className="topbar-logo" style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+          <span style={{fontSize:72}}>🌍</span>
           <div>
-            <div style={{fontWeight:900,fontSize:38,color:"#8ecce8",letterSpacing:".08em",lineHeight:1.1}}>ATLAS DES MERVEILLES</div>
-            <div style={{fontSize:18,color:"#4a80a8",fontWeight:600,marginTop:4}}>
-              <span style={{color:"#38bdf8",fontWeight:900,fontSize:22}}>{nCountries}</span> pays · <span style={{color:"#38bdf8",fontWeight:900,fontSize:22}}>{allSpots.length}</span> exp. · <span style={{color:"#4ade80",fontWeight:900,fontSize:22}}>{totalDone}</span> accomplies
+            <div style={{fontWeight:900,fontSize:54,color:"#8ecce8",letterSpacing:".08em",lineHeight:1.1}}>ATLAS DES MERVEILLES</div>
+            <div style={{fontSize:24,color:"#4a80a8",fontWeight:600,marginTop:5}}>
+              <span style={{color:"#38bdf8",fontWeight:900,fontSize:30}}>{nCountries}</span> pays · <span style={{color:"#38bdf8",fontWeight:900,fontSize:30}}>{allSpots.length}</span> exp. · <span style={{color:"#4ade80",fontWeight:900,fontSize:30}}>{totalDone}</span> accomplies
             </div>
           </div>
         </div>
-        <div style={{display:"flex",gap:10,flexWrap:"wrap",flex:1,minWidth:0}}>
+        <div className="topbar-cats" style={{display:"flex",gap:10,flexWrap:"wrap",flex:1,minWidth:0}}>
           {CATS.map(c=>{ const a=filter===c.id; return(
-            <button key={c.id} className="btn" onClick={()=>setFilter(c.id)}
-              style={{background:a?`${c.color}18`:"transparent",border:`1px solid ${a?c.color+"55":"#0b1e34"}`,borderRadius:7,padding:"10px 18px",color:a?c.color:"#8abcda",fontSize:15,fontWeight:a?800:600,display:"flex",alignItems:"center",gap:5,whiteSpace:"nowrap"}}>
+            <button key={c.id} className="btn topbar-cat-btn" onClick={()=>setFilter(c.id)}
+              style={{background:a?`${c.color}18`:"transparent",border:`1px solid ${a?c.color+"55":"#0b1e34"}`,borderRadius:7,padding:"12px 22px",color:a?c.color:"#8abcda",fontSize:17,fontWeight:a?800:600,display:"flex",alignItems:"center",gap:5,whiteSpace:"nowrap"}}>
               {c.icon} {c.label}
             </button>
           );})}
         </div>
         <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
-          <div style={{display:"flex",gap:3}}>{CN.map((n,i)=>(<div key={n} title={n} style={{width:14,height:14,borderRadius:"50%",background:CC[i],opacity:.75,cursor:"default"}}/>))}</div>
-          <div style={{width:120,height:6,background:"#0b1e34",borderRadius:2,overflow:"hidden"}}>
+          <div style={{display:"flex",gap:3}}>{CN.map((n,i)=>(<div key={n} title={n} style={{width:18,height:18,borderRadius:"50%",background:CC[i],opacity:.75,cursor:"default"}}/>))}</div>
+          <div style={{width:160,height:8,background:"#0b1e34",borderRadius:2,overflow:"hidden"}}>
             <div style={{width:`${allSpots.length?(totalDone/allSpots.length)*100:0}%`,height:"100%",background:"linear-gradient(90deg,#0ea5e9,#22c55e)",transition:"width .6s"}}/>
           </div>
-          <span style={{fontSize:16,color:"#4a90b0",fontWeight:700}}>{totalDone}/{allSpots.length}</span>
+          <span style={{fontSize:20,color:"#4a90b0",fontWeight:700}}>{totalDone}/{allSpots.length}</span>
         </div>
       </div>
 
@@ -484,15 +494,15 @@ function AtlasMerveilles() {
               {NM[hoveredCountry]}
             </div>
           )}
-          {!loading&&(<div style={{position:"absolute",bottom:14,left:14,background:"#020e1ce8",backdropFilter:"blur(12px)",border:"1px solid #0b1e34",borderRadius:10,padding:"10px 12px",fontSize:9}}>
-            <div style={{fontWeight:700,color:"#1a3a56",letterSpacing:".1em",marginBottom:7,fontSize:8}}>CONTINENTS</div>
-            {CN.map((n,i)=>(<div key={n} style={{display:"flex",alignItems:"center",gap:5,marginBottom:3}}><div style={{width:9,height:9,background:CONT[i].active,border:`1.5px solid ${CC[i]}`,borderRadius:2}}/><span style={{color:"#1e3a56",fontWeight:500}}>{n}</span></div>))}
-            <div style={{borderTop:"1px solid #0b1e34",marginTop:7,paddingTop:6}}>
+          {!loading&&(<div style={{position:"absolute",bottom:14,left:14,background:"#020e1ce8",backdropFilter:"blur(12px)",border:"1px solid #0b1e34",borderRadius:10,padding:"22px 26px",fontSize:16}}>
+            <div style={{fontWeight:900,color:"#5a9abf",letterSpacing:".1em",marginBottom:14,fontSize:16}}>CONTINENTS</div>
+            {CN.map((n,i)=>(<div key={n} style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}><div style={{width:16,height:16,background:CONT[i].active,border:`2px solid ${CC[i]}`,borderRadius:3}}/><span style={{color:"#5a9abf",fontWeight:600,fontSize:16}}>{n}</span></div>))}
+            <div style={{borderTop:"1px solid #0b1e34",marginTop:12,paddingTop:10}}>
               {[{bg:"#062338",st:"#0ea5e9",l:"Spots à explorer"},{bg:"#2c1b04",st:"#f59e0b",l:"En cours"},{bg:"#0a2c18",st:"#22c55e",l:"Accompli"}].map(x=>(
-                <div key={x.l} style={{display:"flex",alignItems:"center",gap:5,marginBottom:2.5}}><div style={{width:9,height:9,background:x.bg,border:`1.5px solid ${x.st}`,borderRadius:2}}/><span style={{color:"#1e3a56",fontWeight:400}}>{x.l}</span></div>
+                <div key={x.l} style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}><div style={{width:16,height:16,background:x.bg,border:`2px solid ${x.st}`,borderRadius:3}}/><span style={{color:"#5a9abf",fontWeight:500,fontSize:16}}>{x.l}</span></div>
               ))}
             </div>
-            <div style={{color:"#0a1e30",marginTop:6,fontSize:8}}>Drag = tourner · Scroll = zoom</div>
+            <div style={{color:"#2a5070",marginTop:10,fontSize:14}}>Drag = tourner · Scroll = zoom</div>
           </div>)}
           {!selectedCountry&&!loading&&(<div style={{position:"absolute",bottom:"44%",left:"50%",transform:"translateX(-50%)",pointerEvents:"none"}}>
             <div style={{fontSize:9,color:"#0d2540",fontWeight:700,letterSpacing:".3em",animation:"pulse 3s ease infinite"}}>CLIQUEZ SUR UN PAYS</div>
