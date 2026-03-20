@@ -489,33 +489,56 @@ function AtlasMerveilles() {
       `}</style>
 
       {/* ── TOPBAR ── */}
-      <div style={{display:"flex",alignItems:"center",gap:isMobile?8:28,padding:isMobile?"10px 12px":"28px 36px",background:"#020e1c",borderBottom:"2px solid #0d2540",flexShrink:0,flexWrap:isMobile?"nowrap":"wrap",overflowX:isMobile?"auto":"visible",alignItems:"center"}}>
-        <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
-          <span style={{fontSize:isMobile?28:68}}>🌍</span>
-          <div>
-            <div style={{fontWeight:900,fontSize:isMobile?16:46,color:"#8ecce8",letterSpacing:".08em",lineHeight:1.1}}>Mes Pokémons Rares</div>
-            <div style={{fontSize:isMobile?10:20,color:"#5a90b8",fontWeight:600,marginTop:isMobile?2:6}}>
-              <span style={{color:"#38bdf8",fontWeight:900,fontSize:26}}>{nCountries}</span> pays · <span style={{color:"#38bdf8",fontWeight:900,fontSize:26}}>{allSpots.length}</span> exp. · <span style={{color:"#4ade80",fontWeight:900,fontSize:26}}>{totalDone}</span> accomplies
+      {isMobile ? (
+        <div style={{background:"#020e1c",borderBottom:"2px solid #0d2540",flexShrink:0}}>
+          {/* Mobile row 1: logo + title */}
+          <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px 6px"}}>
+            <span style={{fontSize:28,flexShrink:0}}>🌍</span>
+            <div style={{minWidth:0}}>
+              <div style={{fontWeight:900,fontSize:18,color:"#8ecce8",letterSpacing:".04em",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>Mes Pokémons Rares</div>
+              <div style={{fontSize:11,color:"#5a90b8",fontWeight:600,marginTop:1}}>
+                <span style={{color:"#38bdf8",fontWeight:800}}>{nCountries}</span> pays · <span style={{color:"#38bdf8",fontWeight:800}}>{allSpots.length}</span> exp. · <span style={{color:"#4ade80",fontWeight:800}}>{totalDone}</span> accomplies
+              </div>
             </div>
           </div>
-        </div>
-        <div style={{display:"flex",gap:8,flexWrap:"wrap",flex:1,minWidth:0}}>
-          {CATS.filter((c,i,a)=>a.findIndex(x=>x.id===c.id)===i).map(c=>{ const a=filter===c.id; return(
-            <button key={c.id} className="btn" onClick={()=>setFilter(c.id)}
-              style={{background:a?`${c.color}18`:"transparent",border:`1px solid ${a?c.color+"55":"#0b1e34"}`,borderRadius:7,padding:isMobile?"5px 10px":"8px 18px",color:a?c.color:"#7aaccf",fontSize:isMobile?11:13,fontWeight:a?700:500,flexShrink:0,display:"flex",alignItems:"center",gap:5,whiteSpace:"nowrap",letterSpacing:".02em",border:`1px solid ${a?c.color+"77":"#1a3a5a"}`}}>
-              {c.icon} {c.label}
-            </button>
-          );})}
-        </div>
-        <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
-          <div style={{display:"flex",gap:3}}>{CN.map((n,i)=>(<div key={n} title={n} style={{width:22,height:22,borderRadius:"50%",background:CC[i],opacity:.75,cursor:"default"}}/>))}</div>
-          <div style={{width:160,height:10,background:"#0b1e34",borderRadius:2,overflow:"hidden"}}>
-            <div style={{width:`${allSpots.length?(totalDone/allSpots.length)*100:0}%`,height:"100%",background:"linear-gradient(90deg,#0ea5e9,#22c55e)",transition:"width .6s"}}/>
+          {/* Mobile row 2: categories horizontal scroll */}
+          <div style={{display:"flex",gap:6,padding:"6px 14px 10px",overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",flexWrap:"nowrap"}}>
+            {CATS.filter((c,i,a)=>a.findIndex(x=>x.id===c.id)===i).map(c=>{ const a=filter===c.id; return(
+              <button key={c.id} className="btn" onClick={()=>setFilter(c.id)}
+                style={{background:a?`${c.color}20`:"#0a1e34",border:`1.5px solid ${a?c.color+"88":"#162840"}`,borderRadius:20,padding:"7px 14px",color:a?c.color:"#4a7898",fontSize:12,fontWeight:a?800:600,display:"flex",alignItems:"center",gap:5,whiteSpace:"nowrap",flexShrink:0}}>
+                {c.icon} {c.label}
+              </button>
+            );})}
           </div>
-          <span style={{fontSize:20,color:"#5aabcc",fontWeight:800}}>{totalDone}/{allSpots.length}</span>
         </div>
-      </div>
-
+      ) : (
+        <div style={{display:"flex",alignItems:"center",gap:28,padding:"28px 36px",background:"#020e1c",borderBottom:"2px solid #0d2540",flexShrink:0,flexWrap:"wrap"}}>
+          <div style={{display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
+            <span style={{fontSize:68}}>🌍</span>
+            <div>
+              <div style={{fontWeight:900,fontSize:46,color:"#8ecce8",letterSpacing:".08em",lineHeight:1.1}}>Mes Pokémons Rares</div>
+              <div style={{fontSize:20,color:"#5a90b8",fontWeight:600,marginTop:6}}>
+                <span style={{color:"#38bdf8",fontWeight:900,fontSize:26}}>{nCountries}</span> pays · <span style={{color:"#38bdf8",fontWeight:900,fontSize:26}}>{allSpots.length}</span> exp. · <span style={{color:"#4ade80",fontWeight:900,fontSize:26}}>{totalDone}</span> accomplies
+              </div>
+            </div>
+          </div>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap",flex:1,minWidth:0}}>
+            {CATS.filter((c,i,a)=>a.findIndex(x=>x.id===c.id)===i).map(c=>{ const a=filter===c.id; return(
+              <button key={c.id} className="btn" onClick={()=>setFilter(c.id)}
+                style={{background:a?`${c.color}18`:"transparent",border:`1px solid ${a?c.color+"55":"#1a3a5a"}`,borderRadius:8,padding:"8px 18px",color:a?c.color:"#7aaccf",fontSize:13,fontWeight:a?700:500,display:"flex",alignItems:"center",gap:5,whiteSpace:"nowrap",flexShrink:0}}>
+                {c.icon} {c.label}
+              </button>
+            );})}
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
+            <div style={{display:"flex",gap:4}}>{CN.map((n,i)=>(<div key={n} title={n} style={{width:16,height:16,borderRadius:"50%",background:CC[i],opacity:.75,cursor:"default"}}/>))}</div>
+            <div style={{width:160,height:10,background:"#0b1e34",borderRadius:2,overflow:"hidden"}}>
+              <div style={{width:`${allSpots.length?(totalDone/allSpots.length)*100:0}%`,height:"100%",background:"linear-gradient(90deg,#0ea5e9,#22c55e)",transition:"width .6s"}}/>
+            </div>
+            <span style={{fontSize:20,color:"#5aabcc",fontWeight:800}}>{totalDone}/{allSpots.length}</span>
+          </div>
+        </div>
+      )}
       {/* ── BODY ── */}
       <div style={{flex:1,display:"flex",overflow:"hidden"}}>
         {/* GLOBE */}
@@ -558,14 +581,14 @@ function AtlasMerveilles() {
               overflow:"hidden", background:"#020e1c", borderLeft:"1px solid #0b1e34",
               display:"flex", flexDirection:"column", flexShrink:0,
             })}}>
-          <div style={{width:isMobile?"100%":420,height:"100%",display:"flex",flexDirection:"column"}}>
+          <div style={{width:"100%",height:"100%",display:"flex",flexDirection:"column"}}>
 
             {/* Country header */}
             <div key={`h${animKey}`} className="slid" style={{padding:"16px 16px 14px",borderBottom:"1px solid #0b1e34",background:"linear-gradient(160deg,#030e1c,#05182e)",flexShrink:0}}>
               {isMobile&&<div onClick={()=>{setShowMobileSidebar(false);}} style={{width:40,height:4,background:"#1a3a5a",borderRadius:2,margin:"0 auto 12px",cursor:"pointer"}}/>}
               <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8,marginBottom:11}}>
                 <div>
-                  <div style={{fontWeight:900,fontSize:24,color:"#e4f0fc",letterSpacing:"-.02em",lineHeight:1.05}}>{selectedName}</div>
+                  <div style={{fontWeight:900,fontSize:isMobile?20:24,color:"#e4f0fc",letterSpacing:"-.02em",lineHeight:1.05}}>{selectedName}</div>
                   <div style={{display:"flex",alignItems:"center",gap:8,marginTop:6}}>
                     {selectedCountry&&<span style={{fontSize:9,fontWeight:800,padding:"2px 9px",borderRadius:4,background:`${CC[ci]}15`,color:CC[ci],border:`1px solid ${CC[ci]}30`,letterSpacing:".08em"}}>{CN[ci]}</span>}
                     <span style={{fontSize:10,color:"#1e3a56",fontWeight:500}}>{sideSpots.length} exp.{sideSpots.length>0&&<span style={{color:sideSpots.filter(s=>s.done).length>0?"#22c55e":"#1e3a56"}}> · {sideSpots.filter(s=>s.done).length} accomplie{sideSpots.filter(s=>s.done).length!==1?"s":""}</span>}</span>
@@ -584,7 +607,7 @@ function AtlasMerveilles() {
             </div>
 
             {/* Spots */}
-            <div style={{flex:1,overflowY:"auto",padding:"10px"}}>
+            <div style={{flex:1,overflowY:"auto",padding:isMobile?"8px 10px":"10px"}}>
               {filtered.length===0?(
                 <div style={{textAlign:"center",marginTop:60}}>
                   <div style={{fontSize:28,marginBottom:10,opacity:.2}}>◎</div>
@@ -603,8 +626,8 @@ function AtlasMerveilles() {
                           style={{width:22,height:22,borderRadius:"50%",flexShrink:0,border:`2px solid ${spot.done?"#22c55e":"#1a3a5a"}`,background:spot.done?"#22c55e":"transparent",display:"flex",alignItems:"center",justifyContent:"center",color:spot.done?"#020c1a":"transparent",fontSize:11,marginTop:2,fontWeight:900}}>✓</button>
                         <div style={{flex:1,minWidth:0}}>
                           <div style={{marginBottom:6}}><span style={{fontSize:13,fontWeight:700,background:`${c.color}15`,color:c.color,padding:"4px 10px",borderRadius:5,border:`1px solid ${c.color}25`,letterSpacing:".04em"}}>{c.icon} {c.label}</span></div>
-                          <div style={{fontSize:21,fontWeight:800,color:spot.done?"#1e3a56":"#d8eef8",lineHeight:1.2,textDecoration:spot.done?"line-through":"none",marginBottom:6,letterSpacing:"-.01em"}}>{spot.name}</div>
-                          <div style={{fontSize:17,color:"#2a5070",fontWeight:400,lineHeight:1.55}}>{spot.desc}</div>
+                          <div style={{fontSize:isMobile?17:21,fontWeight:800,color:spot.done?"#1e3a56":"#d8eef8",lineHeight:1.2,textDecoration:spot.done?"line-through":"none",marginBottom:6,letterSpacing:"-.01em"}}>{spot.name}</div>
+                          <div style={{fontSize:isMobile?13:17,color:"#2a5070",fontWeight:400,lineHeight:1.55}}>{spot.desc}</div>
                           {spot.season&&<div style={{marginTop:7,display:"flex",alignItems:"center",gap:5}}><span style={{fontSize:13,fontWeight:600,color:"#1a4060",background:"#0a1e30",padding:"4px 10px",borderRadius:5,border:"1px solid #0e2844"}}>🗓 {spot.season}</span></div>}
                           <div style={{marginTop:8,fontSize:14,fontWeight:700,color:"#0d3050",letterSpacing:".06em"}}>VOIR LES DÉTAILS →</div>
                         </div>
@@ -624,7 +647,7 @@ function AtlasMerveilles() {
       {detailSpot&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.88)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,backdropFilter:"blur(12px)",padding:"16px"}}
           onClick={()=>setDetailSpot(null)}>
-          <div style={{background:"#030e1c",border:"1px solid #0d2540",borderRadius:16,width:"min(640px,96vw)",maxHeight:"88vh",overflow:"auto",boxShadow:"0 30px 80px rgba(0,0,0,.9)",animation:"min .22s ease both"}}
+          <div style={{background:"#030e1c",border:"1px solid #0d2540",borderRadius:isMobile?0:16,width:isMobile?"100vw":"min(640px,96vw)",maxHeight:isMobile?"100vh":"88vh",overflow:"auto",boxShadow:"0 30px 80px rgba(0,0,0,.9)",animation:"min .22s ease both"}}
             onClick={e=>e.stopPropagation()}>
             <div style={{position:"relative",height:260,background:"#071424",overflow:"hidden",borderRadius:"16px 16px 0 0",flexShrink:0}}>
               {!imgErr
