@@ -295,44 +295,12 @@ const DEFAULT_SPOTS = {
   ],
 };
 
-const IMG_CACHE = {};
-async function fetchIMG(keywords) {
-  if (IMG_CACHE[keywords]) return IMG_CACHE[keywords];
-  const terms = keywords.split(' ').slice(0,3);
-  for (const term of terms) {
-    try {
-      const r = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(term)}`, {headers:{"Api-User-Agent":"atlas-merveilles/1.0"}});
-      const d = await r.json();
-      if (d.thumbnail?.source) {
-        const url = d.thumbnail.source.replace(/\/thumb\//, '/').replace(/\/[^/]+$/, '').replace('thumb/', '');
-        const betterUrl = d.originalimage?.source || d.thumbnail.source;
-        IMG_CACHE[keywords] = betterUrl;
-        return betterUrl;
-      }
-    } catch(e) {}
-  }
-  // Fallback to Unsplash
-  const q = encodeURIComponent(keywords.replace(/\s+/g,','));
-  const seed = Math.abs(keywords.split('').reduce((a,c)=>a+c.charCodeAt(0),0)%1000);
-  return `https://picsum.photos/seed/${seed}/900/500`;
-}
+const IMG = (kw) => {
+  const seed = Math.abs(kw.split('').reduce((a,c)=>a+c.charCodeAt(0),0)%9999);
+  return 'https://source.unsplash.com/900x500/?' + encodeURIComponent(kw) + '&sig=' + seed;
+};
 
-// ── COMPONENT ─────────────────────────────────────────────────────────────────
 
-function WikiImg({keywords, alt, onError}) {
-  const [src, setSrc] = React.useState(null);
-  const [loaded, setLoaded] = React.useState(false);
-  React.useEffect(() => {
-    setSrc(null); setLoaded(false);
-    fetchIMG(keywords).then(url => setSrc(url));
-  }, [keywords]);
-  if (!src) return (
-    <div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",background:"radial-gradient(circle at 40% 40%,#0c2a44,#020c1a)"}}>
-      <div style={{width:36,height:36,border:"2px solid #0c2040",borderTopColor:"#0ea5e9",borderRadius:"50%",animation:"spin .8s linear infinite"}}/>
-    </div>
-  );
-  return <img src={src} alt={alt} style={{width:"100%",height:"100%",objectFit:"cover",opacity:loaded?.78:.0,transition:"opacity .5s"}} onLoad={()=>setLoaded(true)} onError={onError}/>;
-}
 
 function AtlasMerveilles() {
   const canvasRef    = useRef(null);
@@ -443,14 +411,12 @@ function AtlasMerveilles() {
       .on("start",e=>{
         draggingRef.current=true; autoSpinRef.current=false; clearTimeout(resumeRef.current);
         const src=e.sourceEvent;
-        const tx=src.touches?.[0]?.clientX||e.x;
-        const ty=src.touches?.[0]?.clientY||e.y;
+        const t=src.touches&&src.touches[0]; const tx=t?t.clientX:e.x; const ty=t?t.clientY:e.y;
         dragStartRef.current=[tx,ty]; dragMoveRef.current=[tx,ty];
       })
       .on("drag",e=>{
         const src=e.sourceEvent;
-        const tx=src.touches?.[0]?.clientX||e.x;
-        const ty=src.touches?.[0]?.clientY||e.y;
+        const t2=src.touches&&src.touches[0]; const tx=t2?t2.clientX:e.x; const ty=t2?t2.clientY:e.y;
         const dx=tx-dragMoveRef.current[0],dy=ty-dragMoveRef.current[1];
         dragMoveRef.current=[tx,ty]; const sc=projRef.current?.scale()||R; const r=rotateRef.current; rotateRef.current=[r[0]+dx*65/sc,r[1]-dy*65/sc]; projRef.current?.rotate(rotateRef.current); })
       .on("end",e=>{
@@ -710,7 +676,7 @@ function AtlasMerveilles() {
             onClick={e=>e.stopPropagation()}>
             <div style={{position:"relative",height:260,background:"#071424",overflow:"hidden",borderRadius:"16px 16px 0 0",flexShrink:0}}>
               {!imgErr
-                ? <WikiImg keywords={detailSpot.photo||detailSpot.name} alt={detailSpot.name} onError={()=>setImgErr(true)} />
+                ? <img src={IMG(detailSpot.photo||detailSpot.name)} alt={detailSpot.name} style={{width:"100%",height:"100%",objectFit:"cover",opacity:.72}} onError={()=>setImgErr(true)}/>
                 : <div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",background:"radial-gradient(circle at 40% 40%,#0c2a44,#020c1a)"}}><span style={{fontSize:64}}>{Cat(detailSpot.category).icon}</span></div>
               }
               <div style={{position:"absolute",inset:0,background:"linear-gradient(to top,#030e1c 0%,rgba(3,14,28,.2) 55%,transparent 100%)"}}/>
