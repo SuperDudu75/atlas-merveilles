@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Atlas des Merveilles 🌍</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+<style>*{margin:0;padding:0;box-sizing:border-box}html,body,#root{height:100%;background:#020c1a;overflow:hidden}</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+window.storage={get:async(k)=>{try{const v=localStorage.getItem(k);return v?{key:k,value:v}:null;}catch{return null;}},set:async(k,v)=>{try{localStorage.setItem(k,v);return{key:k,value:v};}catch{return null;}},delete:async(k)=>{try{localStorage.removeItem(k);return{key:k,deleted:true};}catch{return null;}},list:async(p)=>{try{const ks=Object.keys(localStorage).filter(k=>!p||k.startsWith(p));return{keys:ks};}catch{return{keys:[]};}}};
+const{useState,useEffect,useRef,useCallback}=React;
+</script>
+<script type="text/babel">
+
+// ── CONTINENT MAP ─────────────────────────────────────────────────────────────
+const CM = {
+  "12":0,"24":0,"72":0,"108":0,"120":0,"132":0,"140":0,"148":0,"174":0,"178":0,
+  "180":0,"204":0,"226":0,"231":0,"232":0,"262":0,"266":0,"270":0,"288":0,
+  "324":0,"384":0,"404":0,"426":0,"430":0,"434":0,"450":0,"454":0,"466":0,
+  "478":0,"480":0,"504":0,"508":0,"516":0,"562":0,"566":0,"624":0,"646":0,
+  "678":0,"686":0,"694":0,"706":0,"710":0,"716":0,"728":0,"729":0,"748":0,
+  "768":0,"788":0,"800":0,"818":0,"834":0,"854":0,"894":0,
+  "4":1,"31":1,"50":1,"51":1,"64":1,"96":1,"104":1,"116":1,"144":1,"156":1,
+  "158":1,"196":1,"268":1,"356":1,"360":1,"364":1,"368":1,"376":1,"392":1,
+  "398":1,"400":1,"408":1,"410":1,"414":1,"417":1,"418":1,"422":1,"458":1,
+  "462":1,"496":1,"512":1,"524":1,"586":1,"608":1,"626":1,"634":1,"682":1,
+  "702":1,"704":1,"760":1,"762":1,"764":1,"784":1,"792":1,"795":1,"860":1,"887":1,
+  "8":2,"20":2,"40":2,"56":2,"70":2,"100":2,"112":2,"191":2,"203":2,"208":2,
+  "233":2,"246":2,"250":2,"276":2,"300":2,"348":2,"352":2,"372":2,"380":2,
+  "383":2,"428":2,"438":2,"440":2,"442":2,"470":2,"492":2,"498":2,"499":2,
+  "528":2,"578":2,"616":2,"620":2,"642":2,"643":2,"674":2,"688":2,"703":2,
+  "705":2,"724":2,"752":2,"756":2,"804":2,"807":2,"826":2,
+  "28":3,"44":3,"52":3,"84":3,"124":3,"188":3,"192":3,"212":3,"214":3,
+  "222":3,"308":3,"320":3,"332":3,"340":3,"388":3,"484":3,"558":3,"591":3,
+  "659":3,"662":3,"670":3,"780":3,"840":3,
+  "32":4,"68":4,"76":4,"152":4,"170":4,"218":4,"328":4,"600":4,"604":4,
+  "740":4,"858":4,"862":4,
+  "36":5,"90":5,"242":5,"296":5,"520":5,"548":5,"554":5,"583":5,"584":5,
+  "585":5,"598":5,"776":5,"798":5,"882":5,
+};
+const gc = id => CM[id] ?? 2;
+const CONT = [
+  { base:"#1a1005",active:"#2c1e0e",stroke:"#c8780a",hover:"#382614" },
+  { base:"#051508",active:"#0c2618",stroke:"#16b878",hover:"#112c1c" },
+  { base:"#090e26",active:"#141e40",stroke:"#4870e8",hover:"#162240" },
+  { base:"#060e04",active:"#102608",stroke:"#3ab828",hover:"#142410" },
+  { base:"#140608",active:"#241014",stroke:"#d84860",hover:"#200e10" },
+  { base:"#04081c",active:"#0c1430",stroke:"#5888e8",hover:"#0e1634" },
+];
+const CC = ["#d48a18","#22c49a","#6888e8","#52c440","#e06878","#70a0f8"];
+const CN = ["Afrique","Asie","Europe","Amér. Nord","Amér. Sud","Océanie"];
+
+// ── CATEGORIES ────────────────────────────────────────────────────────────────
+const CATS = [
+  { id:"all",      label:"Tout",              icon:"✦", color:"#94a3b8" },
+  { id:"marine",   label:"Vie Marine",         icon:"🌊",color:"#22d3ee" },
+  { id:"wildlife", label:"Faune Sauvage",      icon:"🦁",color:"#fb923c" },
+  { id:"geology",  label:"Volcans & Géo",      icon:"🌋",color:"#f87171" },
+  { id:"nature",   label:"Nature & Forêts",    icon:"🌿",color:"#4ade80" },
+  { id:"heritage", label:"Patrimoine",         icon:"🏛️",color:"#c084fc" },
+  { id:"unique",   label:"Expérience Unique",  icon:"⭐",color:"#fbbf24" },
+];
+const Cat = id => CATS.find(c=>c.id===id)||CATS[1];
+
+// ── 195 PAYS DU MONDE ─────────────────────────────────────────────────────────
+const NM = {
+  "4":"Afghanistan","8":"Albanie","12":"Algérie","20":"Andorre","24":"Angola",
+  "28":"Antigua-et-Barbuda","31":"Azerbaïdjan","32":"Argentine","36":"Australie",
+  "40":"Autriche","44":"Bahamas","48":"Bahreïn","50":"Bangladesh","51":"Arménie",
+  "52":"Barbade","56":"Belgique","64":"Bhoutan","68":"Bolivie",
+  "70":"Bosnie-Herzégovine","72":"Botswana","76":"Brésil","84":"Belize",
+  "90":"Îles Salomon","96":"Brunéi","100":"Bulgarie","104":"Birmanie",
+  "108":"Burundi","112":"Biélorussie","116":"Cambodge","120":"Cameroun",
+  "124":"Canada","132":"Cap-Vert","140":"Rép. Centrafricaine","144":"Sri Lanka",
+  "148":"Tchad","152":"Chili","156":"Chine","158":"Taïwan","170":"Colombie",
+  "174":"Comores","178":"Congo","180":"RD Congo","188":"Costa Rica",
+  "191":"Croatie","192":"Cuba","196":"Chypre","203":"Tchéquie","204":"Bénin",
+  "208":"Danemark","212":"Dominique","214":"Rép. Dominicaine","218":"Équateur",
+  "222":"El Salvador","226":"Guinée Équatoriale","231":"Éthiopie","232":"Érythrée",
+  "233":"Estonie","242":"Fidji","246":"Finlande","250":"France","262":"Djibouti",
+  "266":"Gabon","268":"Géorgie","270":"Gambie","276":"Allemagne","288":"Ghana",
+  "296":"Kiribati","300":"Grèce","308":"Grenade","320":"Guatemala","324":"Guinée",
+  "328":"Guyana","332":"Haïti","340":"Honduras","348":"Hongrie","352":"Islande",
+  "356":"Inde","360":"Indonésie","364":"Iran","368":"Irak","372":"Irlande",
+  "376":"Israël","380":"Italie","383":"Kosovo","384":"Côte d'Ivoire",
+  "388":"Jamaïque","392":"Japon","398":"Kazakhstan","400":"Jordanie","404":"Kenya",
+  "408":"Corée du Nord","410":"Corée du Sud","414":"Koweït","417":"Kirghizistan",
+  "418":"Laos","422":"Liban","426":"Lesotho","428":"Lettonie","430":"Liberia",
+  "434":"Libye","438":"Liechtenstein","440":"Lituanie","442":"Luxembourg",
+  "450":"Madagascar","454":"Malawi","458":"Malaisie","462":"Maldives","466":"Mali",
+  "470":"Malte","478":"Mauritanie","480":"Maurice","484":"Mexique",
+  "492":"Monaco","496":"Mongolie","498":"Moldavie","499":"Monténégro",
+  "504":"Maroc","508":"Mozambique","512":"Oman","516":"Namibie","520":"Nauru",
+  "524":"Népal","528":"Pays-Bas","548":"Vanuatu","554":"Nouvelle-Zélande",
+  "558":"Nicaragua","562":"Niger","566":"Nigeria","578":"Norvège",
+  "583":"Micronésie","584":"Îles Marshall","585":"Palaos","586":"Pakistan",
+  "591":"Panama","598":"Papouasie-Nv-Guinée","600":"Paraguay","604":"Pérou",
+  "608":"Philippines","616":"Pologne","620":"Portugal","624":"Guinée-Bissau",
+  "626":"Timor-Leste","634":"Qatar","642":"Roumanie","643":"Russie","646":"Rwanda",
+  "659":"Saint-Kitts","662":"Sainte-Lucie","670":"Saint-Vincent","674":"Saint-Marin",
+  "678":"São Tomé-et-Príncipe","682":"Arabie Saoudite","686":"Sénégal",
+  "688":"Serbie","694":"Sierra Leone","702":"Singapour","703":"Slovaquie",
+  "704":"Viêt Nam","705":"Slovénie","706":"Somalie","710":"Afrique du Sud",
+  "716":"Zimbabwe","724":"Espagne","728":"Soudan du Sud","729":"Soudan",
+  "740":"Suriname","748":"Eswatini","752":"Suède","756":"Suisse","760":"Syrie",
+  "762":"Tadjikistan","764":"Thaïlande","768":"Togo","776":"Tonga",
+  "780":"Trinité-et-Tobago","784":"Émirats Arabes Unis","788":"Tunisie",
+  "792":"Turquie","795":"Turkménistan","798":"Tuvalu","800":"Ouganda",
+  "804":"Ukraine","807":"Macédoine du Nord","818":"Égypte","826":"Royaume-Uni",
+  "834":"Tanzanie","840":"États-Unis","854":"Burkina Faso","858":"Uruguay",
+  "860":"Ouzbékistan","862":"Venezuela","882":"Samoa","887":"Yémen","894":"Zambie",
+};
+
+// ── SPOTS (triés alphabétiquement par nom dans chaque pays) ────────────────────
+const DEFAULT_SPOTS = {
+  "887":[
+    {id:"ye1",name:"Arbres à Sang de Dragon — Socotra",category:"nature",desc:"L'île la plus étrange du monde. 37% des plantes n'existent nulle part ailleurs.",why:"Socotra, 'Galápagos de l'Océan Indien', abrite 307 espèces végétales endémiques. L'arbre Dracaena cinnabari à résine rouge sang est classé UNESCO. Certaines plantes inchangées depuis 20 millions d'années.",season:"Octobre–Avril.",tip:"Guide local + bivouac sur le plateau Dixsam.",photo:"dragon blood trees socotra Yemen landscape",done:false},
+    {id:"ye2",name:"Lagon de Qalansiyah",category:"nature",desc:"Lagune turquoise entourée de dunes blanches. Zéro touriste.",why:"Préservé par l'isolement total de l'île. Moins de 1 000 visiteurs par an sur toute l'île. Eaux cristallines, mangroves et silence absolu.",season:"Novembre–Mars.",tip:"4x4 avec chauffeur depuis Hadibu.",photo:"Qalansiyah lagoon socotra turquoise water",done:false},
+  ],
+  "646":[
+    {id:"rw1",name:"Trek Gorilles des Montagnes",category:"wildlife",desc:"Une heure face aux gorilles des montagnes. Regard dans les yeux, à vie.",why:"Moins de 1 100 gorilles des montagnes sur Terre. Le regard d'un silverback à 1 mètre redéfinit le rapport à l'animal.",season:"Juin–Sept / Déc–Fév.",tip:"Permis 1 500$ via RDB Rwanda. Réserver 6 mois à l'avance.",photo:"mountain gorilla Rwanda silverback forest",done:false},
+  ],
+  "800":[
+    {id:"ug1",name:"Chimpanzés de Kibale",category:"wildlife",desc:"1 500 chimpanzés. La plus haute densité d'Afrique.",why:"Suivre un groupe de chimpanzés toute une matinée. Ils chassent des colobes, se battent, jouent. Le bruit des knuckle-walks dans la forêt est inoubliable.",season:"Toute l'année. Mieux juin–oct.",tip:"Combiner gorilles Bwindi + chimpanzés Kibale.",photo:"chimpanzee Uganda Kibale forest wild",done:false},
+    {id:"ug2",name:"Gorilles à Bwindi",category:"wildlife",desc:"Forêt impénétrable. Gorilles dos argentés et atmosphère brute.",why:"Bwindi est plus sauvage et moins touristique que le Rwanda. 120 espèces de mammifères.",season:"Juin–Août / Déc–Fév.",tip:"Permis 800$ — moins cher qu'au Rwanda.",photo:"gorilla Uganda Bwindi forest dense",done:false},
+  ],
+  "404":[
+    {id:"ke2",name:"Flamants Roses — Lac Nakuru",category:"wildlife",desc:"Un million de flamants. Le lac devient rose.",why:"Lac Nakuru accueille des centaines de milliers de flamants. Rhinocéros blancs et noirs aussi présents. Vue depuis la falaise : hallucinante.",season:"Juillet–Mars.",tip:"Arriver à l'aube — lumière rasante + couleur rose maximale.",photo:"flamingos Lake Nakuru Kenya pink million",done:false},
+    {id:"ke1",name:"Grande Migration — Masaï Mara",category:"wildlife",desc:"La traversée des gnous. Le plus grand spectacle terrestre.",why:"1,5M de gnous, 200 000 zèbres. La traversée de la Mara River avec crocodiles en embuscade est parmi les moments les plus dramatiques de la nature.",season:"Juillet–Octobre.",tip:"Camp hors du parc = sorties libres dès l'aube.",photo:"wildebeest migration Masai Mara Kenya river",done:false},
+    {id:"ke3",name:"Requins-Baleines — Watamu",category:"marine",desc:"Snorkeling avec les requins-baleines dans un parc marin protégé.",why:"Watamu Marine Park est l'un des récifs les mieux protégés d'Afrique de l'Est.",season:"Octobre–Mars.",tip:"Sortie bateau depuis Watamu village.",photo:"whale shark snorkeling Kenya Watamu",done:false},
+  ],
+  "834":[
+    {id:"tz3",name:"Ascension du Kilimandjaro",category:"geology",desc:"5 zones climatiques. Le toit de l'Afrique (5 895 m).",why:"Jungle tropicale, bruyère géante, moorlands, désert alpin, calotte glaciaire. 7 jours sans technique d'escalade.",season:"Jan–Mars / Juin–Oct.",tip:"Voie Lemosho (8 jours) = meilleur taux d'acclimatation.",photo:"Kilimanjaro summit snow Africa sunrise",done:false},
+    {id:"tz2",name:"Plongée à Mafia Island",category:"marine",desc:"Requins-baleines et récifs vierges hors des circuits.",why:"Mafia Island : aucun tourisme de masse. Récifs les plus intacts de la côte tanzanienne.",season:"Oct–Mars.",tip:"Vol depuis Dar es Salaam (40 min). 4 lodges seulement.",photo:"whale shark Mafia Island Tanzania ocean",done:false},
+    {id:"tz1",name:"Serengeti en Montgolfière",category:"unique",desc:"Vol à l'aube. Gnous à perte de vue. Champagne dans la savane.",why:"Flotter à 200 m au-dessus de la Serengeti au lever du soleil, troupeaux silencieux sous les pieds.",season:"Juin–Octobre.",tip:"Serengeti Balloon Safaris ~600$/pers.",photo:"hot air balloon Serengeti Tanzania sunrise savanna",done:false},
+  ],
+  "231":[
+    {id:"et1",name:"Dépression Danakil",category:"geology",desc:"Le lieu habité le plus chaud de la Terre. Sources fluo, lac de lave.",why:"-120 m sous le niveau de la mer, +50°C. Dallol : jaune soufre et rouge sang. L'un des 4 lacs de lave permanents du monde.",season:"Nov–Fév.",tip:"Guide obligatoire + escorte. Tour depuis Mekele (3-4 jours).",photo:"Danakil depression Ethiopia sulfur lava lake",done:false},
+    {id:"et2",name:"Géladas des Monts Simien",category:"wildlife",desc:"Le seul primate qui mange de l'herbe. Des milliers sur les falaises.",why:"Endémique des hauts plateaux éthiopiens. Troupeaux de plusieurs centaines. Poitrine rouge vif.",season:"Oct–Juin.",tip:"Simien Lodge (3 260 m) pour rencontres à l'aube.",photo:"gelada baboon Ethiopia Simien mountains",done:false},
+  ],
+  "450":[
+    {id:"mg2",name:"Avenue des Baobabs au Crépuscule",category:"nature",desc:"Silhouettes de 800 ans contre un ciel orange.",why:"Baobabs de Morondava : jusqu'à 800 ans, 30 mètres. Vestiges d'une forêt ancienne. Coucher de soleil cinématique.",season:"Avril–Novembre.",tip:"Arriver 1h avant le coucher. Rester pour l'heure bleue.",photo:"Avenue Baobabs Madagascar sunset orange",done:false},
+    {id:"mg3",name:"Dugongs & Baleines — Nosy Bé",category:"marine",desc:"Dugongs rares et baleines à bosse saisonnières.",why:"Canal de Mozambique : l'une des dernières zones pour les dugongs. Sept–Nov : baleines à bosse accouchent.",season:"Sept–Nov.",tip:"Opérateur respectueux — approche douce.",photo:"dugong Madagascar snorkeling ocean",done:false},
+    {id:"mg1",name:"Lémuriens à Andasibe",category:"wildlife",desc:"L'indri-indri pousse un chant qui traverse la forêt.",why:"105 espèces de lémuriens endémiques. L'indri est le plus grand lémurien vivant.",season:"Avril–Novembre.",tip:"Trek de nuit : lémuriens nocturnes + caméléons géants.",photo:"indri lemur Madagascar forest",done:false},
+  ],
+  "516":[
+    {id:"na3",name:"Cape Cross — 100 000 Otaries",category:"wildlife",desc:"La plus grande colonie d'otaries du Cap au monde.",why:"Plus de 100 000 otaries. Naissances sous les yeux en nov-déc. L'odeur est épique.",season:"Nov–Déc.",tip:"Arriver tôt le matin.",photo:"Cape Cross seal colony Namibia",done:false},
+    {id:"na1",name:"Éléphants du Désert — Damaraland",category:"wildlife",desc:"Génétiquement distincts. Survivent sans eau pendant des jours.",why:"Les éléphants du désert namibien mémorisent des sources souterraines, marchent 70 km/nuit.",season:"Mai–Octobre.",tip:"Desert Rhino Camp — guides Damara.",photo:"desert elephants Namibia Damaraland dry",done:false},
+    {id:"na2",name:"Sossusvlei & Deadvlei",category:"geology",desc:"Dunes jusqu'à 325 m. Arbres morts depuis 900 ans.",why:"Deadvlei : argile blanche, acacias debout depuis 900 ans. Contraste ocre/blanc/bleu parfait.",season:"Avril–Octobre.",tip:"Entrée à 5h45. Monter Dune 45 avant le soleil.",photo:"Deadvlei Sossusvlei Namibia dunes dead trees",done:false},
+  ],
+  "72":[
+    {id:"bw1",name:"Okavango en Mokoro",category:"nature",desc:"En pirogue dans le plus grand delta intérieur du monde.",why:"11 millions d'hectares UNESCO. En mokoro poussé à la perche, lions qui nagent entre les îles.",season:"Juin–Octobre.",tip:"Camp sur île flottante. Accès uniquement par avion léger.",photo:"Okavango Delta Botswana mokoro canoe",done:false},
+    {id:"bw2",name:"Suricates du Kalahari",category:"wildlife",desc:"Les suricates grimpent sur vous pour faire le guet.",why:"Certains groupes habitués vous traitent comme un élément du paysage. Ils chassent les scorpions à vos pieds.",season:"Toute l'année. Mieux juin–août.",tip:"Kalahari Meerkat Project.",photo:"meerkat Kalahari Botswana sunrise",done:false},
+  ],
+  "710":[
+    {id:"za1",name:"Cage Diving Grand Requin Blanc",category:"marine",desc:"Face à face avec le plus grand prédateur marin.",why:"Gansbaai : capitale mondiale du grand requin blanc. La cage descend à 3 m — le requin arrive à pleine vitesse.",season:"Juin–Octobre.",tip:"Marine Dynamics — certifié sans appâts vivants.",photo:"great white shark cage diving South Africa",done:false},
+    {id:"za2",name:"Manchots de Boulders Beach",category:"wildlife",desc:"Nager parmi les manchots africains. La seule plage du genre.",why:"3 000 manchots africains. Totalement indifférents aux humains.",season:"Toute l'année.",tip:"Arriver avant 9h. Côté gauche de la plage.",photo:"African penguins Boulders Beach Cape Town",done:false},
+    {id:"za3",name:"Sardine Run — KwaZulu-Natal",category:"marine",desc:"La plus grande migration marine. Dauphins, orques, requins.",why:"Milliards de sardines. Milliers de dauphins, requins-bouledogues, orques et fous de Bassan simultanément.",season:"Mai–Juillet.",tip:"Port Shepstone ou Margate.",photo:"sardine run South Africa dolphins sharks",done:false},
+  ],
+  "818":[
+    {id:"eg2",name:"Abu Simbel — Alignement Solaire",category:"heritage",desc:"2 fois par an, les rayons illuminent exactement Ramsès II.",why:"Calcul astronomique de 3 200 ans. Le 22 février et 22 octobre, les premiers rayons pénètrent exactement dans le temple.",season:"22 Fév et 22 Oct.",tip:"Dormir à Abu Simbel la veille. Arriver à l'aube.",photo:"Abu Simbel temple sunrise Egypt Ramses",done:false},
+    {id:"eg3",name:"Désert Blanc — Bivouac Étoilé",category:"geology",desc:"Formations de craie sculptées. Paysage lunaire.",why:"Sahara el Abyad : formations calcaires de millions d'années. Nuit sans pollution, Voie Lactée à l'œil nu.",season:"Octobre–Mars.",tip:"4x4 depuis Bahariya Oasis. Bivouac 1 nuit minimum.",photo:"White Desert Egypt chalk formations night",done:false},
+    {id:"eg1",name:"Plongée Mer Rouge — Mantas Géantes",category:"marine",desc:"The Brothers, Daedalus. Mantas 3m et requins gris en eau bleue.",why:"Parmi les 5 meilleurs sites au monde. Visibilité permanente de 40 m. Requins océaniques en masse.",season:"Juin–Août.",tip:"Liveaboard depuis Hurghada. Advanced OW minimum.",photo:"manta ray Red Sea Egypt diving Brothers",done:false},
+  ],
+  "124":[
+    {id:"ca3",name:"Aurores Boréales — Yukon",category:"unique",desc:"Lac Laberge. Danses vertes et violettes qui remplissent le ciel.",why:"65° N, ciel sec, zéro pollution. Lac Laberge glacé, forêts de bouleaux, aurores pendant des heures.",season:"Décembre–Mars.",tip:"Whitehorse → Lac Laberge en 30 min.",photo:"northern lights aurora Yukon Canada winter",done:false},
+    {id:"ca1",name:"Bélugas à Tadoussac",category:"marine",desc:"Nager avec les baleines blanches du Saint-Laurent.",why:"Fjord du Saguenay : zone la plus riche en mammifères marins de l'Atlantique Nord.",season:"Mai–Octobre.",tip:"Kayak de mer depuis Tadoussac.",photo:"beluga whale St Lawrence River Canada",done:false},
+    {id:"ca2",name:"Ours Polaires — Churchill",category:"wildlife",desc:"La capitale mondiale de l'ours polaire.",why:"900 ours attendent que la baie d'Hudson gèle chaque novembre. Tundra Buggy à 2 mètres.",season:"Octobre–Novembre.",tip:"Tundra Buggy Lodge — réserver 6 mois à l'avance.",photo:"polar bear Churchill Manitoba Arctic",done:false},
+  ],
+  "840":[
+    {id:"us2",name:"Bioluminescence — Mosquito Bay",category:"unique",desc:"Record Guinness de la baie la plus bioluminescente. Kayak de nuit.",why:"Vieques, Porto Rico. Millions de dinoflagellés émettent une lumière bleue à chaque mouvement.",season:"Toute l'année. Mieux nouvelle lune.",tip:"Island Adventures — tour 2h, paddle électrique silencieux.",photo:"bioluminescence bay kayak Puerto Rico blue",done:false},
+    {id:"us3",name:"Grand Canyon en Raft — Colorado",category:"geology",desc:"12 jours au fond. 2 milliards d'années de géologie.",why:"350 km de rapides entre des parois de 2 milliards d'années. Isolation totale du monde.",season:"Mai–Septembre.",tip:"Liste d'attente 12 ans pour permis privés.",photo:"Grand Canyon rafting Colorado River camps",done:false},
+    {id:"us1",name:"Loups de Yellowstone — Lamar Valley",category:"wildlife",desc:"Le meilleur spot mondial pour observer les loups sauvages.",why:"Réintroduits en 1995, les loups ont transformé l'écosystème. Meutes observables à l'aube quotidiennement.",season:"Nov–Avril.",tip:"Jumelles 20x60 en location. Arriver avant 6h.",photo:"wolf pack Yellowstone Lamar Valley snow",done:false},
+  ],
+  "484":[
+    {id:"mx3",name:"Cenotes du Yucatán",category:"unique",desc:"Grottes sous-marines mayas. Haloclines, stalactites, silence.",why:"Plus grand système de cavernes sous-marines (350+ km). Haloclines : miroir liquide entre eau douce et salée.",season:"Toute l'année.",tip:"Cenote Dos Ojos ou The Pit pour plongeurs.",photo:"cenote underwater cave Yucatan Mexico blue",done:false},
+    {id:"mx1",name:"Migration Papillons Monarques",category:"wildlife",desc:"300 millions de papillons couvrent les sapins du Michoacán.",why:"Densité si grande que les arbres disparaissent. Bruissement de millions d'ailes audible à 100 m.",season:"Novembre–Mars.",tip:"Sanctuaire El Rosario. Arriver à 8h.",photo:"monarch butterfly migration Michoacan Mexico",done:false},
+    {id:"mx2",name:"Requins-Baleines à Isla Holbox",category:"marine",desc:"Nager avec le plus grand poisson au coucher du soleil.",why:"Jusqu'à 400 requins-baleines en juin-septembre. Snorkeling à côté d'un poisson de 12 m.",season:"Juin–Septembre.",tip:"Partir à l'aube (6h) — 2 nageurs max par requin.",photo:"whale shark snorkeling Mexico Holbox",done:false},
+  ],
+  "320":[
+    {id:"gt1",name:"Bivouac Acatenango face au Fuego",category:"geology",desc:"Nuit à 3 976 m. Éruption toutes les 30 min sous vos yeux.",why:"Le Fuego est l'un des plus actifs du monde. Lueur rouge des explosions dans le noir total.",season:"Nov–Avril.",tip:"Partir d'Antigua. Nuit à -5°C — équipement chaud.",photo:"Acatenango volcano Guatemala night Fuego lava",done:false},
+    {id:"gt2",name:"Tikal au Lever du Soleil",category:"heritage",desc:"Pyramides mayas dans la brume. Singes hurleurs à l'aube.",why:"570 km² de jungle. Rester dormir dans le parc = entrée à 4h. Temple IV au lever.",season:"Nov–Avril.",tip:"Hôtel Tikal Inn dans le parc. Réserver 3 mois avant.",photo:"Tikal Maya temple sunrise jungle mist",done:false},
+  ],
+  "76":[
+    {id:"br3",name:"Dauphin Rose — Amazonie",category:"wildlife",desc:"Le boto rose d'Amazonie. Mystique et joueur.",why:"Le plus grand dauphin d'eau douce. Rose, curieux. Selon la mythologie amazonienne, il se transforme en homme la nuit.",season:"Juin–Nov.",tip:"Lago do Janauarí près de Manaus.",photo:"pink river dolphin boto Amazon Brazil",done:false},
+    {id:"br1",name:"Jaguar du Pantanal",category:"wildlife",desc:"La meilleure destination mondiale pour le jaguar sauvage.",why:"Porto Jofre : jaguars qui chassent caïmans et capybaras à l'aube. Densité 1 jaguar/10 km².",season:"Juillet–Octobre.",tip:"Houseboat 3-5 jours depuis Porto Jofre.",photo:"jaguar Brazil Pantanal river hunting",done:false},
+    {id:"br2",name:"Lençóis Maranhenses",category:"geology",desc:"Dunes blanches + lagunes bleues. Paradoxe géologique unique.",why:"1 500 km² de quartz blanc avec lagunes d'eau douce. Dunes dans une zone pluvieuse.",season:"Avril–Juillet.",tip:"Base à Barreirinhas. Trek 3 jours avec guide.",photo:"Lencois Maranhenses Brazil white dunes lagoons",done:false},
+  ],
+  "218":[
+    {id:"ec2",name:"Fous à Pieds Bleus",category:"wildlife",desc:"Danse nuptiale à vos pieds. Les animaux ignorent les humains.",why:"60% de la population mondiale aux Galápagos. La danse nuptiale se déroule à 30 cm de vous.",season:"Toute l'année.",tip:"Isla Española ou Seymour Norte.",photo:"blue footed booby Galapagos dance mating",done:false},
+    {id:"ec3",name:"Iguanes Marins — Fernandina",category:"wildlife",desc:"Le seul lézard marin du monde. Plonge, revient sur la lave.",why:"Nage jusqu'à 10 m pour brouter des algues, revient se réchauffer sur le basalte noir.",season:"Déc–Mai.",tip:"Accessible uniquement en croisière liveaboard.",photo:"marine iguana Galapagos volcanic rock",done:false},
+    {id:"ec1",name:"Tortues Géantes — Galápagos",category:"wildlife",desc:"Les mêmes que Darwin. 150 ans, sans peur, sans fuite.",why:"400 kg, 150 ans. Évolutivament seules depuis des millions d'années.",season:"Juin–Décembre.",tip:"Centre Darwin + Highlands sauvages de Santa Cruz.",photo:"giant tortoise Galapagos Islands close",done:false},
+  ],
+  "68":[
+    {id:"bo2",name:"Flamants des Andes — Laguna Colorada",category:"wildlife",desc:"Lac rouge sang à 4 500 m. Flamants James endémiques.",why:"Algues et minéraux rendent le lac rouge. Des milliers de flamants James nichent ici et nulle part ailleurs.",season:"Novembre–Février.",tip:"Route des Joyaux depuis Uyuni (4x4).",photo:"Laguna Colorada Bolivia flamingos red lake",done:false},
+    {id:"bo1",name:"Salar d'Uyuni — Miroir Infini",category:"geology",desc:"10 582 km² de sel. Le plus grand miroir naturel de la Terre.",why:"Après les pluies, surface miroir parfaite — horizon disparu, on flotte entre deux ciels.",season:"Nov–Avr (miroir) / Mai–Oct (sec).",tip:"Hôtel de Sel sur le salar. Tour 3J/2N.",photo:"Uyuni salt flats Bolivia mirror sky reflection",done:false},
+  ],
+  "604":[
+    {id:"pe1",name:"Condors — Canyon del Colca",category:"wildlife",desc:"Envergure 3,3 m. Ils montent en thermique à hauteur de visage.",why:"Canyon del Colca (3 400 m de profondeur). À Cruz del Condor, les condors passent à hauteur de votre visage.",season:"Avr–Nov.",tip:"Séjourner à Chivay. Arriver avant 8h.",photo:"Andean condor Canyon Colca Peru soaring",done:false},
+    {id:"pe2",name:"Machu Picchu — Porte du Soleil",category:"heritage",desc:"4 jours sur le chemin Inca. La cité dans les nuages.",why:"Arriver par la Porte du Soleil après 4 jours de marche et voir Machu Picchu émerger des nuages.",season:"Mai–Octobre.",tip:"Chemin Inca : réservation 6 mois à l'avance.",photo:"Machu Picchu sunrise clouds mist Peru",done:false},
+  ],
+  "152":[
+    {id:"cl2",name:"Île de Pâques — Ahu Tongariki",category:"heritage",desc:"15 moaïs face à la mer. L'endroit le plus isolé habité.",why:"3 500 km de la côte chilienne. 15 moaïs de 80 tonnes contre l'Océan Pacifique.",season:"Octobre–Avril.",tip:"Équinoxe 21 mars : soleil dans l'axe exact des moaïs.",photo:"Easter Island Moai statues Ahu Tongariki",done:false},
+    {id:"cl1",name:"Pumas de Torres del Paine",category:"wildlife",desc:"Le seul endroit pour approcher le puma librement.",why:"Les guides connaissent les territoires de chaque individu. Les pumas chassent en plein jour.",season:"Août–Octobre.",tip:"Eco Camp Patagonia : sorties puma à l'aube.",photo:"puma cougar Torres del Paine Patagonia",done:false},
+  ],
+  "578":[
+    {id:"no1",name:"Nager avec les Baleines — Andøya",category:"marine",desc:"Plonger avec les baleines à bosse + aurores boréales au retour.",why:"Harengs et baleines à bosse convergent dans les fjords de Tromsø. Nage libre à 4°C à côté d'une baleine de 15 m.",season:"Octobre–Janvier.",tip:"Fjord Dreams Expeditions. Combinaison étanche obligatoire.",photo:"humpback whale Norway fjord winter snorkeling",done:false},
+    {id:"no2",name:"Kayak dans les Fjords — Lofoten",category:"nature",desc:"Falaises à pic, villages rouges dans l'eau. Silence de cathédrale.",why:"L'archipel des Lofoten est la plus belle côte d'Europe. Aigles à queue blanche, soleil de minuit.",season:"Mai–Août.",tip:"Paddling Norway : circuits kayak 5 jours.",photo:"Lofoten Islands Norway kayak fjord",done:false},
+  ],
+  "352":[
+    {id:"is2",name:"Macareux — Vestmannaeyjar",category:"wildlife",desc:"4 millions de couples. On peut tenir un macareux dans les mains.",why:"En août, les poussins tombent en ville. Les habitants les recueillent — tradition unique au monde.",season:"Mai–Août.",tip:"Ferry depuis Þorlákshöfn. 2 nuits sur l'île.",photo:"puffin Iceland Westman Islands colony cliffs",done:false},
+    {id:"is1",name:"Plongée Silfra — 2 Continents",category:"geology",desc:"La seule faille où nager entre l'Eurasie et l'Amérique. Visibilité 100 m.",why:"Eau du glacier Langjökull filtrée 50 ans par la lave. 2°C, visibilité 100 m. Toucher deux continents.",season:"Toute l'année.",tip:"Certification Drysuit PADI en 1 jour sur place.",photo:"Silfra fissure Iceland diving tectonic plates",done:false},
+  ],
+  "246":[
+    {id:"fi1",name:"Ours Bruns — Forêts de Kuhmo",category:"wildlife",desc:"À quelques mètres des ours bruns. Mères avec oursons.",why:"2 000 ours bruns de Scandinavie. Affûts en forêt boréale en plein soleil estival.",season:"Mai–Août.",tip:"Wild Brown Bear Centre à Martinselkonen.",photo:"brown bear Finland forest cubs Kuhmo",done:false},
+  ],
+  "826":[
+    {id:"gb1",name:"Bramissement des Cerfs — Richmond Park",category:"wildlife",desc:"Octobre : cerfs royaux qui rugissent dans un parc londonien.",why:"Richmond Park, 30 min du centre de Londres, 630 cerfs élaphes en liberté depuis 1637.",season:"1er–31 Octobre.",tip:"Entrée Isabella Plantation à l'aube.",photo:"red deer rut Richmond Park London autumn",done:false},
+    {id:"gb2",name:"Orques des Shetland",category:"wildlife",desc:"Orques sauvages depuis les falaises + macareux.",why:"Orcades & Shetland : orques qui suivent les saumons en mai-juillet.",season:"Mai–Juillet.",tip:"Shetland Wildlife Tours depuis Lerwick.",photo:"orca killer whale Shetland Scotland ocean",done:false},
+  ],
+  "392":[
+    {id:"jp2",name:"Calmars Bioluminescents — Toyama Bay",category:"marine",desc:"Mars–Mai : la baie entière s'illumine de bleu. Unique au monde.",why:"Millions de calmars firefly remontent pondre en surface. La baie entière scintille.",season:"Mars–Mai.",tip:"Tour bateau de nuit depuis Namerikawa Port.",photo:"firefly squid bioluminescence Japan Toyama blue",done:false},
+    {id:"jp1",name:"Macaques dans les Onsen — Jigokudani",category:"wildlife",desc:"Le seul endroit au monde. Singes des neiges dans les sources chaudes.",why:"Jigokudani : seul endroit où des primates utilisent des bains chauds naturels.",season:"Décembre–Mars.",tip:"Train Nagano → bus Yudanaka → 2 km à pied.",photo:"snow monkey Japanese macaque onsen winter",done:false},
+    {id:"jp3",name:"Mont Fuji — Ascension Nocturne",category:"geology",desc:"8h de nuit. Sommet à l'aube. Ombre triangulaire sur les nuages.",why:"Goraiko : l'ombre parfaite du Fuji projetée sur la mer de nuages à 360°.",season:"Juillet–Septembre.",tip:"Voie Yoshida. Partir à minuit pour sommet à 4h30.",photo:"Mount Fuji Japan summit sunrise shadow",done:false},
+  ],
+  "496":[
+    {id:"mn1",name:"Festival des Aigles Dorés",category:"unique",desc:"Chasseurs kazakhs et leurs aigles royaux. Culture millénaire intacte.",why:"Ölgii, octobre. Centaines de Kazakhs et leurs aigles dressés pendant 7 ans.",season:"Octobre.",tip:"1er/2e week-end d'octobre. Séjourner chez des familles nomades.",photo:"eagle hunter golden eagle festival Mongolia",done:false},
+    {id:"mn2",name:"Nuit en Yourte dans le Gobi",category:"unique",desc:"Gobi. Zéro pollution. Voie Lactée à l'œil nu à -20°C.",why:"L'un des 5 déserts les plus noirs de la planète. Densité d'étoiles qui écrase.",season:"Juin–Août / Nov–Fév.",tip:"Familles nomades = expérience directe.",photo:"Gobi desert Mongolia night stars yurt",done:false},
+  ],
+  "356":[
+    {id:"in2",name:"Léopard des Neiges — Ladakh",category:"wildlife",desc:"L'animal le plus rare à observer en liberté.",why:"Moins de 7 000 individus. La vallée de Rumbak au Ladakh est l'un des seuls endroits avec guide expert.",season:"Janvier–Mars.",tip:"Snow Leopard Conservancy India Tours depuis Leh.",photo:"snow leopard Ladakh Himalayas India winter",done:false},
+    {id:"in1",name:"Safari Tigre — Ranthambore",category:"wildlife",desc:"Le Bengale royal dans les ruines d'un fort mogol.",why:"Le parc avec la plus haute probabilité d'observation d'un tigre en Inde.",season:"Oct–Juin. Mieux mars–mai.",tip:"Zones 1-6. Gypsy à réserver 60 jours à l'avance.",photo:"Bengal tiger Ranthambore India fort ruins",done:false},
+  ],
+  "524":[
+    {id:"np2",name:"Rhinocéros — Chitwan",category:"wildlife",desc:"700 rhinos unicornes. Plus grande densité d'Asie.",why:"La population a triplé grâce à la protection. Tigres du Bengale présents (20% de chance).",season:"Oct–Juin.",tip:"Chitwan depuis Sauraha.",photo:"one horned rhinoceros Nepal Chitwan jungle",done:false},
+    {id:"np1",name:"Trek Everest Base Camp",category:"geology",desc:"17 jours. Sherpas, monastères bouddhistes, géants himalayens.",why:"9 zones climatiques. Villages sherpa, drapeaux de prières, vues sur Everest/Lhotse/Nuptse.",season:"Mars–Mai / Sept–Nov.",tip:"2 nuits à Namche Bazaar pour l'acclimatation.",photo:"Everest Base Camp trekking Nepal Himalayas",done:false},
+  ],
+  "144":[
+    {id:"lk1",name:"Baleines Bleues — Mirissa",category:"marine",desc:"Le plus grand animal de l'Histoire. 30 mètres à quelques mètres.",why:"Mirissa : l'un des rares endroits pour approcher régulièrement la baleine bleue. 150 tonnes.",season:"Nov–Avr.",tip:"Opérateur qui respecte la distance de 50 m.",photo:"blue whale Sri Lanka Mirissa ocean surface",done:false},
+    {id:"lk2",name:"Léopards de Yala",category:"wildlife",desc:"La plus haute densité de léopards au monde.",why:"Yala National Park. Léopards qui chassent au sol. Éléphants, crocodiles et paons.",season:"Fév–Juillet.",tip:"Bloc 1 du parc pour les léopards.",photo:"leopard Sri Lanka Yala National Park",done:false},
+  ],
+  "360":[
+    {id:"id1",name:"Dragons de Komodo",category:"wildlife",desc:"3 mètres, 70 kg. Le plus grand lézard du monde.",why:"Prédateur actif. Venin puissant. Île de Rinca = moins touristique que Komodo.",season:"Toute l'année.",tip:"Speed boat depuis Labuan Bajo, Flores.",photo:"Komodo dragon island Indonesia Rinca",done:false},
+    {id:"id3",name:"Orangs-Outans — Tanjung Puting",category:"wildlife",desc:"En klotok sur la rivière. Les orangs-outans descendent à portée.",why:"6 000 orangs-outans dans la réserve. Descente en klotok 3 jours sur le Rio Sekonyer.",season:"Juin–Septembre.",tip:"Les orangs-outans montent parfois sur le bateau.",photo:"orangutan Borneo Indonesia forest river",done:false},
+    {id:"id2",name:"Raja Ampat — La Plongée Ultime",category:"marine",desc:"75% des coraux mondiaux. Biodiversité marine absolue.",why:"Triangle de Corail : 1 400 espèces de poissons, 600 espèces de coraux.",season:"Oct–Avr. Mantas : Déc–Mars.",tip:"Liveaboard depuis Sorong (Papua).",photo:"Raja Ampat diving Indonesia coral reef manta",done:false},
+  ],
+  "608":[
+    {id:"ph1",name:"Mola Mola — Moalboal, Cebu",category:"marine",desc:"2 tonnes, 3 mètres. Le poisson le plus étrange des océans.",why:"Le plus lourd poisson osseux du monde. Forme aplatie et nageoires verticales : extraterrestre.",season:"Juillet–Novembre.",tip:"Ocean Safari Philippines. Combinaison recommandée.",photo:"mola mola ocean sunfish diving Philippines",done:false},
+    {id:"ph2",name:"Requins-Baleines — Oslob",category:"marine",desc:"À 2 mètres du plus grand poisson. Dès 6h du matin.",why:"Nager à 2 m d'un poisson de 10 m. Voir sa gueule en filtration ouverte.",season:"Toute l'année.",tip:"Arriver avant 6h30. Après 8h, trop de bateaux.",photo:"whale shark Oslob Philippines snorkeling",done:false},
+    {id:"ph3",name:"Tarsier — Bohol",category:"wildlife",desc:"12 cm. Les plus grands yeux du règne animal relatifs au corps.",why:"Le tarsier des Philippines : l'un des plus petits primates. Nocturne, endémique.",season:"Toute l'année.",tip:"Philippine Tarsier Sanctuary à Corella.",photo:"tarsier Philippines Bohol nocturnal primate",done:false},
+  ],
+  "36":[
+    {id:"au2",name:"Quokkas — Rottnest Island",category:"wildlife",desc:"L'animal le plus heureux du monde. Il pose pour les selfies.",why:"Marsupial endémique, museau retroussé en sourire permanent. S'approche spontanément.",season:"Toute l'année.",tip:"Ferry depuis Fremantle. Vélo sur l'île.",photo:"quokka Rottnest Island Australia marsupial",done:false},
+    {id:"au3",name:"Grande Barrière de Corail",category:"marine",desc:"2 300 km. La plus grande structure vivante. Baleines, mérous géants.",why:"Cod Hole : mérous de 150 kg apprivoisés. Juillet–novembre : baleines à bosse.",season:"Toute l'année.",tip:"Liveaboard Spirit of Freedom depuis Cairns.",photo:"Great Barrier Reef diving Australia coral",done:false},
+    {id:"au1",name:"Requins-Baleines — Ningaloo Reef",category:"marine",desc:"Nager avec 50 requins-baleines simultanément. Côte vierge.",why:"Seul grand récif accessible directement depuis la plage. Jusqu'à 500 requins-baleines.",season:"Mars–Août.",tip:"Exmouth comme base. Réserver 3 mois à l'avance.",photo:"whale shark Ningaloo Reef Australia snorkeling",done:false},
+  ],
+  "554":[
+    {id:"nz1",name:"Grottes de Waitomo — Vers Luisants",category:"unique",desc:"Un plafond de galaxie inversée. Barque dans le silence total.",why:"Arachnocampa luminosa : larves bioluminescentes endémiques de NZ. Galaxie d'étoiles bleues.",season:"Toute l'année.",tip:"Tour 'Black Abyss' : grotte + abseiling = 5h.",photo:"Waitomo glowworm caves New Zealand bioluminescence",done:false},
+    {id:"nz2",name:"Kiwi Sauvage — Île Stewart",category:"wildlife",desc:"L'oiseau-fantôme de NZ. Nuit sur une plage isolée.",why:"Rakiura : le dernier endroit pour le kiwi sauvage sans artifice.",season:"Toute l'année. Mieux mai–août.",tip:"Mason Bay. Accès par kayak 3h.",photo:"kiwi bird New Zealand night Stewart Island",done:false},
+  ],
+  "643":[
+    {id:"ru2",name:"Lac Baïkal Gelé",category:"geology",desc:"80 cm de glace sur 600 km. Transparent. Phoques endémiques.",why:"20% de l'eau douce liquide. Glace bleue transparente. Fissures de 30 km avec sons de tonnerre.",season:"Février–Mars.",tip:"Depuis Irkoutsk. Crampons obligatoires.",photo:"Lake Baikal Russia winter ice transparent",done:false},
+    {id:"ru1",name:"Ours de Kamchatka",category:"wildlife",desc:"Des ours pêchent les saumons à quelques mètres. Hélicoptère.",why:"Péninsule aussi grande que la France. Rivière Kurilskoe : dizaines d'ours de Kamchatka.",season:"Août–Octobre.",tip:"Kosatka Travel depuis Petropavlovsk.",photo:"brown bear Kamchatka Russia salmon river",done:false},
+  ],
+  "156":[
+    {id:"cn1",name:"Pandas Géants — Chengdu",category:"wildlife",desc:"200 pandas en semi-liberté. La réserve de référence mondiale.",why:"Seul endroit pour voir des bébés pandas. 600 hectares. Bénévolat possible.",season:"Toute l'année.",tip:"Arriver à 7h30 — pandas actifs le matin.",photo:"giant panda Chengdu China bamboo baby",done:false},
+    {id:"cn2",name:"Rivière Li — Karsts de Guilin",category:"geology",desc:"Pitons calcaires émergés. La Chine des peintures classiques.",why:"83 km entre Guilin et Yangshuo. Paysages les plus photographiés de Chine depuis 2 000 ans.",season:"Avr–Oct.",tip:"Petites embarcations locales depuis Yangshuo.",photo:"Guilin karst mountains Li River China bamboo",done:false},
+  ],
+  "400":[
+    {id:"jo1",name:"Wadi Rum — Nuit dans les Canyons",category:"unique",desc:"Dômes géodésiques dans les canyons rouges. Ciel étoilé absolu.",why:"Wadi Rum : canyons de grès de 600 m. Décors de films (The Martian, Star Wars). Dômes transparents.",season:"Mars–Mai / Sept–Nov.",tip:"Rum Stars Tours pour les dômes transparents.",photo:"Wadi Rum Jordan desert night stars",done:false},
+  ],
+  "512":[
+    {id:"om1",name:"Tortues Caouannes — Ras Al Jinz",category:"wildlife",desc:"La seule plage où les tortues pondent toute l'année.",why:"Site de ponte le plus important de l'Océan Indien, 12 mois/12. Des centaines de femelles en juillet–août.",season:"Toute l'année. Pic juillet–octobre.",tip:"Ras Al Jinz Turtle Reserve — visites nocturnes.",photo:"green sea turtle nesting Oman beach night",done:false},
+  ],
+};
+
+const IMG = (keywords) => `https://loremflickr.com/900/500/${encodeURIComponent(keywords.split(' ').slice(0,3).join(','))}/all?lock=${Math.abs(keywords.split('').reduce((a,c)=>a+c.charCodeAt(0),0)%9999)}`;
+
+// ── COMPONENT ─────────────────────────────────────────────────────────────────
+function AtlasMerveilles() {
+  const canvasRef    = useRef(null);
+  const projRef      = useRef(null);
+  const animRef      = useRef(null);
+  const rotateRef    = useRef([10,-25]);
+  const draggingRef  = useRef(false);
+  const autoSpinRef  = useRef(true);
+  const resumeRef    = useRef(null);
+  const dragStartRef = useRef([0,0]);
+  const dragMoveRef  = useRef([0,0]);
+  const countriesRef = useRef([]);
+  const spotsRef     = useRef(DEFAULT_SPOTS);
+  const hoveredRef   = useRef(null);
+  const selectedRef  = useRef(null);
+
+  const [spots,setSpots]                     = useState(DEFAULT_SPOTS);
+  const [selectedCountry,setSelectedCountry] = useState(null);
+  const [selectedName,setSelectedName]       = useState("");
+  const [hoveredCountry,setHoveredCountry]   = useState(null);
+  const [filter,setFilter]                   = useState("all");
+  const [showModal,setShowModal]             = useState(false);
+  const [detailSpot,setDetailSpot]           = useState(null);
+  const [deleteConfirm,setDeleteConfirm]     = useState(null);
+  const [worldData,setWorldData]             = useState(null);
+  const [loading,setLoading]                 = useState(true);
+  const [animKey,setAnimKey]                 = useState(0);
+  const [imgErr,setImgErr]                   = useState(false);
+  const [importRef]                          = useState(()=>({ current:null }));
+  const [form,setForm] = useState({name:"",category:"marine",desc:"",why:"",season:"",tip:"",photo:""});
+
+  useEffect(()=>{ spotsRef.current=spots; },[spots]);
+  useEffect(()=>{ hoveredRef.current=hoveredCountry; },[hoveredCountry]);
+  useEffect(()=>{ selectedRef.current=selectedCountry; },[selectedCountry]);
+
+  useEffect(()=>{ (async()=>{ try{ const s=await window.storage.get("atlas-v7"); if(s?.value) setSpots(JSON.parse(s.value)); }catch{} })(); },[]);
+  useEffect(()=>{ (async()=>{ try{ await window.storage.set("atlas-v7",JSON.stringify(spots)); }catch{} })(); },[spots]);
+
+  useEffect(()=>{
+    (async()=>{
+      try{
+        await new Promise((res,rej)=>{ if(window.topojson) return res(); const s=document.createElement("script"); s.src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"; s.onload=res; s.onerror=rej; document.head.appendChild(s); });
+        const r=await fetch("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json");
+        setWorldData(await r.json());
+      }catch(e){ console.error(e); }
+      setLoading(false);
+    })();
+  },[]);
+
+  const draw = useCallback(()=>{
+    const canvas=canvasRef.current, proj=projRef.current;
+    if(!canvas||!proj) return;
+    const dpr=canvas._dpr||1, W=canvas.width/dpr, H=canvas.height/dpr;
+    const ctx=canvas.getContext("2d");
+    ctx.save(); ctx.scale(dpr,dpr);
+    const pathGen=d3.geoPath(proj,ctx);
+    const sp=spotsRef.current, hov=hoveredRef.current, sel=selectedRef.current;
+    ctx.clearRect(0,0,W,H);
+    const R=proj.scale(), [cx,cy]=proj.translate();
+    const ag=ctx.createRadialGradient(cx,cy,R*.88,cx,cy,R*1.4);
+    ag.addColorStop(0,"rgba(6,40,90,0)"); ag.addColorStop(.5,"rgba(6,40,90,.15)"); ag.addColorStop(1,"rgba(6,40,90,0)");
+    ctx.beginPath(); ctx.arc(cx,cy,R*1.4,0,Math.PI*2); ctx.fillStyle=ag; ctx.fill();
+    const og=ctx.createRadialGradient(cx-R*.12,cy-R*.18,0,cx,cy,R);
+    og.addColorStop(0,"#0c2d44"); og.addColorStop(.65,"#061828"); og.addColorStop(1,"#020c18");
+    ctx.beginPath(); pathGen({type:"Sphere"}); ctx.fillStyle=og; ctx.fill();
+    ctx.beginPath(); pathGen(d3.geoGraticule()()); ctx.strokeStyle="rgba(20,55,95,.12)"; ctx.lineWidth=.24; ctx.stroke();
+    for(const f of countriesRef.current){
+      const id=String(f.id), ci=gc(id), C=CONT[ci];
+      const sd=sp[id], isH=id===hov, isS=id===sel;
+      ctx.beginPath(); pathGen(f);
+      if(isS) ctx.fillStyle="#1a4870";
+      else if(isH) ctx.fillStyle=C.hover;
+      else if(sd?.length){ if(sd.every(s=>s.done)) ctx.fillStyle="#0a2c18"; else if(sd.some(s=>s.done)) ctx.fillStyle="#2c1b04"; else ctx.fillStyle=C.active; }
+      else ctx.fillStyle=C.base;
+      ctx.fill();
+      const sw=(isH||isS||sd?.length)?(isS?1.8:isH?1.1:.9):.2;
+      const sc=isS?"#5ab0e8":sd?.length?(sd.every(s=>s.done)?"#22c55e":sd.some(s=>s.done)?"#f59e0b":CC[ci]):isH?"#2a6a9a":C.stroke;
+      ctx.beginPath(); pathGen(f); ctx.strokeStyle=sc; ctx.lineWidth=sw; ctx.stroke();
+    }
+    ctx.beginPath(); pathGen({type:"Sphere"}); ctx.strokeStyle="rgba(22,75,130,.28)"; ctx.lineWidth=1; ctx.stroke();
+    ctx.restore();
+  },[]);
+
+  useEffect(()=>{
+    if(!worldData||!canvasRef.current) return;
+    const canvas=canvasRef.current, parent=canvas.parentElement;
+    const dpr=Math.min(window.devicePixelRatio||1,2);
+    canvas._dpr=dpr;
+    const W=parent.offsetWidth, H=parent.offsetHeight;
+    canvas.width=W*dpr; canvas.height=H*dpr;
+    canvas.style.width=W+"px"; canvas.style.height=H+"px";
+    const R=Math.min(W,H)*.43;
+    projRef.current=d3.geoOrthographic().scale(R).translate([W/2,H/2]).rotate(rotateRef.current).clipAngle(90);
+    countriesRef.current=window.topojson.feature(worldData,worldData.objects.countries).features;
+    cancelAnimationFrame(animRef.current);
+    const loop=()=>{ if(autoSpinRef.current&&!draggingRef.current){ rotateRef.current=[rotateRef.current[0]+.06,rotateRef.current[1]]; projRef.current.rotate(rotateRef.current); } draw(); animRef.current=requestAnimationFrame(loop); };
+    animRef.current=requestAnimationFrame(loop);
+    const drag=d3.drag()
+      .on("start",e=>{ draggingRef.current=true; autoSpinRef.current=false; clearTimeout(resumeRef.current); dragStartRef.current=[e.x,e.y]; dragMoveRef.current=[e.x,e.y]; })
+      .on("drag",e=>{ const dx=e.x-dragMoveRef.current[0],dy=e.y-dragMoveRef.current[1]; dragMoveRef.current=[e.x,e.y]; const sc=projRef.current?.scale()||R; const r=rotateRef.current; rotateRef.current=[r[0]+dx*65/sc,r[1]-dy*65/sc]; projRef.current?.rotate(rotateRef.current); })
+      .on("end",e=>{
+        draggingRef.current=false;
+        const dx=Math.abs(e.x-dragStartRef.current[0]),dy=Math.abs(e.y-dragStartRef.current[1]);
+        if(dx<6&&dy<6){ const rect=canvas.getBoundingClientRect(); const px=(e.sourceEvent.clientX||0)-rect.left, py=(e.sourceEvent.clientY||0)-rect.top; const coords=projRef.current?.invert([px,py]); if(coords&&!isNaN(coords[0])){ const c=countriesRef.current.find(f=>d3.geoContains(f,coords)); if(c){ const id=String(c.id); setSelectedCountry(id); setSelectedName(NM[id]||`#${id}`); setAnimKey(k=>k+1); }}}
+        resumeRef.current=setTimeout(()=>{ autoSpinRef.current=true; },3000);
+      });
+    d3.select(canvas).call(drag);
+    const onWheel=e=>{ e.preventDefault(); const sc=projRef.current?.scale()||R; projRef.current?.scale(Math.max(R*.6,Math.min(sc*(e.deltaY>0?.88:1.14),R*6))); };
+    canvas.addEventListener("wheel",onWheel,{passive:false});
+    let hf=null;
+    const onMove=e=>{ if(draggingRef.current||hf) return; hf=requestAnimationFrame(()=>{ const proj=projRef.current; if(!proj){hf=null;return;} const rect=canvas.getBoundingClientRect(); const coords=proj.invert([e.clientX-rect.left,e.clientY-rect.top]); if(coords&&!isNaN(coords[0])){ const c=countriesRef.current.find(f=>d3.geoContains(f,coords)); const nh=c?String(c.id):null; if(nh!==hoveredRef.current){hoveredRef.current=nh;setHoveredCountry(nh);}} hf=null; }); };
+    canvas.addEventListener("mousemove",onMove);
+    return()=>{ cancelAnimationFrame(animRef.current); canvas.removeEventListener("wheel",onWheel); canvas.removeEventListener("mousemove",onMove); clearTimeout(resumeRef.current); };
+  },[worldData,draw]);
+
+  const toggleDone=(cid,sid)=>setSpots(p=>({...p,[cid]:p[cid].map(s=>s.id===sid?{...s,done:!s.done}:s)}));
+  const deleteSpot=(cid,sid)=>setSpots(p=>{const n=p[cid].filter(s=>s.id!==sid);if(!n.length){const{[cid]:_,...r}=p;return r;}return{...p,[cid]:n};});
+  const addSpot=()=>{ if(!form.name.trim()||!selectedCountry) return; const id="u"+Date.now(); setSpots(p=>({...p,[selectedCountry]:[...(p[selectedCountry]||[]),{id,...form,done:false}].sort((a,b)=>a.name.localeCompare(b.name,undefined,{sensitivity:'base'}))})); setForm({name:"",category:"marine",desc:"",why:"",season:"",tip:"",photo:""}); setShowModal(false); };
+
+  const exportSpots=()=>{ const blob=new Blob([JSON.stringify(spots,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='mon-atlas.json'; a.click(); URL.revokeObjectURL(url); };
+  const importSpots=e=>{ const file=e.target.files[0]; if(!file) return; const reader=new FileReader(); reader.onload=ev=>{ try{ setSpots(JSON.parse(ev.target.result)); }catch{ alert('Fichier JSON invalide.'); }}; reader.readAsText(file); e.target.value=''; };
+
+  const allSpots=Object.values(spots).flat();
+  const totalDone=allSpots.filter(s=>s.done).length;
+  const nCountries=Object.keys(spots).length;
+  const sideSpots=selectedCountry?(spots[selectedCountry]||[]):[];
+  const filtered=(filter==="all"?sideSpots:sideSpots.filter(s=>s.category===filter)).slice().sort((a,b)=>a.name.localeCompare(b.name,undefined,{sensitivity:'base'}));
+  const ci=selectedCountry?gc(selectedCountry):0;
+
+  return (
+    <div style={{fontFamily:"'Outfit',sans-serif",background:"#020c1a",height:"100vh",display:"flex",flexDirection:"column",color:"#7aa8c4",overflow:"hidden"}}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+        *{box-sizing:border-box;margin:0;padding:0}
+        ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:#0c2a48;border-radius:2px}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes slid{from{opacity:0;transform:translateX(22px)}to{opacity:1;transform:translateX(0)}}
+        @keyframes pulse{0%,100%{opacity:.22}50%{opacity:.6}}
+        @keyframes min{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+        .rise{animation:rise .32s ease both}.slid{animation:slid .28s cubic-bezier(.4,0,.2,1) both}
+        .btn{transition:all .18s;cursor:pointer}.btn:hover{filter:brightness(1.1);transform:translateY(-1px)}.btn:active{transform:translateY(0)}
+        input,textarea{transition:border-color .2s}input:focus,textarea:focus{border-color:#0ea5e9!important;outline:none}
+        .sc{transition:all .2s;cursor:pointer}.sc:hover{background:#0a1e38!important;border-color:#1a4a7a!important}.sc:hover .del{opacity:1!important}
+        .del{opacity:0;transition:opacity .15s}
+        .chk{transition:all .2s;cursor:pointer}.chk:hover{transform:scale(1.15)}
+      `}</style>
+
+      {/* ── TOPBAR ── */}
+      <div style={{display:"flex",alignItems:"center",gap:10,padding:"7px 16px",background:"#020e1c",borderBottom:"1px solid #0b1e34",flexShrink:0,flexWrap:"wrap"}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+          <span style={{fontSize:20}}>🌍</span>
+          <div>
+            <div style={{fontWeight:900,fontSize:12,color:"#8ecce8",letterSpacing:".08em",lineHeight:1.1}}>ATLAS DES MERVEILLES</div>
+            <div style={{fontSize:8.5,color:"#0e2840",fontWeight:400,marginTop:1}}>
+              <span style={{color:"#0ea5e9",fontWeight:700}}>{nCountries}</span> pays · <span style={{color:"#0ea5e9",fontWeight:700}}>{allSpots.length}</span> exp. · <span style={{color:"#22c55e",fontWeight:700}}>{totalDone}</span> accomplies
+            </div>
+          </div>
+        </div>
+        <div style={{display:"flex",gap:3,flexWrap:"wrap",flex:1,minWidth:0}}>
+          {CATS.map(c=>{ const a=filter===c.id; return(
+            <button key={c.id} className="btn" onClick={()=>setFilter(c.id)}
+              style={{background:a?`${c.color}18`:"transparent",border:`1px solid ${a?c.color+"55":"#0b1e34"}`,borderRadius:6,padding:"3px 8px",color:a?c.color:"#1e3a56",fontSize:9,fontWeight:a?700:500,display:"flex",alignItems:"center",gap:3,whiteSpace:"nowrap"}}>
+              {c.icon} {c.label}
+            </button>
+          );})}
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+          <div style={{display:"flex",gap:3}}>{CN.map((n,i)=>(<div key={n} title={n} style={{width:8,height:8,borderRadius:"50%",background:CC[i],opacity:.75,cursor:"default"}}/>))}</div>
+          <div style={{width:52,height:3,background:"#0b1e34",borderRadius:2,overflow:"hidden"}}>
+            <div style={{width:`${allSpots.length?(totalDone/allSpots.length)*100:0}%`,height:"100%",background:"linear-gradient(90deg,#0ea5e9,#22c55e)",transition:"width .6s"}}/>
+          </div>
+          <span style={{fontSize:8.5,color:"#1a3a56",fontWeight:600}}>{totalDone}/{allSpots.length}</span>
+        </div>
+      </div>
+
+      {/* ── BODY ── */}
+      <div style={{flex:1,display:"flex",overflow:"hidden"}}>
+        {/* GLOBE */}
+        <div style={{flex:1,position:"relative",overflow:"hidden",background:"#020c1a"}}>
+          {loading&&(<div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:10,zIndex:10}}>
+            <div style={{width:28,height:28,border:"2px solid #0b1e34",borderTopColor:"#0ea5e9",borderRadius:"50%",animation:"spin .8s linear infinite"}}/>
+            <div style={{fontSize:9,color:"#1a3550",fontWeight:700,letterSpacing:".2em"}}>CHARGEMENT…</div>
+          </div>)}
+          <canvas ref={canvasRef} style={{width:"100%",height:"100%",display:"block",cursor:"grab"}}/>
+          {hoveredCountry&&NM[hoveredCountry]&&(
+            <div style={{position:"absolute",top:12,left:"50%",transform:"translateX(-50%)",background:"#020e1cf0",border:"1px solid #0e2a44",borderRadius:6,padding:"4px 14px",fontSize:11,fontWeight:700,color:"#8ecce8",pointerEvents:"none",backdropFilter:"blur(8px)",letterSpacing:".04em"}}>
+              {NM[hoveredCountry]}
+            </div>
+          )}
+          {!loading&&(<div style={{position:"absolute",bottom:14,left:14,background:"#020e1ce8",backdropFilter:"blur(12px)",border:"1px solid #0b1e34",borderRadius:10,padding:"10px 12px",fontSize:9}}>
+            <div style={{fontWeight:700,color:"#1a3a56",letterSpacing:".1em",marginBottom:7,fontSize:8}}>CONTINENTS</div>
+            {CN.map((n,i)=>(<div key={n} style={{display:"flex",alignItems:"center",gap:5,marginBottom:3}}><div style={{width:9,height:9,background:CONT[i].active,border:`1.5px solid ${CC[i]}`,borderRadius:2}}/><span style={{color:"#1e3a56",fontWeight:500}}>{n}</span></div>))}
+            <div style={{borderTop:"1px solid #0b1e34",marginTop:7,paddingTop:6}}>
+              {[{bg:"#062338",st:"#0ea5e9",l:"Spots à explorer"},{bg:"#2c1b04",st:"#f59e0b",l:"En cours"},{bg:"#0a2c18",st:"#22c55e",l:"Accompli"}].map(x=>(
+                <div key={x.l} style={{display:"flex",alignItems:"center",gap:5,marginBottom:2.5}}><div style={{width:9,height:9,background:x.bg,border:`1.5px solid ${x.st}`,borderRadius:2}}/><span style={{color:"#1e3a56",fontWeight:400}}>{x.l}</span></div>
+              ))}
+            </div>
+            <div style={{color:"#0a1e30",marginTop:6,fontSize:8}}>Drag = tourner · Scroll = zoom</div>
+          </div>)}
+          {!selectedCountry&&!loading&&(<div style={{position:"absolute",bottom:"44%",left:"50%",transform:"translateX(-50%)",pointerEvents:"none"}}>
+            <div style={{fontSize:9,color:"#0d2540",fontWeight:700,letterSpacing:".3em",animation:"pulse 3s ease infinite"}}>CLIQUEZ SUR UN PAYS</div>
+          </div>)}
+        </div>
+
+        {/* ── SIDEBAR ── */}
+        <div style={{width:selectedCountry?420:0,transition:"width .28s cubic-bezier(.4,0,.2,1)",overflow:"hidden",background:"#020e1c",borderLeft:"1px solid #0b1e34",display:"flex",flexDirection:"column",flexShrink:0}}>
+          <div style={{width:420,height:"100%",display:"flex",flexDirection:"column"}}>
+
+            {/* Country header */}
+            <div key={`h${animKey}`} className="slid" style={{padding:"16px 16px 14px",borderBottom:"1px solid #0b1e34",background:"linear-gradient(160deg,#030e1c,#05182e)",flexShrink:0}}>
+              <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8,marginBottom:11}}>
+                <div>
+                  <div style={{fontWeight:900,fontSize:24,color:"#e4f0fc",letterSpacing:"-.02em",lineHeight:1.05}}>{selectedName}</div>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginTop:6}}>
+                    {selectedCountry&&<span style={{fontSize:9,fontWeight:800,padding:"2px 9px",borderRadius:4,background:`${CC[ci]}15`,color:CC[ci],border:`1px solid ${CC[ci]}30`,letterSpacing:".08em"}}>{CN[ci]}</span>}
+                    <span style={{fontSize:10,color:"#1e3a56",fontWeight:500}}>{sideSpots.length} exp.{sideSpots.length>0&&<span style={{color:sideSpots.filter(s=>s.done).length>0?"#22c55e":"#1e3a56"}}> · {sideSpots.filter(s=>s.done).length} accomplie{sideSpots.filter(s=>s.done).length!==1?"s":""}</span>}</span>
+                  </div>
+                </div>
+                <button onClick={()=>setSelectedCountry(null)} style={{background:"#0b1e34",border:"1px solid #142840",borderRadius:6,width:28,height:28,color:"#3a6080",cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontWeight:300}}>×</button>
+              </div>
+              {sideSpots.length>0&&(<div style={{marginBottom:11}}><div style={{height:3,background:"#0b1e34",borderRadius:2,overflow:"hidden"}}><div style={{width:`${(sideSpots.filter(s=>s.done).length/sideSpots.length)*100}%`,height:"100%",background:"linear-gradient(90deg,#0ea5e9,#22c55e)",transition:"width .5s",borderRadius:2}}/></div></div>)}
+              <div style={{display:"flex",gap:6}}>
+                <button className="btn" onClick={()=>setShowModal(true)} style={{flex:1,background:"linear-gradient(135deg,#0c4880,#072a56)",border:"1px solid #1060a840",borderRadius:8,padding:"10px",color:"#7ec8f0",fontWeight:800,fontSize:10,letterSpacing:".1em",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                  <span style={{fontSize:13,fontWeight:300}}>+</span> AJOUTER
+                </button>
+                <button className="btn" onClick={exportSpots} title="Exporter mes spots" style={{background:"#060f1e",border:"1px solid #0b2040",borderRadius:8,padding:"10px 12px",color:"#2a6080",fontWeight:700,fontSize:14,cursor:"pointer"}}>↓</button>
+                <button className="btn" onClick={()=>{ const inp=document.createElement('input'); inp.type='file'; inp.accept='.json'; inp.onchange=importSpots; inp.click(); }} title="Importer des spots" style={{background:"#060f1e",border:"1px solid #0b2040",borderRadius:8,padding:"10px 12px",color:"#2a6080",fontWeight:700,fontSize:14,cursor:"pointer"}}>↑</button>
+              </div>
+            </div>
+
+            {/* Spots */}
+            <div style={{flex:1,overflowY:"auto",padding:"10px"}}>
+              {filtered.length===0?(
+                <div style={{textAlign:"center",marginTop:60}}>
+                  <div style={{fontSize:28,marginBottom:10,opacity:.2}}>◎</div>
+                  <div style={{fontWeight:800,fontSize:10,letterSpacing:".2em",color:"#0c2040"}}>{sideSpots.length===0?"TERRA INCOGNITA":"AUCUNE CORRESPONDANCE"}</div>
+                  <div style={{fontSize:10,color:"#0a1a2a",marginTop:6,fontWeight:400}}>Cliquez + pour ajouter une expérience</div>
+                </div>
+              ):(
+                filtered.map((spot,i)=>{
+                  const c=Cat(spot.category);
+                  return(
+                    <div key={spot.id} className="sc rise"
+                      onClick={()=>{ setDetailSpot(spot); setImgErr(false); }}
+                      style={{background:"#040e1e",border:`1px solid ${spot.done?"#1a4428":"#0c1e34"}`,borderRadius:10,padding:"14px 14px 12px",marginBottom:9,opacity:spot.done?.55:1,borderLeft:`4px solid ${spot.done?"#22c55e80":c.color+"90"}`,animationDelay:`${i*.04}s`}}>
+                      <div style={{display:"flex",alignItems:"flex-start",gap:10}}>
+                        <button className="chk" onClick={e=>{e.stopPropagation();toggleDone(selectedCountry,spot.id)}}
+                          style={{width:22,height:22,borderRadius:"50%",flexShrink:0,border:`2px solid ${spot.done?"#22c55e":"#1a3a5a"}`,background:spot.done?"#22c55e":"transparent",display:"flex",alignItems:"center",justifyContent:"center",color:spot.done?"#020c1a":"transparent",fontSize:11,marginTop:2,fontWeight:900}}>✓</button>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{marginBottom:6}}><span style={{fontSize:8.5,fontWeight:700,background:`${c.color}15`,color:c.color,padding:"2.5px 8px",borderRadius:4,border:`1px solid ${c.color}25`,letterSpacing:".04em"}}>{c.icon} {c.label}</span></div>
+                          <div style={{fontSize:15,fontWeight:800,color:spot.done?"#1e3a56":"#d8eef8",lineHeight:1.2,textDecoration:spot.done?"line-through":"none",marginBottom:5,letterSpacing:"-.01em"}}>{spot.name}</div>
+                          <div style={{fontSize:12,color:"#2a5070",fontWeight:400,lineHeight:1.55}}>{spot.desc}</div>
+                          {spot.season&&<div style={{marginTop:7,display:"flex",alignItems:"center",gap:5}}><span style={{fontSize:8.5,fontWeight:600,color:"#0d2840",background:"#0a1e30",padding:"2px 7px",borderRadius:4,border:"1px solid #0e2844"}}>🗓 {spot.season}</span></div>}
+                          <div style={{marginTop:6,fontSize:9,fontWeight:700,color:"#0d3050",letterSpacing:".06em"}}>VOIR LES DÉTAILS →</div>
+                        </div>
+                        <button className="del" onClick={e=>{e.stopPropagation();setDeleteConfirm({cid:selectedCountry,sid:spot.id,name:spot.name});}}
+                          style={{background:"rgba(248,113,113,.08)",border:"1px solid rgba(248,113,113,.2)",borderRadius:5,width:24,height:24,color:"#f87171",cursor:"pointer",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>×</button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── DETAIL MODAL ── */}
+      {detailSpot&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.88)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,backdropFilter:"blur(12px)",padding:"16px"}}
+          onClick={()=>setDetailSpot(null)}>
+          <div style={{background:"#030e1c",border:"1px solid #0d2540",borderRadius:16,width:"min(640px,96vw)",maxHeight:"88vh",overflow:"auto",boxShadow:"0 30px 80px rgba(0,0,0,.9)",animation:"min .22s ease both"}}
+            onClick={e=>e.stopPropagation()}>
+            <div style={{position:"relative",height:260,background:"#071424",overflow:"hidden",borderRadius:"16px 16px 0 0",flexShrink:0}}>
+              {!imgErr
+                ? <img src={IMG(detailSpot.photo||detailSpot.name)} alt={detailSpot.name} style={{width:"100%",height:"100%",objectFit:"cover",opacity:.72}} onError={()=>setImgErr(true)}/>
+                : <div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",background:"radial-gradient(circle at 40% 40%,#0c2a44,#020c1a)"}}><span style={{fontSize:64}}>{Cat(detailSpot.category).icon}</span></div>
+              }
+              <div style={{position:"absolute",inset:0,background:"linear-gradient(to top,#030e1c 0%,rgba(3,14,28,.2) 55%,transparent 100%)"}}/>
+              <div style={{position:"absolute",top:14,left:14,right:14,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                <span style={{fontSize:9,fontWeight:800,background:`${Cat(detailSpot.category).color}22`,color:Cat(detailSpot.category).color,padding:"4px 11px",borderRadius:5,border:`1px solid ${Cat(detailSpot.category).color}38`,letterSpacing:".07em"}}>{Cat(detailSpot.category).icon} {Cat(detailSpot.category).label}</span>
+                <button onClick={()=>setDetailSpot(null)} style={{background:"rgba(2,12,26,.75)",border:"1px solid #0d2540",borderRadius:7,width:32,height:32,color:"#5a90b8",cursor:"pointer",fontSize:17,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:300}}>×</button>
+              </div>
+              <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"18px 22px 22px"}}>
+                <div style={{fontSize:8.5,fontWeight:800,color:CC[selectedCountry?gc(selectedCountry):0],letterSpacing:".12em",marginBottom:6}}>{selectedName} · {CN[selectedCountry?gc(selectedCountry):0]}</div>
+                <div style={{fontSize:22,fontWeight:900,color:"#e8f4fc",lineHeight:1.15,letterSpacing:"-.02em"}}>{detailSpot.name}</div>
+              </div>
+            </div>
+            <div style={{padding:"20px 22px 26px"}}>
+              {detailSpot.desc&&<div style={{fontSize:14,fontWeight:500,color:"#3a6a8a",marginBottom:16,lineHeight:1.55}}>{detailSpot.desc}</div>}
+              {detailSpot.why&&(
+                <div style={{background:"#06142a",border:"1px solid #0d2a44",borderLeft:"3px solid #0ea5e9",borderRadius:10,padding:"14px 16px",marginBottom:14}}>
+                  <div style={{fontSize:8,fontWeight:800,color:"#0ea5e9",letterSpacing:".16em",marginBottom:8}}>POURQUOI C'EST EXCEPTIONNEL</div>
+                  <div style={{fontSize:13,fontWeight:400,color:"#7aaccf",lineHeight:1.8}}>{detailSpot.why}</div>
+                </div>
+              )}
+              {(detailSpot.season||detailSpot.tip)&&(
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:18}}>
+                  {detailSpot.season&&(<div style={{background:"#050f1e",border:"1px solid #0d2038",borderRadius:8,padding:"12px 14px"}}><div style={{fontSize:8,fontWeight:800,color:"#0ea5e9",letterSpacing:".12em",marginBottom:6}}>🗓 MEILLEURE SAISON</div><div style={{fontSize:12,fontWeight:600,color:"#4a80a0",lineHeight:1.55}}>{detailSpot.season}</div></div>)}
+                  {detailSpot.tip&&(<div style={{background:"#050f1e",border:"1px solid #0d2038",borderRadius:8,padding:"12px 14px"}}><div style={{fontSize:8,fontWeight:800,color:"#0ea5e9",letterSpacing:".12em",marginBottom:6}}>💡 CONSEIL</div><div style={{fontSize:12,fontWeight:600,color:"#4a80a0",lineHeight:1.55}}>{detailSpot.tip}</div></div>)}
+                </div>
+              )}
+              <button className="btn" onClick={()=>{ toggleDone(selectedCountry,detailSpot.id); setDetailSpot(s=>({...s,done:!s.done})); }}
+                style={{width:"100%",background:detailSpot.done?"linear-gradient(135deg,#0b2e1a,#062014)":"linear-gradient(135deg,#0c4880,#072a56)",border:`2px solid ${detailSpot.done?"#22c55e40":"#1060a840"}`,borderRadius:10,padding:"14px",color:detailSpot.done?"#22c55e":"#7ec8f0",fontWeight:800,fontSize:12,letterSpacing:".1em",display:"flex",alignItems:"center",justifyContent:"center",gap:9}}>
+                {detailSpot.done?<><span style={{fontSize:18}}>✓</span> ACCOMPLI — CLIQUER POUR ANNULER</>:<><span style={{fontSize:18,fontWeight:300}}>○</span> MARQUER COMME ACCOMPLI</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── ADD MODAL ── */}
+      {showModal&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.8)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:999,backdropFilter:"blur(10px)",padding:"16px"}} onClick={()=>setShowModal(false)}>
+          <div className="rise" style={{background:"#030e1c",border:"1px solid #0d2540",borderRadius:14,padding:"22px",width:440,maxWidth:"96vw",maxHeight:"90vh",overflowY:"auto",boxShadow:"0 30px 80px rgba(0,0,0,.9)"}} onClick={e=>e.stopPropagation()}>
+            <div style={{marginBottom:18}}><div style={{fontWeight:900,fontSize:18,color:"#e4f0fc",letterSpacing:"-.01em"}}>Nouvelle expérience</div><div style={{fontSize:11,color:"#1e3a56",fontWeight:600,marginTop:3}}>{selectedName} · {CN[ci]}</div></div>
+            {[{k:"name",l:"NOM",req:true,ph:"Ex: Nager avec les raies mantas…",r:1},{k:"desc",l:"DESCRIPTION COURTE",ph:"Résumé accrocheur en une phrase",r:1},{k:"why",l:"POURQUOI C'EST EXCEPTIONNEL",ph:"Ce qui rend ce spot unique au monde…",r:3},{k:"season",l:"MEILLEURE SAISON",ph:"Ex: Juin–Octobre",r:1},{k:"tip",l:"CONSEIL PRATIQUE",ph:"Comment y accéder, opérateurs…",r:2},{k:"photo",l:"MOTS-CLÉS PHOTO (EN ANGLAIS)",ph:"Ex: whale shark ocean blue",r:1}].map(f=>(
+              <div key={f.k} style={{marginBottom:11}}>
+                <div style={{fontSize:8.5,fontWeight:700,color:f.req?"#0ea5e9":"#1e3a56",letterSpacing:".1em",marginBottom:4}}>{f.l}{f.req?" *":""}</div>
+                {f.r===1
+                  ?<input value={form[f.k]} onChange={e=>setForm(p=>({...p,[f.k]:e.target.value}))} placeholder={f.ph} style={{width:"100%",background:"#06122a",border:"1px solid #0d2038",borderRadius:7,padding:"9px 12px",color:"#c0d8f0",fontSize:13,fontWeight:500}}/>
+                  :<textarea value={form[f.k]} onChange={e=>setForm(p=>({...p,[f.k]:e.target.value}))} placeholder={f.ph} rows={f.r} style={{width:"100%",background:"#06122a",border:"1px solid #0d2038",borderRadius:7,padding:"9px 12px",color:"#c0d8f0",fontSize:12,fontWeight:400,resize:"vertical",lineHeight:1.55}}/>
+                }
+              </div>
+            ))}
+            <div style={{fontSize:8.5,fontWeight:700,color:"#1e3a56",letterSpacing:".1em",marginBottom:7}}>CATÉGORIE</div>
+            <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:18}}>
+              {CATS.filter(c=>c.id!=="all").map(c=>(
+                <button key={c.id} onClick={()=>setForm(p=>({...p,category:c.id}))} style={{background:form.category===c.id?`${c.color}18`:"transparent",border:`1px solid ${form.category===c.id?`${c.color}55`:"#0d2038"}`,borderRadius:6,padding:"5px 10px",color:form.category===c.id?c.color:"#1e3a56",fontSize:10,fontWeight:form.category===c.id?800:500,cursor:"pointer",transition:"all .15s"}}>{c.icon} {c.label}</button>
+              ))}
+            </div>
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={()=>setShowModal(false)} style={{flex:1,background:"transparent",border:"1px solid #0d2038",borderRadius:7,padding:"10px",color:"#1e3a56",cursor:"pointer",fontSize:10,fontWeight:600,letterSpacing:".06em"}}>ANNULER</button>
+              <button className="btn" onClick={addSpot} disabled={!form.name.trim()} style={{flex:2,background:form.name.trim()?"linear-gradient(135deg,#0c4880,#072a56)":"#050f1e",border:`1px solid ${form.name.trim()?"#1060a840":"#0a1e30"}`,borderRadius:7,padding:"10px",color:form.name.trim()?"#7ec8f0":"#0d2540",fontSize:10,fontWeight:800,letterSpacing:".1em",cursor:form.name.trim()?"pointer":"not-allowed"}}>AJOUTER À L'ATLAS</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── DELETE CONFIRM ── */}
+      {deleteConfirm&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.88)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1001,backdropFilter:"blur(12px)"}} onClick={()=>setDeleteConfirm(null)}>
+          <div className="rise" style={{background:"#030e1c",border:"1px solid #2a1010",borderRadius:14,padding:"28px 24px",width:380,maxWidth:"92vw",textAlign:"center",boxShadow:"0 30px 80px rgba(0,0,0,.9)"}} onClick={e=>e.stopPropagation()}>
+            <div style={{width:52,height:52,background:"rgba(248,113,113,.1)",border:"1px solid rgba(248,113,113,.2)",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px",fontSize:22}}>🗑</div>
+            <div style={{fontWeight:900,fontSize:18,color:"#e4f0fc",marginBottom:9,letterSpacing:"-.01em"}}>Supprimer ce spot ?</div>
+            <div style={{fontWeight:700,fontSize:13,color:"#f87171",marginBottom:10}}>"{deleteConfirm.name}"</div>
+            <div style={{fontSize:12,color:"#1e3a56",fontWeight:400,marginBottom:24,lineHeight:1.65}}>Cette action est irréversible. Ce spot sera définitivement supprimé de votre atlas.</div>
+            <div style={{display:"flex",gap:10}}>
+              <button className="btn" onClick={()=>setDeleteConfirm(null)} style={{flex:1,background:"linear-gradient(135deg,#0c4880,#072a56)",border:"1px solid #1060a840",borderRadius:9,padding:"12px",color:"#7ec8f0",fontWeight:800,fontSize:11,letterSpacing:".06em"}}>NON, GARDER</button>
+              <button className="btn" onClick={()=>{ deleteSpot(deleteConfirm.cid,deleteConfirm.sid); if(detailSpot?.id===deleteConfirm.sid) setDetailSpot(null); setDeleteConfirm(null); }} style={{flex:1,background:"linear-gradient(135deg,#4a0e0e,#2e0808)",border:"1px solid rgba(248,113,113,.3)",borderRadius:9,padding:"12px",color:"#f87171",fontWeight:800,fontSize:11,letterSpacing:".06em"}}>OUI, SUPPRIMER</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<AtlasMerveilles />);
+</script>
+</body>
+</html>
