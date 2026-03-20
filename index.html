@@ -447,10 +447,10 @@ function AtlasMerveilles() {
             </div>
           </div>
         </div>
-        <div style={{display:"flex",gap:3,flexWrap:"wrap",flex:1,minWidth:0}}>
+        <div style={{display:"flex",gap:10,flexWrap:"wrap",flex:1,minWidth:0}}>
           {CATS.filter((c,i,a)=>a.findIndex(x=>x.id===c.id)===i).map(c=>{ const a=filter===c.id; return(
             <button key={c.id} className="btn" onClick={()=>setFilter(c.id)}
-              style={{background:a?`${c.color}18`:"transparent",border:`1px solid ${a?c.color+"55":"#0b1e34"}`,borderRadius:10,padding:"13px 26px",color:a?c.color:"#7aaccf",fontSize:18,fontWeight:a?800:600,display:"flex",alignItems:"center",gap:5,whiteSpace:"nowrap",letterSpacing:".02em",border:`1px solid ${a?c.color+"77":"#1a3a5a"}`}}>
+              style={{background:a?`${c.color}18`:"transparent",border:`1px solid ${a?c.color+"55":"#0b1e34"}`,borderRadius:9,padding:"11px 22px",color:a?c.color:"#7aaccf",fontSize:15,fontWeight:a?800:600,display:"flex",alignItems:"center",gap:5,whiteSpace:"nowrap",letterSpacing:".02em",border:`1px solid ${a?c.color+"77":"#1a3a5a"}`}}>
               {c.icon} {c.label}
             </button>
           );})}
@@ -478,15 +478,15 @@ function AtlasMerveilles() {
               {NM[hoveredCountry]}
             </div>
           )}
-          {!loading&&(<div style={{position:"absolute",bottom:14,left:14,background:"#020e1ce8",backdropFilter:"blur(12px)",border:"1px solid #0d2540",borderRadius:18,padding:"36px 42px",fontSize:28}}>
-            <div style={{fontWeight:900,color:"#5a9abf",letterSpacing:".12em",marginBottom:20,fontSize:28}}>CONTINENTS</div>
-            {CN.map((n,i)=>(<div key={n} style={{display:"flex",alignItems:"center",gap:18,marginBottom:14}}><div style={{width:32,height:32,background:CONT[i].active,border:`3px solid ${CC[i]}`,borderRadius:5}}/><span style={{color:"#6aaccc",fontWeight:700,fontSize:36}}>{n}</span></div>))}
+          {!loading&&(<div style={{position:"absolute",bottom:14,left:14,background:"#020e1ce8",backdropFilter:"blur(12px)",border:"1px solid #0d2540",borderRadius:14,padding:"18px 22px",fontSize:15}}>
+            <div style={{fontWeight:900,color:"#5a9abf",letterSpacing:".12em",marginBottom:10,fontSize:14}}>CONTINENTS</div>
+            {CN.map((n,i)=>(<div key={n} style={{display:"flex",alignItems:"center",gap:7,marginBottom:4}}><div style={{width:13,height:13,background:CONT[i].active,border:`2px solid ${CC[i]}`,borderRadius:3}}/><span style={{color:"#6aaccc",fontWeight:700,fontSize:16}}>{n}</span></div>))}
             <div style={{borderTop:"1px solid #0b1e34",marginTop:7,paddingTop:6}}>
               {[{bg:"#062338",st:"#0ea5e9",l:"Spots à explorer"},{bg:"#2c1b04",st:"#f59e0b",l:"En cours"},{bg:"#0a2c18",st:"#22c55e",l:"Accompli"}].map(x=>(
-                <div key={x.l} style={{display:"flex",alignItems:"center",gap:18,marginBottom:14}}><div style={{width:32,height:32,background:x.bg,border:`3px solid ${x.st}`,borderRadius:5}}/><span style={{color:"#6aaccc",fontWeight:600,fontSize:36}}>{x.l}</span></div>
+                <div key={x.l} style={{display:"flex",alignItems:"center",gap:7,marginBottom:4}}><div style={{width:13,height:13,background:x.bg,border:`2px solid ${x.st}`,borderRadius:3}}/><span style={{color:"#6aaccc",fontWeight:600,fontSize:16}}>{x.l}</span></div>
               ))}
             </div>
-            <div style={{color:"#3a7090",marginTop:18,fontSize:24}}>Drag = tourner · Scroll = zoom</div>
+            <div style={{color:"#3a7090",marginTop:6,fontSize:10}}>Drag = tourner · Scroll = zoom</div>
           </div>)}
           {!selectedCountry&&!loading&&(<div style={{position:"absolute",bottom:"44%",left:"50%",transform:"translateX(-50%)",pointerEvents:"none"}}>
             <div style={{fontSize:9,color:"#0d2540",fontWeight:700,letterSpacing:".3em",animation:"pulse 3s ease infinite"}}>CLIQUEZ SUR UN PAYS</div>
@@ -538,11 +538,11 @@ function AtlasMerveilles() {
                         <button className="chk" onClick={e=>{e.stopPropagation();toggleDone(selectedCountry,spot.id)}}
                           style={{width:22,height:22,borderRadius:"50%",flexShrink:0,border:`2px solid ${spot.done?"#22c55e":"#1a3a5a"}`,background:spot.done?"#22c55e":"transparent",display:"flex",alignItems:"center",justifyContent:"center",color:spot.done?"#020c1a":"transparent",fontSize:11,marginTop:2,fontWeight:900}}>✓</button>
                         <div style={{flex:1,minWidth:0}}>
-                          <div style={{marginBottom:6}}><span style={{fontSize:8.5,fontWeight:700,background:`${c.color}15`,color:c.color,padding:"2.5px 8px",borderRadius:4,border:`1px solid ${c.color}25`,letterSpacing:".04em"}}>{c.icon} {c.label}</span></div>
-                          <div style={{fontSize:15,fontWeight:800,color:spot.done?"#1e3a56":"#d8eef8",lineHeight:1.2,textDecoration:spot.done?"line-through":"none",marginBottom:5,letterSpacing:"-.01em"}}>{spot.name}</div>
-                          <div style={{fontSize:12,color:"#2a5070",fontWeight:400,lineHeight:1.55}}>{spot.desc}</div>
-                          {spot.season&&<div style={{marginTop:7,display:"flex",alignItems:"center",gap:5}}><span style={{fontSize:8.5,fontWeight:600,color:"#0d2840",background:"#0a1e30",padding:"2px 7px",borderRadius:4,border:"1px solid #0e2844"}}>🗓 {spot.season}</span></div>}
-                          <div style={{marginTop:6,fontSize:9,fontWeight:700,color:"#0d3050",letterSpacing:".06em"}}>VOIR LES DÉTAILS →</div>
+                          <div style={{marginBottom:6}}><span style={{fontSize:12,fontWeight:700,background:`${c.color}15`,color:c.color,padding:"4px 10px",borderRadius:5,border:`1px solid ${c.color}25`,letterSpacing:".04em"}}>{c.icon} {c.label}</span></div>
+                          <div style={{fontSize:20,fontWeight:800,color:spot.done?"#1e3a56":"#d8eef8",lineHeight:1.2,textDecoration:spot.done?"line-through":"none",marginBottom:6,letterSpacing:"-.01em"}}>{spot.name}</div>
+                          <div style={{fontSize:16,color:"#2a5070",fontWeight:400,lineHeight:1.55}}>{spot.desc}</div>
+                          {spot.season&&<div style={{marginTop:7,display:"flex",alignItems:"center",gap:5}}><span style={{fontSize:12,fontWeight:600,color:"#1a4060",background:"#0a1e30",padding:"4px 10px",borderRadius:5,border:"1px solid #0e2844"}}>🗓 {spot.season}</span></div>}
+                          <div style={{marginTop:8,fontSize:13,fontWeight:700,color:"#0d3050",letterSpacing:".06em"}}>VOIR LES DÉTAILS →</div>
                         </div>
                         <button className="del" onClick={e=>{e.stopPropagation();setDeleteConfirm({cid:selectedCountry,sid:spot.id,name:spot.name});}}
                           style={{background:"rgba(248,113,113,.08)",border:"1px solid rgba(248,113,113,.2)",borderRadius:5,width:24,height:24,color:"#f87171",cursor:"pointer",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>×</button>
