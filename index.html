@@ -329,17 +329,7 @@ function AtlasMerveilles() {
   useEffect(()=>{ hoveredRef.current=hoveredCountry; },[hoveredCountry]);
   useEffect(()=>{ selectedRef.current=selectedCountry; },[selectedCountry]);
 
-  useEffect(()=>{ (async()=>{
-    try{
-      const s=await window.storage.get("atlas-v9");
-      if(s?.value){
-        const saved=JSON.parse(s.value);
-        // Merge: keep DEFAULT_SPOTS for countries not in saved, preserve user data
-        const merged=Object.assign({},DEFAULT_SPOTS,saved);
-        setSpots(merged);
-      }
-    }catch(e){}
-  })(); },[]);
+  useEffect(()=>{ (async()=>{ try{ const s=await window.storage.get("atlas-v9"); if(s&&s.value){ const saved=JSON.parse(s.value); setSpots(Object.assign({},DEFAULT_SPOTS,saved)); } }catch(e){} })(); },[]);
   useEffect(()=>{ (async()=>{ try{ await window.storage.set("atlas-v9",JSON.stringify(spots)); }catch(e){} })(); },[spots]);
 
   useEffect(()=>{
@@ -402,8 +392,8 @@ function AtlasMerveilles() {
     const loop=()=>{ if(autoSpinRef.current&&!draggingRef.current){ rotateRef.current=[rotateRef.current[0]+.06,rotateRef.current[1]]; projRef.current.rotate(rotateRef.current); } draw(); animRef.current=requestAnimationFrame(loop); };
     animRef.current=requestAnimationFrame(loop);
     const drag=d3.drag()
-      .on("start",e=>{draggingRef.current=true; autoSpinRef.current=false; clearTimeout(resumeRef.current);const _s=e.sourceEvent;const _tx=(_s.touches&&_s.touches[0]?_s.touches[0].clientX:e.x);const _ty=(_s.touches&&_s.touches[0]?_s.touches[0].clientY:e.y);dragStartRef.current=[_tx,_ty]; dragMoveRef.current=[_tx,_ty]; })
-      .on("drag",e=>{const _d=e.sourceEvent;const _tx2=(_d.touches&&_d.touches[0]?_d.touches[0].clientX:e.x);const _ty2=(_d.touches&&_d.touches[0]?_d.touches[0].clientY:e.y);const dx=_tx2-dragMoveRef.current[0],dy=_ty2-dragMoveRef.current[1];dragMoveRef.current=[_tx2,_ty2]; const sc=projRef.current?.scale()||R; const r=rotateRef.current; rotateRef.current=[r[0]+dx*65/sc,r[1]-dy*65/sc]; projRef.current?.rotate(rotateRef.current); })
+      .on("start",e=>{ draggingRef.current=true; autoSpinRef.current=false; clearTimeout(resumeRef.current); const _s=e.sourceEvent; const _tx=(_s.touches&&_s.touches[0]?_s.touches[0].clientX:e.x); const _ty=(_s.touches&&_s.touches[0]?_s.touches[0].clientY:e.y); dragStartRef.current=[_tx,_ty]; dragMoveRef.current=[_tx,_ty]; })
+      .on("drag",e=>{ const _d=e.sourceEvent; const _tx2=(_d.touches&&_d.touches[0]?_d.touches[0].clientX:e.x); const _ty2=(_d.touches&&_d.touches[0]?_d.touches[0].clientY:e.y); const dx=_tx2-dragMoveRef.current[0],dy=_ty2-dragMoveRef.current[1]; dragMoveRef.current=[_tx2,_ty2]; const sc=projRef.current?.scale()||R; const r=rotateRef.current; rotateRef.current=[r[0]+dx*65/sc,r[1]-dy*65/sc]; projRef.current?.rotate(rotateRef.current); })
       .on("end",e=>{
         draggingRef.current=false;
         const dx=Math.abs(e.x-dragStartRef.current[0]),dy=Math.abs(e.y-dragStartRef.current[1]);
@@ -662,6 +652,7 @@ function AtlasMerveilles() {
     </div>
   );
 }
+
 ReactDOM.createRoot(document.getElementById('root')).render(<AtlasMerveilles />);
 </script>
 </body>
