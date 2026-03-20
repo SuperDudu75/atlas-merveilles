@@ -364,6 +364,7 @@ function AtlasMerveilles() {
   const [loading,setLoading]                 = useState(true);
   const [animKey,setAnimKey]                 = useState(0);
   const [imgErr,setImgErr]                   = useState(false);
+  const swipeStartX = useRef(null);
   const [importRef]                          = useState(()=>({ current:null }));
   const [form,setForm] = useState({name:"",category:"marine",desc:"",why:"",season:"",tip:"",photo:""});
 
@@ -439,21 +440,58 @@ function AtlasMerveilles() {
     const loop=()=>{ if(autoSpinRef.current&&!draggingRef.current){ rotateRef.current=[rotateRef.current[0]+.06,rotateRef.current[1]]; projRef.current.rotate(rotateRef.current); } draw(); animRef.current=requestAnimationFrame(loop); };
     animRef.current=requestAnimationFrame(loop);
     const drag=d3.drag()
-      .on("start",e=>{ draggingRef.current=true; autoSpinRef.current=false; clearTimeout(resumeRef.current); dragStartRef.current=[e.x,e.y]; dragMoveRef.current=[e.x,e.y]; })
-      .on("drag",e=>{ const dx=e.x-dragMoveRef.current[0],dy=e.y-dragMoveRef.current[1]; dragMoveRef.current=[e.x,e.y]; const sc=projRef.current?.scale()||R; const r=rotateRef.current; rotateRef.current=[r[0]+dx*65/sc,r[1]-dy*65/sc]; projRef.current?.rotate(rotateRef.current); })
+      .on("start",e=>{
+        draggingRef.current=true; autoSpinRef.current=false; clearTimeout(resumeRef.current);
+        const src=e.sourceEvent;
+        const tx=src.touches?.[0]?.clientX||e.x;
+        const ty=src.touches?.[0]?.clientY||e.y;
+        dragStartRef.current=[tx,ty]; dragMoveRef.current=[tx,ty];
+      })
+      .on("drag",e=>{
+        const src=e.sourceEvent;
+        const tx=src.touches?.[0]?.clientX||e.x;
+        const ty=src.touches?.[0]?.clientY||e.y;
+        const dx=tx-dragMoveRef.current[0],dy=ty-dragMoveRef.current[1];
+        dragMoveRef.current=[tx,ty]; const sc=projRef.current?.scale()||R; const r=rotateRef.current; rotateRef.current=[r[0]+dx*65/sc,r[1]-dy*65/sc]; projRef.current?.rotate(rotateRef.current); })
       .on("end",e=>{
         draggingRef.current=false;
         const dx=Math.abs(e.x-dragStartRef.current[0]),dy=Math.abs(e.y-dragStartRef.current[1]);
-        if(dx<6&&dy<6){ const rect=canvas.getBoundingClientRect(); const px=(e.sourceEvent.clientX||0)-rect.left, py=(e.sourceEvent.clientY||0)-rect.top; const coords=projRef.current?.invert([px,py]); if(coords&&!isNaN(coords[0])){ const c=countriesRef.current.find(f=>d3.geoContains(f,coords)); if(c){ const id=String(parseInt(c.id,10)); setSelectedCountry(id); setSelectedName(NM[id]||`#${id}`); setAnimKey(k=>k+1); if(window.innerWidth<=768) setShowMobileSidebar(true); }}}
+        if(dx<6&&dy<6){ const rect=canvas.getBoundingClientRect();
+          const src=e.sourceEvent;
+          const clientX=src.clientX||(src.changedTouches&&src.changedTouches[0]&&src.changedTouches[0].clientX)||0;
+          const clientY=src.clientY||(src.changedTouches&&src.changedTouches[0]&&src.changedTouches[0].clientY)||0;
+          const px=clientX-rect.left, py=clientY-rect.top; const coords=projRef.current?.invert([px,py]); if(coords&&!isNaN(coords[0])){ const c=countriesRef.current.find(f=>d3.geoContains(f,coords)); if(c){ const id=String(parseInt(c.id,10)); setSelectedCountry(id); setSelectedName(NM[id]||`#${id}`); setAnimKey(k=>k+1); if(window.innerWidth<=768) setShowMobileSidebar(true); }}}
         resumeRef.current=setTimeout(()=>{ autoSpinRef.current=true; },3000);
       });
     d3.select(canvas).call(drag);
     const onWheel=e=>{ e.preventDefault(); const sc=projRef.current?.scale()||R; projRef.current?.scale(Math.max(R*.6,Math.min(sc*(e.deltaY>0?.88:1.14),R*6))); };
     canvas.addEventListener("wheel",onWheel,{passive:false});
+    // Pinch to zoom on mobile
+    let lastDist=0;
+    const onTouchStart=e=>{
+      if(e.touches.length===2){
+        lastDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+        e.preventDefault();
+      }
+    };
+    const onTouchMove=e=>{
+      if(e.touches.length===2){
+        e.preventDefault();
+        const dist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+        if(lastDist>0){
+          const sc=projRef.current?.scale()||R;
+          const factor=dist/lastDist;
+          projRef.current?.scale(Math.max(R*.6,Math.min(sc*factor,R*6)));
+        }
+        lastDist=dist;
+      }
+    };
+    canvas.addEventListener("touchstart",onTouchStart,{passive:false});
+    canvas.addEventListener("touchmove",onTouchMove,{passive:false});
     let hf=null;
     const onMove=e=>{ if(draggingRef.current||hf) return; hf=requestAnimationFrame(()=>{ const proj=projRef.current; if(!proj){hf=null;return;} const rect=canvas.getBoundingClientRect(); const coords=proj.invert([e.clientX-rect.left,e.clientY-rect.top]); if(coords&&!isNaN(coords[0])){ const c=countriesRef.current.find(f=>d3.geoContains(f,coords)); const nh=c?String(parseInt(c.id,10)):null; if(nh!==hoveredRef.current){hoveredRef.current=nh;setHoveredCountry(nh);}} hf=null; }); };
     canvas.addEventListener("mousemove",onMove);
-    return()=>{ cancelAnimationFrame(animRef.current); canvas.removeEventListener("wheel",onWheel); canvas.removeEventListener("mousemove",onMove); clearTimeout(resumeRef.current); };
+    return()=>{ cancelAnimationFrame(animRef.current); canvas.removeEventListener("wheel",onWheel); canvas.removeEventListener("mousemove",onMove); canvas.removeEventListener("touchstart",onTouchStart); canvas.removeEventListener("touchmove",onTouchMove); clearTimeout(resumeRef.current); };
   },[worldData,draw]);
 
   const toggleDone=(cid,sid)=>setSpots(p=>({...p,[cid]:p[cid].map(s=>s.id===sid?{...s,done:!s.done}:s)}));
@@ -656,6 +694,19 @@ function AtlasMerveilles() {
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.88)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,backdropFilter:"blur(12px)",padding:"16px"}}
           onClick={()=>setDetailSpot(null)}>
           <div style={{background:"#030e1c",border:"1px solid #0d2540",borderRadius:isMobile?0:16,width:isMobile?"100vw":"min(640px,96vw)",maxHeight:isMobile?"100vh":"88vh",overflow:"auto",boxShadow:"0 30px 80px rgba(0,0,0,.9)",animation:"min .22s ease both"}}
+            onTouchStart={e=>{swipeStartX.current=e.touches[0].clientX;}}
+            onTouchEnd={e=>{
+              if(swipeStartX.current===null) return;
+              const dx=e.changedTouches[0].clientX-swipeStartX.current;
+              swipeStartX.current=null;
+              if(Math.abs(dx)<60) return;
+              // Swipe to navigate between spots of current country
+              const spots=filtered;
+              const idx=spots.findIndex(s=>s.id===detailSpot.id);
+              if(dx<0&&idx<spots.length-1){ setDetailSpot(spots[idx+1]); setImgErr(false); }
+              else if(dx>0&&idx>0){ setDetailSpot(spots[idx-1]); setImgErr(false); }
+              else { setDetailSpot(null); }
+            }}
             onClick={e=>e.stopPropagation()}>
             <div style={{position:"relative",height:260,background:"#071424",overflow:"hidden",borderRadius:"16px 16px 0 0",flexShrink:0}}>
               {!imgErr
@@ -663,6 +714,11 @@ function AtlasMerveilles() {
                 : <div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",background:"radial-gradient(circle at 40% 40%,#0c2a44,#020c1a)"}}><span style={{fontSize:64}}>{Cat(detailSpot.category).icon}</span></div>
               }
               <div style={{position:"absolute",inset:0,background:"linear-gradient(to top,#030e1c 0%,rgba(3,14,28,.2) 55%,transparent 100%)"}}/>
+              <div style={{position:"absolute",top:0,left:0,right:0,display:"flex",justifyContent:"center",padding:"8px 0"}}>
+                {isMobile&&filtered.length>1&&filtered.map((s,i)=>(
+                  <div key={s.id} style={{width:i===filtered.findIndex(x=>x.id===detailSpot.id)?20:6,height:6,borderRadius:3,background:i===filtered.findIndex(x=>x.id===detailSpot.id)?"#0ea5e9":"#1a3050",margin:"0 2px",transition:"all .2s"}}/>
+                ))}
+              </div>
               <div style={{position:"absolute",top:14,left:14,right:14,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                 <span style={{fontSize:9,fontWeight:800,background:`${Cat(detailSpot.category).color}22`,color:Cat(detailSpot.category).color,padding:"4px 11px",borderRadius:5,border:`1px solid ${Cat(detailSpot.category).color}38`,letterSpacing:".07em"}}>{Cat(detailSpot.category).icon} {Cat(detailSpot.category).label}</span>
                 <button onClick={()=>setDetailSpot(null)} style={{background:"rgba(2,12,26,.75)",border:"1px solid #0d2540",borderRadius:7,width:32,height:32,color:"#5a90b8",cursor:"pointer",fontSize:17,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:300}}>×</button>
