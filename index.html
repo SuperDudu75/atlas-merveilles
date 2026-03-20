@@ -283,7 +283,11 @@ const DEFAULT_SPOTS = {
   ],
 };
 
-const IMG = (keywords) => `https://loremflickr.com/900/500/${encodeURIComponent(keywords.split(' ').slice(0,3).join(','))}/all?lock=${Math.abs(keywords.split('').reduce((a,c)=>a+c.charCodeAt(0),0)%9999)}`;
+const IMG = (keywords) => {
+  const seed = Math.abs(keywords.split('').reduce((a,c)=>a+c.charCodeAt(0),0) % 1000);
+  const q = encodeURIComponent(keywords.replace(/\s+/g,','));
+  return `https://source.unsplash.com/900x500/?${q}&sig=${seed}`;
+};
 
 // ── COMPONENT ─────────────────────────────────────────────────────────────────
 function AtlasMerveilles() {
@@ -434,12 +438,12 @@ function AtlasMerveilles() {
       `}</style>
 
       {/* ── TOPBAR ── */}
-      <div style={{display:"flex",alignItems:"center",gap:14,padding:"12px 20px",background:"#020e1c",borderBottom:"1px solid #0b1e34",flexShrink:0,flexWrap:"wrap"}}>
+      <div style={{display:"flex",alignItems:"center",gap:18,padding:"16px 24px",background:"#020e1c",borderBottom:"2px solid #0d2540",flexShrink:0,flexWrap:"wrap"}}>
         <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
-          <span style={{fontSize:26}}>🌍</span>
+          <span style={{fontSize:34}}>🌍</span>
           <div>
-            <div style={{fontWeight:900,fontSize:16,color:"#8ecce8",letterSpacing:".08em",lineHeight:1.1}}>ATLAS DES MERVEILLES</div>
-            <div style={{fontSize:10.5,color:"#1a3a56",fontWeight:500,marginTop:2}}>
+            <div style={{fontWeight:900,fontSize:22,color:"#8ecce8",letterSpacing:".08em",lineHeight:1.1}}>ATLAS DES MERVEILLES</div>
+            <div style={{fontSize:13,color:"#2a5070",fontWeight:600,marginTop:3}}>
               <span style={{color:"#0ea5e9",fontWeight:700}}>{nCountries}</span> pays · <span style={{color:"#0ea5e9",fontWeight:700}}>{allSpots.length}</span> exp. · <span style={{color:"#22c55e",fontWeight:700}}>{totalDone}</span> accomplies
             </div>
           </div>
@@ -447,14 +451,14 @@ function AtlasMerveilles() {
         <div style={{display:"flex",gap:3,flexWrap:"wrap",flex:1,minWidth:0}}>
           {CATS.map(c=>{ const a=filter===c.id; return(
             <button key={c.id} className="btn" onClick={()=>setFilter(c.id)}
-              style={{background:a?`${c.color}18`:"transparent",border:`1px solid ${a?c.color+"55":"#0b1e34"}`,borderRadius:7,padding:"5px 12px",color:a?c.color:"#1e3a56",fontSize:11,fontWeight:a?700:500,display:"flex",alignItems:"center",gap:3,whiteSpace:"nowrap"}}>
+              style={{background:a?`${c.color}18`:"transparent",border:`1px solid ${a?c.color+"55":"#0b1e34"}`,borderRadius:8,padding:"7px 16px",color:a?c.color:"#2a4a6a",fontSize:13,fontWeight:a?700:500,display:"flex",alignItems:"center",gap:3,whiteSpace:"nowrap"}}>
               {c.icon} {c.label}
             </button>
           );})}
         </div>
         <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
-          <div style={{display:"flex",gap:3}}>{CN.map((n,i)=>(<div key={n} title={n} style={{width:10,height:10,borderRadius:"50%",background:CC[i],opacity:.75,cursor:"default"}}/>))}</div>
-          <div style={{width:70,height:4,background:"#0b1e34",borderRadius:2,overflow:"hidden"}}>
+          <div style={{display:"flex",gap:3}}>{CN.map((n,i)=>(<div key={n} title={n} style={{width:13,height:13,borderRadius:"50%",background:CC[i],opacity:.75,cursor:"default"}}/>))}</div>
+          <div style={{width:90,height:5,background:"#0b1e34",borderRadius:2,overflow:"hidden"}}>
             <div style={{width:`${allSpots.length?(totalDone/allSpots.length)*100:0}%`,height:"100%",background:"linear-gradient(90deg,#0ea5e9,#22c55e)",transition:"width .6s"}}/>
           </div>
           <span style={{fontSize:8.5,color:"#1a3a56",fontWeight:600}}>{totalDone}/{allSpots.length}</span>
