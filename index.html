@@ -65,7 +65,9 @@ const CATS = [
   { id:"geology",  label:"Volcans & Géo",      icon:"🌋",color:"#f87171" },
   { id:"nature",   label:"Nature & Forêts",    icon:"🌿",color:"#4ade80" },
   { id:"heritage", label:"Patrimoine",         icon:"🏛️",color:"#c084fc" },
-  { id:"unique",   label:"Expérience Unique",  icon:"⭐",color:"#fbbf24" },
+  { id:"unique",   label:"Expérience Unique", icon:"⭐",color:"#fbbf24" },
+  { id:"famous",   label:"Incontournables",    icon:"🏆",color:"#f0c040" },
+  { id:"famous",   label:"Incontournables",    icon:"🏆",color:"#f0c040" },
 ];
 const Cat = id => CATS.find(c=>c.id===id)||CATS[1];
 
@@ -350,7 +352,7 @@ function AtlasMerveilles() {
     ctx.beginPath(); pathGen({type:"Sphere"}); ctx.fillStyle=og; ctx.fill();
     ctx.beginPath(); pathGen(d3.geoGraticule()()); ctx.strokeStyle="rgba(20,55,95,.12)"; ctx.lineWidth=.24; ctx.stroke();
     for(const f of countriesRef.current){
-      const id=String(f.id), ci=gc(id), C=CONT[ci];
+      const id=String(parseInt(f.id,10)), ci=gc(id), C=CONT[ci];
       const sd=sp[id], isH=id===hov, isS=id===sel;
       ctx.beginPath(); pathGen(f);
       if(isS) ctx.fillStyle="#1a4870";
@@ -386,14 +388,14 @@ function AtlasMerveilles() {
       .on("end",e=>{
         draggingRef.current=false;
         const dx=Math.abs(e.x-dragStartRef.current[0]),dy=Math.abs(e.y-dragStartRef.current[1]);
-        if(dx<6&&dy<6){ const rect=canvas.getBoundingClientRect(); const px=(e.sourceEvent.clientX||0)-rect.left, py=(e.sourceEvent.clientY||0)-rect.top; const coords=projRef.current?.invert([px,py]); if(coords&&!isNaN(coords[0])){ const c=countriesRef.current.find(f=>d3.geoContains(f,coords)); if(c){ const id=String(c.id); setSelectedCountry(id); setSelectedName(NM[id]||`#${id}`); setAnimKey(k=>k+1); }}}
+        if(dx<6&&dy<6){ const rect=canvas.getBoundingClientRect(); const px=(e.sourceEvent.clientX||0)-rect.left, py=(e.sourceEvent.clientY||0)-rect.top; const coords=projRef.current?.invert([px,py]); if(coords&&!isNaN(coords[0])){ const c=countriesRef.current.find(f=>d3.geoContains(f,coords)); if(c){ const id=String(parseInt(c.id,10)); setSelectedCountry(id); setSelectedName(NM[id]||`#${id}`); setAnimKey(k=>k+1); }}}
         resumeRef.current=setTimeout(()=>{ autoSpinRef.current=true; },3000);
       });
     d3.select(canvas).call(drag);
     const onWheel=e=>{ e.preventDefault(); const sc=projRef.current?.scale()||R; projRef.current?.scale(Math.max(R*.6,Math.min(sc*(e.deltaY>0?.88:1.14),R*6))); };
     canvas.addEventListener("wheel",onWheel,{passive:false});
     let hf=null;
-    const onMove=e=>{ if(draggingRef.current||hf) return; hf=requestAnimationFrame(()=>{ const proj=projRef.current; if(!proj){hf=null;return;} const rect=canvas.getBoundingClientRect(); const coords=proj.invert([e.clientX-rect.left,e.clientY-rect.top]); if(coords&&!isNaN(coords[0])){ const c=countriesRef.current.find(f=>d3.geoContains(f,coords)); const nh=c?String(c.id):null; if(nh!==hoveredRef.current){hoveredRef.current=nh;setHoveredCountry(nh);}} hf=null; }); };
+    const onMove=e=>{ if(draggingRef.current||hf) return; hf=requestAnimationFrame(()=>{ const proj=projRef.current; if(!proj){hf=null;return;} const rect=canvas.getBoundingClientRect(); const coords=proj.invert([e.clientX-rect.left,e.clientY-rect.top]); if(coords&&!isNaN(coords[0])){ const c=countriesRef.current.find(f=>d3.geoContains(f,coords)); const nh=c?String(parseInt(c.id,10)):null; if(nh!==hoveredRef.current){hoveredRef.current=nh;setHoveredCountry(nh);}} hf=null; }); };
     canvas.addEventListener("mousemove",onMove);
     return()=>{ cancelAnimationFrame(animRef.current); canvas.removeEventListener("wheel",onWheel); canvas.removeEventListener("mousemove",onMove); clearTimeout(resumeRef.current); };
   },[worldData,draw]);
