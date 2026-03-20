@@ -19,13 +19,18 @@ html,body,#root{height:100%;background:#020c1a;overflow:hidden}
     border-top:2px solid #0d2540!important;border-radius:16px 16px 0 0!important;z-index:200;}
   .sidebar-panel.hidden{height:0!important;}
   .sidebar-inner{width:100%!important;}
-  /* Categories scroll */
-  .topbar-cats{overflow-x:auto!important;flex-wrap:nowrap!important;-webkit-overflow-scrolling:touch;}
+  /* Topbar: wrap into 2 rows */
+  .topbar-wrap{flex-wrap:wrap!important;padding:8px 10px 0!important;gap:0!important;}
+  /* Row 1: logo full width */
+  .topbar-logo-block{width:100%!important;padding-bottom:6px!important;flex-shrink:0!important;}
+  /* Row 2: categories scroll full width */
+  .topbar-cats{width:100%!important;overflow-x:auto!important;flex-wrap:nowrap!important;
+    -webkit-overflow-scrolling:touch;padding-bottom:8px!important;gap:6px!important;min-width:0!important;}
   .topbar-cats::-webkit-scrollbar{display:none!important;}
-  .topbar-cat-btn{flex-shrink:0!important;font-size:11px!important;padding:5px 10px!important;}
-  /* Hide progress dots on mobile */
+  .topbar-cat-btn{flex-shrink:0!important;font-size:12px!important;padding:6px 12px!important;border-radius:20px!important;}
+  /* Hide right side */
   .topbar-right{display:none!important;}
-  /* Hide legend on mobile - takes too much space */
+  /* Hide legend */
   .globe-legend{display:none!important;}
 }
 </style>
@@ -451,7 +456,7 @@ function AtlasMerveilles() {
       `}</style>
 
       {/* ── TOPBAR ── */}
-      <div style={{display:"flex",alignItems:"center",gap:18,padding:"16px 24px",background:"#020e1c",borderBottom:"1px solid #0b1e34",flexShrink:0,flexWrap:"wrap"}}>
+      <div className="topbar-wrap" style={{display:"flex",alignItems:"center",gap:18,padding:"16px 24px",background:"#020e1c",borderBottom:"1px solid #0b1e34",flexShrink:0,flexWrap:"wrap"}}>
         <div className="topbar-right" style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
           <span style={{fontSize:32}}>🌍</span>
           <div>
@@ -469,7 +474,7 @@ function AtlasMerveilles() {
             </button>
           );})}
         </div>
-        <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+        <div className="topbar-logo-block" style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
           <div style={{display:"flex",gap:3}}>{CN.map((n,i)=>(<div key={n} title={n} style={{width:12,height:12,borderRadius:"50%",background:CC[i],opacity:.75,cursor:"default"}}/>))}</div>
           <div style={{width:100,height:5,background:"#0b1e34",borderRadius:2,overflow:"hidden"}}>
             <div style={{width:`${allSpots.length?(totalDone/allSpots.length)*100:0}%`,height:"100%",background:"linear-gradient(90deg,#0ea5e9,#22c55e)",transition:"width .6s"}}/>
