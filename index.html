@@ -350,6 +350,7 @@ function AtlasMerveilles() {
   const selectedRef  = useRef(null);
 
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [legendOpen, setLegendOpen] = useState(false);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const [spots,setSpots]                     = useState(DEFAULT_SPOTS);
   const [selectedCountry,setSelectedCountry] = useState(null);
@@ -485,27 +486,25 @@ function AtlasMerveilles() {
         input,textarea{transition:border-color .2s}input:focus,textarea:focus{border-color:#0ea5e9!important;outline:none}
         .sc{transition:all .2s;cursor:pointer}.sc:hover{background:#0a1e38!important;border-color:#1a4a7a!important}.sc:hover .del{opacity:1!important}
         .del{opacity:0;transition:opacity .15s}
-        .chk{transition:all .2s;cursor:pointer}.chk:hover{transform:scale(1.15)}
-      `}</style>
-
-      {/* ── TOPBAR ── */}
+        .chk{transition:all .2s;cursor:pointer}.ch{/* ── TOPBAR ── */}
       {isMobile ? (
-        <div style={{background:"#020e1c",borderBottom:"2px solid #0d2540",flexShrink:0}}>
-          {/* Mobile row 1: logo + title */}
-          <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px 6px"}}>
-            <span style={{fontSize:28,flexShrink:0}}>🌍</span>
-            <div style={{minWidth:0}}>
-              <div style={{fontWeight:900,fontSize:18,color:"#8ecce8",letterSpacing:".04em",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>Mes Pokémons Rares</div>
-              <div style={{fontSize:11,color:"#5a90b8",fontWeight:600,marginTop:1}}>
+        <div style={{background:"#020e1c",borderBottom:"1px solid #0d2540",flexShrink:0}}>
+          {/* Row 1: logo + stats */}
+          <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px 8px",borderBottom:"1px solid #0a1e34"}}>
+            <span style={{fontSize:26,flexShrink:0}}>🌍</span>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontWeight:900,fontSize:17,color:"#8ecce8",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>Mes Pokémons Rares</div>
+              <div style={{fontSize:10,color:"#5a90b8",fontWeight:500,marginTop:1}}>
                 <span style={{color:"#38bdf8",fontWeight:800}}>{nCountries}</span> pays · <span style={{color:"#38bdf8",fontWeight:800}}>{allSpots.length}</span> exp. · <span style={{color:"#4ade80",fontWeight:800}}>{totalDone}</span> accomplies
               </div>
             </div>
           </div>
-          {/* Mobile row 2: categories horizontal scroll */}
-          <div style={{display:"flex",gap:6,padding:"6px 14px 10px",overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",flexWrap:"nowrap"}}>
+          {/* Row 2: categories horizontal scroll */}
+          <div style={{display:"flex",gap:6,padding:"8px 12px",overflowX:"auto",WebkitOverflowScrolling:"touch",flexWrap:"nowrap"}}>
+            <style>{".cats-scroll::-webkit-scrollbar{display:none}"}</style>
             {CATS.filter((c,i,a)=>a.findIndex(x=>x.id===c.id)===i).map(c=>{ const a=filter===c.id; return(
               <button key={c.id} className="btn" onClick={()=>setFilter(c.id)}
-                style={{background:a?`${c.color}20`:"#0a1e34",border:`1.5px solid ${a?c.color+"88":"#162840"}`,borderRadius:20,padding:"7px 14px",color:a?c.color:"#4a7898",fontSize:12,fontWeight:a?800:600,display:"flex",alignItems:"center",gap:5,whiteSpace:"nowrap",flexShrink:0}}>
+                style={{background:a?`${c.color}22`:"#0b1e34",border:`1.5px solid ${a?c.color+"99":"#1a3050"}`,borderRadius:20,padding:"6px 13px",color:a?c.color:"#4a7898",fontSize:12,fontWeight:a?800:600,display:"flex",alignItems:"center",gap:5,whiteSpace:"nowrap",flexShrink:0}}>
                 {c.icon} {c.label}
               </button>
             );})}
@@ -531,11 +530,15 @@ function AtlasMerveilles() {
             );})}
           </div>
           <div style={{display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
-            <div style={{display:"flex",gap:4}}>{CN.map((n,i)=>(<div key={n} title={n} style={{width:16,height:16,borderRadius:"50%",background:CC[i],opacity:.75,cursor:"default"}}/>))}</div>
+            <div style={{display:"flex",gap:4}}>{CN.map((n,i)=>(<div key={n} title={n} style={{width:16,height:16,borderRadius:"50%",background:CC[i],opacity:.75}}/>))}</div>
             <div style={{width:160,height:10,background:"#0b1e34",borderRadius:2,overflow:"hidden"}}>
               <div style={{width:`${allSpots.length?(totalDone/allSpots.length)*100:0}%`,height:"100%",background:"linear-gradient(90deg,#0ea5e9,#22c55e)",transition:"width .6s"}}/>
             </div>
             <span style={{fontSize:20,color:"#5aabcc",fontWeight:800}}>{totalDone}/{allSpots.length}</span>
+          </div>
+        </div>
+      )}
+      </span>
           </div>
         </div>
       )}
@@ -553,7 +556,11 @@ function AtlasMerveilles() {
               {NM[hoveredCountry]}
             </div>
           )}
-          {!loading&&(<div style={{position:"absolute",bottom:14,left:14,background:"#020e1ce8",backdropFilter:"blur(12px)",border:"1px solid #0d2540",borderRadius:10,padding:"9px 12px",fontSize:8}}>
+          {!loading&&(<div style={{position:"absolute",bottom:14,left:14}}>
+            <button onClick={()=>setLegendOpen(p=>!p)} style={{display:"flex",alignItems:"center",gap:5,background:"#020e1cf0",border:"1px solid #0d2540",borderRadius:7,padding:"5px 10px",color:"#4a8ab0",fontSize:9,fontWeight:700,cursor:"pointer",width:"100%",marginBottom:legendOpen?5:0}}>
+              {legendOpen?"▼ LEGENDE":"▶ LEGENDE"}
+            </button>
+            {legendOpen&&<div style={{background:"#020e1ce8",backdropFilter:"blur(12px)",border:"1px solid #0d2540",borderRadius:10,padding:"9px 12px",fontSize:8}}>
             <div style={{fontWeight:800,color:"#5a9abf",letterSpacing:".1em",marginBottom:6,fontSize:8}}>CONTINENTS</div>
             {CN.map((n,i)=>(<div key={n} style={{display:"flex",alignItems:"center",gap:5,marginBottom:3}}><div style={{width:8,height:8,background:CONT[i].active,border:`1.5px solid ${CC[i]}`,borderRadius:2}}/><span style={{color:"#6aaccc",fontWeight:600,fontSize:9}}>{n}</span></div>))}
             <div style={{borderTop:"1px solid #0b1e34",marginTop:7,paddingTop:6}}>
@@ -562,6 +569,7 @@ function AtlasMerveilles() {
               ))}
             </div>
             <div style={{color:"#3a7090",marginTop:4,fontSize:7}}>Drag = tourner · Scroll = zoom</div>
+          </div>}
           </div>)}
           {!selectedCountry&&!loading&&(<div style={{position:"absolute",bottom:"44%",left:"50%",transform:"translateX(-50%)",pointerEvents:"none"}}>
             <div style={{fontSize:9,color:"#0d2540",fontWeight:700,letterSpacing:".3em",animation:"pulse 3s ease infinite"}}>CLIQUEZ SUR UN PAYS</div>
