@@ -9,7 +9,18 @@
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
-<style>*{margin:0;padding:0;box-sizing:border-box}html,body,#root{height:100%;background:#020c1a;overflow:hidden}</style>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body,#root{height:100%;background:#020c1a;overflow:hidden}
+@media(max-width:768px){
+  .sidebar-panel{position:fixed!important;bottom:0!important;left:0!important;right:0!important;
+    width:100%!important;height:75vh!important;border-left:none!important;
+    border-top:2px solid #0d2540!important;border-radius:16px 16px 0 0!important;
+    z-index:200;}
+  .sidebar-panel.hidden{height:0!important;}
+  .sidebar-inner{width:100%!important;}
+}
+</style>
 </head>
 <body>
 <div id="root"></div>
@@ -318,8 +329,18 @@ function AtlasMerveilles() {
   useEffect(()=>{ hoveredRef.current=hoveredCountry; },[hoveredCountry]);
   useEffect(()=>{ selectedRef.current=selectedCountry; },[selectedCountry]);
 
-  useEffect(()=>{ (async()=>{ try{ const s=await window.storage.get("atlas-v7"); if(s?.value) setSpots(JSON.parse(s.value)); }catch{} })(); },[]);
-  useEffect(()=>{ (async()=>{ try{ await window.storage.set("atlas-v7",JSON.stringify(spots)); }catch{} })(); },[spots]);
+  useEffect(()=>{ (async()=>{
+    try{
+      const s=await window.storage.get("atlas-v9");
+      if(s?.value){
+        const saved=JSON.parse(s.value);
+        // Merge: keep DEFAULT_SPOTS for countries not in saved, preserve user data
+        const merged=Object.assign({},DEFAULT_SPOTS,saved);
+        setSpots(merged);
+      }
+    }catch(e){}
+  })(); },[]);
+  useEffect(()=>{ (async()=>{ try{ await window.storage.set("atlas-v9",JSON.stringify(spots)); }catch(e){} })(); },[spots]);
 
   useEffect(()=>{
     (async()=>{
@@ -381,12 +402,12 @@ function AtlasMerveilles() {
     const loop=()=>{ if(autoSpinRef.current&&!draggingRef.current){ rotateRef.current=[rotateRef.current[0]+.06,rotateRef.current[1]]; projRef.current.rotate(rotateRef.current); } draw(); animRef.current=requestAnimationFrame(loop); };
     animRef.current=requestAnimationFrame(loop);
     const drag=d3.drag()
-      .on("start",e=>{ draggingRef.current=true; autoSpinRef.current=false; clearTimeout(resumeRef.current); dragStartRef.current=[e.x,e.y]; dragMoveRef.current=[e.x,e.y]; })
-      .on("drag",e=>{ const dx=e.x-dragMoveRef.current[0],dy=e.y-dragMoveRef.current[1]; dragMoveRef.current=[e.x,e.y]; const sc=projRef.current?.scale()||R; const r=rotateRef.current; rotateRef.current=[r[0]+dx*65/sc,r[1]-dy*65/sc]; projRef.current?.rotate(rotateRef.current); })
+      .on("start",e=>{draggingRef.current=true; autoSpinRef.current=false; clearTimeout(resumeRef.current);const _s=e.sourceEvent;const _tx=(_s.touches&&_s.touches[0]?_s.touches[0].clientX:e.x);const _ty=(_s.touches&&_s.touches[0]?_s.touches[0].clientY:e.y);dragStartRef.current=[_tx,_ty]; dragMoveRef.current=[_tx,_ty]; })
+      .on("drag",e=>{const _d=e.sourceEvent;const _tx2=(_d.touches&&_d.touches[0]?_d.touches[0].clientX:e.x);const _ty2=(_d.touches&&_d.touches[0]?_d.touches[0].clientY:e.y);const dx=_tx2-dragMoveRef.current[0],dy=_ty2-dragMoveRef.current[1];dragMoveRef.current=[_tx2,_ty2]; const sc=projRef.current?.scale()||R; const r=rotateRef.current; rotateRef.current=[r[0]+dx*65/sc,r[1]-dy*65/sc]; projRef.current?.rotate(rotateRef.current); })
       .on("end",e=>{
         draggingRef.current=false;
         const dx=Math.abs(e.x-dragStartRef.current[0]),dy=Math.abs(e.y-dragStartRef.current[1]);
-        if(dx<6&&dy<6){ const rect=canvas.getBoundingClientRect(); const px=(e.sourceEvent.clientX||0)-rect.left, py=(e.sourceEvent.clientY||0)-rect.top; const coords=projRef.current?.invert([px,py]); if(coords&&!isNaN(coords[0])){ const c=countriesRef.current.find(f=>d3.geoContains(f,coords)); if(c){ const id=String(parseInt(c.id,10)); setSelectedCountry(id); setSelectedName(NM[id]||`#${id}`); setAnimKey(k=>k+1); }}}
+        if(dx<6&&dy<6){ const rect=canvas.getBoundingClientRect(); const _src=e.sourceEvent;const _cx=_src.clientX||(_src.changedTouches&&_src.changedTouches[0]?_src.changedTouches[0].clientX:0)||0;const _cy=_src.clientY||(_src.changedTouches&&_src.changedTouches[0]?_src.changedTouches[0].clientY:0)||0;const px=_cx-rect.left, py=_cy-rect.top; const coords=projRef.current?.invert([px,py]); if(coords&&!isNaN(coords[0])){ const c=countriesRef.current.find(f=>d3.geoContains(f,coords)); if(c){ const id=String(parseInt(c.id,10)); setSelectedCountry(id); setSelectedName(NM[id]||`#${id}`); setAnimKey(k=>k+1); }}}
         resumeRef.current=setTimeout(()=>{ autoSpinRef.current=true; },3000);
       });
     d3.select(canvas).call(drag);
@@ -489,8 +510,8 @@ function AtlasMerveilles() {
         </div>
 
         {/* ── SIDEBAR ── */}
-        <div style={{width:selectedCountry?420:0,transition:"width .28s cubic-bezier(.4,0,.2,1)",overflow:"hidden",background:"#020e1c",borderLeft:"1px solid #0b1e34",display:"flex",flexDirection:"column",flexShrink:0}}>
-          <div style={{width:420,height:"100%",display:"flex",flexDirection:"column"}}>
+        <div className={selectedCountry?"sidebar-panel":"sidebar-panel hidden"} style={{width:selectedCountry?420:0,transition:"width .28s cubic-bezier(.4,0,.2,1)",overflow:"hidden",background:"#020e1c",borderLeft:"1px solid #0b1e34",display:"flex",flexDirection:"column",flexShrink:0}}>
+          <div className="sidebar-inner" style={{width:420,height:"100%",display:"flex",flexDirection:"column"}}>
 
             {/* Country header */}
             <div key={`h${animKey}`} className="slid" style={{padding:"16px 16px 14px",borderBottom:"1px solid #0b1e34",background:"linear-gradient(160deg,#030e1c,#05182e)",flexShrink:0}}>
