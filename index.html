@@ -441,14 +441,14 @@ function AtlasMerveilles() {
         <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
           <span style={{fontSize:68}}>🌍</span>
           <div>
-            <div style={{fontWeight:900,fontSize:46,color:"#8ecce8",letterSpacing:".08em",lineHeight:1.1}}>ATLAS DES MERVEILLES</div>
+            <div style={{fontWeight:900,fontSize:46,color:"#8ecce8",letterSpacing:".08em",lineHeight:1.1}}>Mes Pokémons Rares</div>
             <div style={{fontSize:20,color:"#5a90b8",fontWeight:600,marginTop:6}}>
               <span style={{color:"#38bdf8",fontWeight:900,fontSize:26}}>{nCountries}</span> pays · <span style={{color:"#38bdf8",fontWeight:900,fontSize:26}}>{allSpots.length}</span> exp. · <span style={{color:"#4ade80",fontWeight:900,fontSize:26}}>{totalDone}</span> accomplies
             </div>
           </div>
         </div>
         <div style={{display:"flex",gap:3,flexWrap:"wrap",flex:1,minWidth:0}}>
-          {CATS.map(c=>{ const a=filter===c.id; return(
+          {CATS.filter((c,i,a)=>a.findIndex(x=>x.id===c.id)===i).map(c=>{ const a=filter===c.id; return(
             <button key={c.id} className="btn" onClick={()=>setFilter(c.id)}
               style={{background:a?`${c.color}18`:"transparent",border:`1px solid ${a?c.color+"55":"#0b1e34"}`,borderRadius:10,padding:"13px 26px",color:a?c.color:"#7aaccf",fontSize:18,fontWeight:a?800:600,display:"flex",alignItems:"center",gap:5,whiteSpace:"nowrap",letterSpacing:".02em",border:`1px solid ${a?c.color+"77":"#1a3a5a"}`}}>
               {c.icon} {c.label}
@@ -478,15 +478,15 @@ function AtlasMerveilles() {
               {NM[hoveredCountry]}
             </div>
           )}
-          {!loading&&(<div style={{position:"absolute",bottom:14,left:14,background:"#020e1ce8",backdropFilter:"blur(12px)",border:"1px solid #0d2540",borderRadius:16,padding:"28px 32px",fontSize:22}}>
-            <div style={{fontWeight:900,color:"#5a9abf",letterSpacing:".12em",marginBottom:16,fontSize:20}}>CONTINENTS</div>
-            {CN.map((n,i)=>(<div key={n} style={{display:"flex",alignItems:"center",gap:14,marginBottom:10}}><div style={{width:22,height:22,background:CONT[i].active,border:`3px solid ${CC[i]}`,borderRadius:4}}/><span style={{color:"#6aaccc",fontWeight:700,fontSize:22}}>{n}</span></div>))}
+          {!loading&&(<div style={{position:"absolute",bottom:14,left:14,background:"#020e1ce8",backdropFilter:"blur(12px)",border:"1px solid #0d2540",borderRadius:18,padding:"36px 42px",fontSize:28}}>
+            <div style={{fontWeight:900,color:"#5a9abf",letterSpacing:".12em",marginBottom:20,fontSize:28}}>CONTINENTS</div>
+            {CN.map((n,i)=>(<div key={n} style={{display:"flex",alignItems:"center",gap:18,marginBottom:14}}><div style={{width:32,height:32,background:CONT[i].active,border:`3px solid ${CC[i]}`,borderRadius:5}}/><span style={{color:"#6aaccc",fontWeight:700,fontSize:36}}>{n}</span></div>))}
             <div style={{borderTop:"1px solid #0b1e34",marginTop:7,paddingTop:6}}>
               {[{bg:"#062338",st:"#0ea5e9",l:"Spots à explorer"},{bg:"#2c1b04",st:"#f59e0b",l:"En cours"},{bg:"#0a2c18",st:"#22c55e",l:"Accompli"}].map(x=>(
-                <div key={x.l} style={{display:"flex",alignItems:"center",gap:14,marginBottom:10}}><div style={{width:22,height:22,background:x.bg,border:`3px solid ${x.st}`,borderRadius:4}}/><span style={{color:"#6aaccc",fontWeight:600,fontSize:22}}>{x.l}</span></div>
+                <div key={x.l} style={{display:"flex",alignItems:"center",gap:18,marginBottom:14}}><div style={{width:32,height:32,background:x.bg,border:`3px solid ${x.st}`,borderRadius:5}}/><span style={{color:"#6aaccc",fontWeight:600,fontSize:36}}>{x.l}</span></div>
               ))}
             </div>
-            <div style={{color:"#3a7090",marginTop:14,fontSize:18}}>Drag = tourner · Scroll = zoom</div>
+            <div style={{color:"#3a7090",marginTop:18,fontSize:24}}>Drag = tourner · Scroll = zoom</div>
           </div>)}
           {!selectedCountry&&!loading&&(<div style={{position:"absolute",bottom:"44%",left:"50%",transform:"translateX(-50%)",pointerEvents:"none"}}>
             <div style={{fontSize:9,color:"#0d2540",fontWeight:700,letterSpacing:".3em",animation:"pulse 3s ease infinite"}}>CLIQUEZ SUR UN PAYS</div>
@@ -616,7 +616,7 @@ function AtlasMerveilles() {
             ))}
             <div style={{fontSize:8.5,fontWeight:700,color:"#1e3a56",letterSpacing:".1em",marginBottom:7}}>CATÉGORIE</div>
             <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:18}}>
-              {CATS.filter(c=>c.id!=="all").map(c=>(
+              {CATS.filter((c,i,a)=>c.id!=="all"&&a.findIndex(x=>x.id===c.id)===i).map(c=>(
                 <button key={c.id} onClick={()=>setForm(p=>({...p,category:c.id}))} style={{background:form.category===c.id?`${c.color}18`:"transparent",border:`1px solid ${form.category===c.id?`${c.color}55`:"#0d2038"}`,borderRadius:6,padding:"5px 10px",color:form.category===c.id?c.color:"#1e3a56",fontSize:10,fontWeight:form.category===c.id?800:500,cursor:"pointer",transition:"all .15s"}}>{c.icon} {c.label}</button>
               ))}
             </div>
