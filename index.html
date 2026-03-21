@@ -563,19 +563,14 @@ function AtlasMerveilles() {
               {selectedCountry&&(
                 <div style={{marginBottom:8}}>
                   <div style={{display:"flex",gap:2,marginBottom:3}}>
-                    {getWeather(selectedCountry).map((sc,i)=>(
+                    {getWeather(selectedCountry).map(function(sc,i){ return (
                       <div key={i} title={MN[i]+": "+WL[sc]}
-                        style={{flex:1,height:16,borderRadius:3,background:WC[sc],cursor:"default",position:"relative"}}>
-                        {sc>=4&&<span style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:7,fontWeight:800,color:"#020c1a"}}>{MN[i].slice(0,1)}</span>}
+                        style={{flex:1,height:14,borderRadius:3,background:WC[sc]}}>
                       </div>
-                    ))}
+                    ); })}
                   </div>
-                  <div style={{fontSize:9,color:"#1a3a56"}}>
-                    <span style={{color:WC[5]}}>■</span> Parfait &nbsp;
-                    <span style={{color:WC[4]}}>■</span> Très bon &nbsp;
-                    <span style={{color:WC[3]}}>■</span> Bon &nbsp;
-                    <span style={{color:WC[2]}}>■</span> Correct &nbsp;
-                    <span style={{color:WC[1]}}>■</span> Éviter
+                  <div style={{fontSize:9,color:"#1a3a56",display:"flex",gap:6,flexWrap:"wrap"}}>
+                    {[5,4,3,2,1].map(function(n){ return <span key={n} style={{color:WC[n]}}>■ {WL[n]}</span>; })}
                   </div>
                 </div>
               )}
@@ -593,16 +588,12 @@ function AtlasMerveilles() {
             <div style={{padding:"8px 12px 0",borderBottom:"1px solid #0b1e34",flexShrink:0}}>
               <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Rechercher un spot..." style={{width:"100%",background:"#06122a",border:"1px solid #0d2038",borderRadius:8,padding:"8px 12px",color:"#c0d8f0",fontSize:13,marginBottom:8,outline:"none"}}/>
               <div style={{display:"flex",gap:3,flexWrap:"wrap",marginBottom:8}}>
-                {[0,1,2,3,4,5,6,7,8,9,10,11,12].map(m=>{
-                  const ws=m===0?null:getWeather(selectedCountry||"default")[m-1];
-                  const wc=ws?WC[ws]:"#94a3b8";
-                  const act=monthFilter===m;
-                  return(<button key={m} onClick={()=>setMonthFilter(m===monthFilter?0:m)}
-                    title={m>0?MN[m-1]+": "+WL[ws]:"Tous"}
-                    style={{background:act?(m===0?"#0ea5e920":wc+"33"):"transparent",border:"1px solid "+(act?(m===0?"#0ea5e9":wc):"#0d2038"),borderRadius:5,padding:"3px 7px",color:act?(m===0?"#0ea5e9":wc):(m===0?"#2a5070":wc+"aa"),fontSize:10,fontWeight:600,cursor:"pointer"}}>
+                {[0,1,2,3,4,5,6,7,8,9,10,11,12].map(function(m){ return (
+                  <button key={m} onClick={()=>setMonthFilter(m===monthFilter?0:m)}
+                    style={{background:monthFilter===m?"#0ea5e930":"transparent",border:"1px solid "+(monthFilter===m?"#0ea5e9":"#0d2038"),borderRadius:5,padding:"3px 7px",color:monthFilter===m?"#0ea5e9":"#2a5070",fontSize:10,fontWeight:600,cursor:"pointer"}}>
                     {m===0?"Tout":MN[m-1]}
-                  </button>);
-                })}
+                  </button>
+                ); })}
               </div>
             </div>
             <div style={{flex:1,overflowY:"auto",padding:"10px"}}>
