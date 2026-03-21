@@ -431,7 +431,7 @@ const DEFAULT_SPOTS = {
   ],
 };
 
-const IMG = (keywords) => `https://loremflickr.com/900/500/${encodeURIComponent(keywords.split(' ').slice(0,3).join(','))}/all?lock=${Math.abs(keywords.split('').reduce((a,c)=>a+c.charCodeAt(0),0)%9999)}`;
+// IMG defined above
 
 // ── COMPONENT ─────────────────────────────────────────────────────────────────
 function AtlasMerveilles() {
