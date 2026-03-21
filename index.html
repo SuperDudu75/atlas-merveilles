@@ -87,6 +87,66 @@ const WEATHER = {
   "578":[2,2,3,4,5,5,5,4,4,3,2,1],"352":[2,2,3,4,4,5,5,4,4,3,2,1],
   "800":[4,4,4,4,3,2,2,2,3,4,5,4],"646":[4,4,4,4,3,2,2,2,3,4,5,4],
 };
+
+// ── DONNÉES MÉTÉO DÉTAILLÉES ─────────────────────────────────────────────────
+const WEATHER_DETAIL = {
+  "default": [
+    {label:"Temp. max (°C)",    values:[18,19,21,23,26,28,30,30,28,25,22,19], color:"#f97316", unit:"°"},
+    {label:"Temp. min (°C)",    values:[8,9,11,13,16,19,21,21,19,16,12,9],    color:"#38bdf8", unit:"°"},
+    {label:"Pluie (jours)",     values:[8,7,7,6,6,4,3,3,5,7,8,8],            color:"#60a5fa", unit:"j"},
+    {label:"Ensoleillement (h)",values:[4,5,6,7,8,9,10,9,7,5,4,3],           color:"#fbbf24", unit:"h"},
+    {label:"Humidité (%)",      values:[75,72,70,68,65,60,55,55,60,68,72,76], color:"#a78bfa", unit:"%"},
+  ],
+  "840": [ // USA (moyenne)
+    {label:"Temp. max (°C)",    values:[8,10,14,19,24,28,31,30,26,20,13,8],   color:"#f97316", unit:"°"},
+    {label:"Temp. min (°C)",    values:[-2,0,4,9,14,19,22,21,17,10,4,-1],     color:"#38bdf8", unit:"°"},
+    {label:"Pluie (jours)",     values:[10,9,10,10,11,9,8,8,8,8,9,10],        color:"#60a5fa", unit:"j"},
+    {label:"Ensoleillement (h)",values:[4,5,6,7,8,9,10,9,7,6,4,4],           color:"#fbbf24", unit:"h"},
+    {label:"Humidité (%)",      values:[65,63,62,60,62,62,63,64,64,63,65,66], color:"#a78bfa", unit:"%"},
+  ],
+  "250": [ // France
+    {label:"Temp. max (°C)",    values:[8,9,13,16,20,24,26,26,22,17,11,8],    color:"#f97316", unit:"°"},
+    {label:"Temp. min (°C)",    values:[2,3,5,8,11,14,16,16,13,10,5,3],       color:"#38bdf8", unit:"°"},
+    {label:"Pluie (jours)",     values:[11,9,10,10,11,9,8,8,8,10,11,12],      color:"#60a5fa", unit:"j"},
+    {label:"Ensoleillement (h)",values:[2,3,5,6,7,8,8,8,6,4,2,2],            color:"#fbbf24", unit:"h"},
+    {label:"Humidité (%)",      values:[84,81,76,72,72,70,68,69,74,80,84,86], color:"#a78bfa", unit:"%"},
+  ],
+  "724": [ // Espagne
+    {label:"Temp. max (°C)",    values:[13,15,18,21,25,30,34,33,28,22,16,13], color:"#f97316", unit:"°"},
+    {label:"Temp. min (°C)",    values:[4,5,7,10,13,17,20,20,17,12,7,5],      color:"#38bdf8", unit:"°"},
+    {label:"Pluie (jours)",     values:[8,7,8,8,7,4,2,2,5,8,9,9],            color:"#60a5fa", unit:"j"},
+    {label:"Ensoleillement (h)",values:[5,6,7,8,9,11,12,11,8,6,5,4],         color:"#fbbf24", unit:"h"},
+    {label:"Humidité (%)",      values:[74,70,65,60,58,52,46,48,58,67,73,76], color:"#a78bfa", unit:"%"},
+  ],
+  "764": [ // Thaïlande
+    {label:"Temp. max (°C)",    values:[33,35,36,36,35,33,32,32,32,32,31,31], color:"#f97316", unit:"°"},
+    {label:"Temp. min (°C)",    values:[21,23,25,26,26,25,25,25,24,24,22,21], color:"#38bdf8", unit:"°"},
+    {label:"Pluie (jours)",     values:[2,2,3,5,13,16,17,18,18,14,7,2],       color:"#60a5fa", unit:"j"},
+    {label:"Ensoleillement (h)",values:[9,10,10,9,7,5,5,5,5,6,7,8],          color:"#fbbf24", unit:"h"},
+    {label:"Humidité (%)",      values:[56,57,57,64,74,77,77,78,80,77,70,60], color:"#a78bfa", unit:"%"},
+  ],
+  "404": [ // Kenya
+    {label:"Temp. max (°C)",    values:[27,28,28,27,25,24,23,24,26,27,27,27], color:"#f97316", unit:"°"},
+    {label:"Temp. min (°C)",    values:[14,14,15,15,13,12,11,11,12,13,14,14], color:"#38bdf8", unit:"°"},
+    {label:"Pluie (jours)",     values:[4,4,9,16,15,6,4,4,5,10,13,6],         color:"#60a5fa", unit:"j"},
+    {label:"Ensoleillement (h)",values:[8,9,8,6,7,8,8,9,8,7,7,8],            color:"#fbbf24", unit:"h"},
+    {label:"Humidité (%)",      values:[62,61,66,74,73,64,63,62,62,68,72,65], color:"#a78bfa", unit:"%"},
+  ],
+  "392": [ // Japon
+    {label:"Temp. max (°C)",    values:[9,10,13,19,23,27,30,32,28,22,16,11],  color:"#f97316", unit:"°"},
+    {label:"Temp. min (°C)",    values:[0,1,4,9,14,18,22,23,19,13,7,2],       color:"#38bdf8", unit:"°"},
+    {label:"Pluie (jours)",     values:[6,6,10,11,11,13,12,9,12,10,7,5],      color:"#60a5fa", unit:"j"},
+    {label:"Ensoleillement (h)",values:[5,6,6,6,7,5,6,7,5,5,5,5],            color:"#fbbf24", unit:"h"},
+    {label:"Humidité (%)",      values:[52,52,57,63,68,76,76,72,72,66,63,55], color:"#a78bfa", unit:"%"},
+  ],
+  "360": [ // Indonésie
+    {label:"Temp. max (°C)",    values:[30,30,31,32,32,31,31,31,32,32,31,30], color:"#f97316", unit:"°"},
+    {label:"Temp. min (°C)",    values:[23,23,23,24,24,23,23,23,23,23,23,23], color:"#38bdf8", unit:"°"},
+    {label:"Pluie (jours)",     values:[17,15,15,13,11,8,7,7,9,13,16,18],     color:"#60a5fa", unit:"j"},
+    {label:"Ensoleillement (h)",values:[5,6,6,7,7,8,8,8,7,6,5,5],            color:"#fbbf24", unit:"h"},
+    {label:"Humidité (%)",      values:[85,84,83,82,81,79,78,78,79,82,84,85], color:"#a78bfa", unit:"%"},
+  ],
+};
 const getWeather = (cid) => WEATHER[String(cid)] || WEATHER["default"];
 const WC = ["","#ef4444","#f97316","#eab308","#22c55e","#06b6d4"];
 const WL = ["","Éviter","Correct","Bon","Très bon","Parfait"];
@@ -335,7 +395,10 @@ function AtlasMerveilles() {
   const [worldData,setWorldData]             = useState(null);
   const [loading,setLoading]                 = useState(true);
   const [animKey,setAnimKey]                 = useState(0);
+  useEffect(()=>{ setModalErr(false); setImgErr(false); },[detailSpot]);
   const [imgErr,setImgErr]                   = useState(false);
+  const [modalErr,setModalErr]               = useState(false);
+  const [showWeather,setShowWeather]         = useState(false);
   const [showLegend,setShowLegend]           = useState(false);
   const [search,setSearch]                   = useState('');
   const [monthFilter,setMonthFilter]         = useState(0);
@@ -560,22 +623,10 @@ function AtlasMerveilles() {
                 </div>
                 <button onClick={()=>setSelectedCountry(null)} style={{background:"#0b1e34",border:"1px solid #142840",borderRadius:6,width:28,height:28,color:"#3a6080",cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontWeight:300}}>×</button>
               </div>
-              {selectedCountry&&(
-                <div style={{marginBottom:8}}>
-                  <div style={{display:"flex",gap:2,marginBottom:3}}>
-                    {getWeather(selectedCountry).map(function(sc,i){ return (
-                      <div key={i} title={MN[i]+": "+WL[sc]}
-                        style={{flex:1,height:14,borderRadius:3,background:WC[sc]}}>
-                      </div>
-                    ); })}
-                  </div>
-                  <div style={{fontSize:9,color:"#1a3a56",display:"flex",gap:6,flexWrap:"wrap"}}>
-                    {[5,4,3,2,1].map(function(n){ return <span key={n} style={{color:WC[n]}}>■ {WL[n]}</span>; })}
-                  </div>
-                </div>
-              )}
-              {sideSpots.length>0&&(<div style={{marginBottom:11}}><div style={{height:3,background:"#0b1e34",borderRadius:2,overflow:"hidden"}}><div style={{width:`${(sideSpots.filter(s=>s.done).length/sideSpots.length)*100}%`,height:"100%",background:"linear-gradient(90deg,#0ea5e9,#22c55e)",transition:"width .5s",borderRadius:2}}/></div></div>)}
+              
+              {sideSpots.length>0&&(<div style={{marginBottom:11}}><div style={{height:3,background:"#0b1e34",borderRadius:2,overflow:"hidden"}}><div style={{width:""+(sideSpots.filter(s=>s.done).length/sideSpots.length*100)+"%",height:"100%",background:"linear-gradient(90deg,#0ea5e9,#22c55e)",transition:"width .5s",borderRadius:2}}/></div></div>)}
               <div style={{display:"flex",gap:6}}>
+                <button className="btn" onClick={()=>setShowWeather(true)} title="Météo détaillée" style={{background:"#06122a",border:"1px solid #0d2038",borderRadius:8,padding:"10px 12px",color:"#38bdf8",fontWeight:700,fontSize:14,cursor:"pointer"}}>🌤</button>
                 <button className="btn" onClick={()=>setShowModal(true)} style={{flex:1,background:"linear-gradient(135deg,#0c4880,#072a56)",border:"1px solid #1060a840",borderRadius:8,padding:"10px",color:"#7ec8f0",fontWeight:800,fontSize:10,letterSpacing:".1em",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
                   <span style={{fontSize:13,fontWeight:300}}>+</span> AJOUTER
                 </button>
@@ -595,6 +646,20 @@ function AtlasMerveilles() {
                   </button>
                 ); })}
               </div>
+              {selectedCountry&&(
+                <div style={{marginTop:6,marginBottom:2}}>
+                  <div style={{display:"flex",gap:2,marginBottom:3}}>
+                    {getWeather(selectedCountry).map(function(sc,i){ return (
+                      <div key={i} title={MN[i]+": "+WL[sc]}
+                        style={{flex:1,height:12,borderRadius:3,background:WC[sc]}}>
+                      </div>
+                    ); })}
+                  </div>
+                  <div style={{fontSize:9,color:"#2a5070",display:"flex",gap:8,flexWrap:"wrap",paddingBottom:6}}>
+                    {[5,4,3,2,1].map(function(n){ return <span key={n} style={{color:WC[n]}}>■ {WL[n]}</span>; })}
+                  </div>
+                </div>
+              )}
             </div>
             <div style={{flex:1,overflowY:"auto",padding:"10px"}}>
               {filtered.length===0?(
@@ -609,10 +674,10 @@ function AtlasMerveilles() {
                   return(
                     <div key={spot.id} className="sc rise"
                       onClick={()=>{ setDetailSpot(spot); setImgErr(false); }}
-                      style={{background:"#040e1e",border:"1px solid "+(spot.done?"#1a4428":"#0c1e34"),borderRadius:10,padding:"14px 14px 12px",marginBottom:9,opacity:spot.done?.55:1,borderLeft:"4px solid "+(spot.done?"#22c55e80":c.color+"90"),animationDelay:`${i*.04}s`}}>
+                      style={{background:"#040e1e",border:"1px solid "+(spot.done?"#1a4428":"#0c1e34"),borderRadius:10,padding:"14px 14px 12px",marginBottom:9,opacity:spot.done?.55:1,borderLeft:"4px solid "+(spot.done?"#22c55e80":c.color+"90"),animationDelay:""+(i*.04)+"s"}}>
                       <div style={{display:"flex",alignItems:"flex-start",gap:10}}>
                         <button className="chk" onClick={e=>{e.stopPropagation();toggleDone(selectedCountry,spot.id)}}
-                          style={{width:22,height:22,borderRadius:"50%",flexShrink:0,border:`2px solid ${spot.done?"#22c55e":"#1a3a5a"}`,background:spot.done?"#22c55e":"transparent",display:"flex",alignItems:"center",justifyContent:"center",color:spot.done?"#020c1a":"transparent",fontSize:11,marginTop:2,fontWeight:900}}>✓</button>
+                          style={{width:22,height:22,borderRadius:"50%",flexShrink:0,border:"2px solid "+(spot.done?"#22c55e":"#1a3a5a"),background:spot.done?"#22c55e":"transparent",display:"flex",alignItems:"center",justifyContent:"center",color:spot.done?"#020c1a":"transparent",fontSize:11,marginTop:2,fontWeight:900}}>✓</button>
                         <div style={{flex:1,minWidth:0}}>
                           <div style={{marginBottom:6}}><span style={{fontSize:8.5,fontWeight:700,background:c.color+"15",color:c.color,padding:"2.5px 8px",borderRadius:4,border:"1px solid "+c.color+"25",letterSpacing:".04em"}}>{c.icon} {c.label}</span></div>
                           <div style={{fontSize:20,fontWeight:800,color:spot.done?"#1e3a56":"#d8eef8",lineHeight:1.2,textDecoration:spot.done?"line-through":"none",marginBottom:5,letterSpacing:"-.01em"}}>{spot.name}</div>
@@ -633,7 +698,7 @@ function AtlasMerveilles() {
       </div>
 
       {/* ── DETAIL MODAL ── */}
-      {detailSpot&&(
+      {detailSpot&&!modalErr&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.88)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,backdropFilter:"blur(12px)",padding:"16px"}}
           onClick={()=>setDetailSpot(null)}>
           <div style={{background:"#030e1c",border:"1px solid #0d2540",borderRadius:16,width:"min(640px,96vw)",maxHeight:"88vh",overflow:"auto",boxShadow:"0 30px 80px rgba(0,0,0,.9)",animation:"modIn .22s ease both"}}
@@ -668,7 +733,7 @@ function AtlasMerveilles() {
                 </div>
               )}
               <button className="btn" onClick={()=>{ toggleDone(selectedCountry,detailSpot.id); setDetailSpot(s=>({...s,done:!s.done})); }}
-                style={{width:"100%",background:detailSpot.done?"linear-gradient(135deg,#0b2e1a,#062014)":"linear-gradient(135deg,#0c4880,#072a56)",border:`2px solid ${detailSpot.done?"#22c55e40":"#1060a840"}`,borderRadius:10,padding:"14px",color:detailSpot.done?"#22c55e":"#7ec8f0",fontWeight:800,fontSize:12,letterSpacing:".1em",display:"flex",alignItems:"center",justifyContent:"center",gap:9}}>
+                style={{width:"100%",background:detailSpot.done?"linear-gradient(135deg,#0b2e1a,#062014)":"linear-gradient(135deg,#0c4880,#072a56)",border:"2px solid "+(detailSpot.done?"#22c55e40":"#1060a840"),borderRadius:10,padding:"14px",color:detailSpot.done?"#22c55e":"#7ec8f0",fontWeight:800,fontSize:12,letterSpacing:".1em",display:"flex",alignItems:"center",justifyContent:"center",gap:9}}>
                 {detailSpot.done?<><span style={{fontSize:18}}>✓</span> ACCOMPLI — CLIQUER POUR ANNULER</>:<><span style={{fontSize:18,fontWeight:300}}>○</span> MARQUER COMME ACCOMPLI</>}
               </button>
             </div>
@@ -693,17 +758,66 @@ function AtlasMerveilles() {
             <div style={{fontSize:8.5,fontWeight:700,color:"#1e3a56",letterSpacing:".1em",marginBottom:7}}>CATÉGORIE</div>
             <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:18}}>
               {CATS.filter(c=>c.id!=="all").map(c=>(
-                <button key={c.id} onClick={()=>setForm(p=>({...p,category:c.id}))} style={{background:form.category===c.id?`${c.color}18`:"transparent",border:`1px solid ${form.category===c.id?`${c.color}55`:"#0d2038"}`,borderRadius:6,padding:"5px 10px",color:form.category===c.id?c.color:"#1e3a56",fontSize:10,fontWeight:form.category===c.id?800:500,cursor:"pointer",transition:"all .15s"}}>{c.icon} {c.label}</button>
+                <button key={c.id} onClick={()=>setForm(p=>({...p,category:c.id}))} style={{background:form.category===c.id?c.color+"18":"transparent",border:"1px solid "+(form.category===c.id?c.color+"55":"#0d2038"),borderRadius:6,padding:"5px 10px",color:form.category===c.id?c.color:"#1e3a56",fontSize:10,fontWeight:form.category===c.id?800:500,cursor:"pointer",transition:"all .15s"}}>{c.icon} {c.label}</button>
               ))}
             </div>
             <div style={{display:"flex",gap:8}}>
               <button onClick={()=>setShowModal(false)} style={{flex:1,background:"transparent",border:"1px solid #0d2038",borderRadius:7,padding:"10px",color:"#1e3a56",cursor:"pointer",fontSize:10,fontWeight:600,letterSpacing:".06em"}}>ANNULER</button>
-              <button className="btn" onClick={addSpot} disabled={!form.name.trim()} style={{flex:2,background:form.name.trim()?"linear-gradient(135deg,#0c4880,#072a56)":"#050f1e",border:`1px solid ${form.name.trim()?"#1060a840":"#0a1e30"}`,borderRadius:7,padding:"10px",color:form.name.trim()?"#7ec8f0":"#0d2540",fontSize:10,fontWeight:800,letterSpacing:".1em",cursor:form.name.trim()?"pointer":"not-allowed"}}>AJOUTER À L'ATLAS</button>
+              <button className="btn" onClick={addSpot} disabled={!form.name.trim()} style={{flex:2,background:form.name.trim()?"linear-gradient(135deg,#0c4880,#072a56)":"#050f1e",border:"1px solid "+(form.name.trim()?"#1060a840":"#0a1e30"),borderRadius:7,padding:"10px",color:form.name.trim()?"#7ec8f0":"#0d2540",fontSize:10,fontWeight:800,letterSpacing:".1em",cursor:form.name.trim()?"pointer":"not-allowed"}}>AJOUTER À L'ATLAS</button>
             </div>
           </div>
         </div>
       )}
 
+      {/* ── WEATHER MODAL ── */}
+      {showWeather&&selectedCountry&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.88)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,backdropFilter:"blur(12px)",padding:"16px"}}
+          onClick={()=>setShowWeather(false)}>
+          <div style={{background:"#030e1c",border:"1px solid #0d2540",borderRadius:16,width:"min(700px,96vw)",maxHeight:"88vh",overflow:"auto",padding:"24px"}}
+            onClick={function(e){e.stopPropagation();}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+              <div>
+                <div style={{fontWeight:900,fontSize:22,color:"#e4f0fc"}}>{selectedName}</div>
+                <div style={{fontSize:12,color:"#2a5070",marginTop:2}}>Comparatif météo mensuel</div>
+              </div>
+              <button onClick={()=>setShowWeather(false)} style={{background:"#0b1e34",border:"1px solid #142840",borderRadius:8,width:32,height:32,color:"#3a6080",cursor:"pointer",fontSize:18}}>×</button>
+            </div>
+            <div style={{overflowX:"auto"}}>
+              <table style={{width:"100%",borderCollapse:"separate",borderSpacing:"4px"}}>
+                <thead>
+                  <tr>
+                    <td style={{width:100,color:"#2a5070",fontSize:11,fontWeight:700,paddingBottom:8}}>Indicateur</td>
+                    {MN.map(function(m){ return <th key={m} style={{color:"#4a90b0",fontSize:11,fontWeight:700,textAlign:"center",width:48,paddingBottom:8}}>{m}</th>; })}
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style={{color:"#2a5070",fontSize:11,paddingRight:8,paddingBottom:6}}>Météo globale</td>
+                    {getWeather(selectedCountry).map(function(sc,i){ return (
+                      <td key={i} style={{textAlign:"center",paddingBottom:6}}>
+                        <div style={{background:WC[sc],borderRadius:6,padding:"6px 2px",fontSize:10,fontWeight:800,color:"#020c1a"}}>{WL[sc].slice(0,4)}</div>
+                      </td>
+                    ); })}
+                  </tr>
+                  {(WEATHER_DETAIL[selectedCountry]||WEATHER_DETAIL["default"]).map(function(row,ri){ return (
+                    <tr key={ri}>
+                      <td style={{color:"#2a5070",fontSize:11,paddingRight:8,paddingBottom:4,whiteSpace:"nowrap"}}>{row.label}</td>
+                      {row.values.map(function(v,i){ return (
+                        <td key={i} style={{textAlign:"center",paddingBottom:4}}>
+                          <div style={{background:"#06122a",borderRadius:5,padding:"5px 2px",fontSize:11,fontWeight:600,color:row.color||"#4a90b0",border:"1px solid #0d2038"}}>{v}{row.unit||""}</div>
+                        </td>
+                      ); })}
+                    </tr>
+                  ); })}
+                </tbody>
+              </table>
+            </div>
+            <div style={{marginTop:16,fontSize:10,color:"#1a3a56",textAlign:"center"}}>
+              Données indicatives. Cliquez sur un mois pour filtrer les spots.
+            </div>
+          </div>
+        </div>
+      )}
       {/* ── DELETE CONFIRM ── */}
       {deleteConfirm&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.88)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1001,backdropFilter:"blur(12px)"}} onClick={()=>setDeleteConfirm(null)}>
