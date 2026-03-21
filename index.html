@@ -531,10 +531,10 @@ function AtlasMerveilles() {
           )}
           {!loading&&(<div style={{position:"absolute",bottom:14,left:14,background:"#020e1ce8",backdropFilter:"blur(12px)",border:"1px solid #0b1e34",borderRadius:10,padding:"10px 12px",fontSize:9}}>
             <div style={{fontWeight:700,color:"#1a3a56",letterSpacing:".1em",marginBottom:7,fontSize:8}}>CONTINENTS</div>
-            {CN.map((n,i)=>(<div key={n} style={{display:"flex",alignItems:"center",gap:5,marginBottom:3}}><div style={{width:9,height:9,background:CONT[i].active,border:`1.5px solid ${CC[i]}`,borderRadius:2}}/><span style={{color:"#1e3a56",fontWeight:500}}>{n}</span></div>))}
+            {CN.map((n,i)=>(<div key={n} style={{display:"flex",alignItems:"center",gap:5,marginBottom:3}}><div style={{width:9,height:9,background:CONT[i].active,border:"1.5px solid "+CC[i],borderRadius:2}}/><span style={{color:"#1e3a56",fontWeight:500}}>{n}</span></div>))}
             <div style={{borderTop:"1px solid #0b1e34",marginTop:7,paddingTop:6}}>
               {[{bg:"#062338",st:"#0ea5e9",l:"Spots à explorer"},{bg:"#2c1b04",st:"#f59e0b",l:"En cours"},{bg:"#0a2c18",st:"#22c55e",l:"Accompli"}].map(x=>(
-                <div key={x.l} style={{display:"flex",alignItems:"center",gap:5,marginBottom:2.5}}><div style={{width:9,height:9,background:x.bg,border:`1.5px solid ${x.st}`,borderRadius:2}}/><span style={{color:"#1e3a56",fontWeight:400}}>{x.l}</span></div>
+                <div key={x.l} style={{display:"flex",alignItems:"center",gap:5,marginBottom:2.5}}><div style={{width:9,height:9,background:x.bg,border:"1.5px solid "+x.st,borderRadius:2}}/><span style={{color:"#1e3a56",fontWeight:400}}>{x.l}</span></div>
               ))}
             </div>
             <div style={{color:"#0a1e30",marginTop:6,fontSize:8}}>Drag = tourner · Scroll = zoom</div>
@@ -554,7 +554,7 @@ function AtlasMerveilles() {
                 <div>
                   <div style={{fontWeight:900,fontSize:24,color:"#e4f0fc",letterSpacing:"-.02em",lineHeight:1.05}}>{selectedName}</div>
                   <div style={{display:"flex",alignItems:"center",gap:8,marginTop:6}}>
-                    {selectedCountry&&<span style={{fontSize:9,fontWeight:800,padding:"2px 9px",borderRadius:4,background:`${CC[ci]}15`,color:CC[ci],border:`1px solid ${CC[ci]}30`,letterSpacing:".08em"}}>{CN[ci]}</span>}
+                    {selectedCountry&&<span style={{fontSize:9,fontWeight:800,padding:"2px 9px",borderRadius:4,background:CC[ci]+"15",color:CC[ci],border:"1px solid "+CC[ci]+"30",letterSpacing:".08em"}}>{CN[ci]}</span>}
                     <span style={{fontSize:10,color:"#1e3a56",fontWeight:500}}>{sideSpots.length} exp.{sideSpots.length>0&&<span style={{color:sideSpots.filter(s=>s.done).length>0?"#22c55e":"#1e3a56"}}> · {sideSpots.filter(s=>s.done).length} accomplie{sideSpots.filter(s=>s.done).length!==1?"s":""}</span>}</span>
                   </div>
                 </div>
@@ -609,12 +609,12 @@ function AtlasMerveilles() {
                   return(
                     <div key={spot.id} className="sc rise"
                       onClick={()=>{ setDetailSpot(spot); setImgErr(false); }}
-                      style={{background:"#040e1e",border:`1px solid ${spot.done?"#1a4428":"#0c1e34"}`,borderRadius:10,padding:"14px 14px 12px",marginBottom:9,opacity:spot.done?.55:1,borderLeft:`4px solid ${spot.done?"#22c55e80":c.color+"90"}`,animationDelay:`${i*.04}s`}}>
+                      style={{background:"#040e1e",border:"1px solid "+(spot.done?"#1a4428":"#0c1e34"),borderRadius:10,padding:"14px 14px 12px",marginBottom:9,opacity:spot.done?.55:1,borderLeft:"4px solid "+(spot.done?"#22c55e80":c.color+"90"),animationDelay:`${i*.04}s`}}>
                       <div style={{display:"flex",alignItems:"flex-start",gap:10}}>
                         <button className="chk" onClick={e=>{e.stopPropagation();toggleDone(selectedCountry,spot.id)}}
                           style={{width:22,height:22,borderRadius:"50%",flexShrink:0,border:`2px solid ${spot.done?"#22c55e":"#1a3a5a"}`,background:spot.done?"#22c55e":"transparent",display:"flex",alignItems:"center",justifyContent:"center",color:spot.done?"#020c1a":"transparent",fontSize:11,marginTop:2,fontWeight:900}}>✓</button>
                         <div style={{flex:1,minWidth:0}}>
-                          <div style={{marginBottom:6}}><span style={{fontSize:8.5,fontWeight:700,background:`${c.color}15`,color:c.color,padding:"2.5px 8px",borderRadius:4,border:`1px solid ${c.color}25`,letterSpacing:".04em"}}>{c.icon} {c.label}</span></div>
+                          <div style={{marginBottom:6}}><span style={{fontSize:8.5,fontWeight:700,background:c.color+"15",color:c.color,padding:"2.5px 8px",borderRadius:4,border:"1px solid "+c.color+"25",letterSpacing:".04em"}}>{c.icon} {c.label}</span></div>
                           <div style={{fontSize:20,fontWeight:800,color:spot.done?"#1e3a56":"#d8eef8",lineHeight:1.2,textDecoration:spot.done?"line-through":"none",marginBottom:5,letterSpacing:"-.01em"}}>{spot.name}</div>
                           <div style={{fontSize:15,color:"#2a5070",fontWeight:400,lineHeight:1.55}}>{spot.desc}</div>
                           {spot.season&&<div style={{marginTop:7,display:"flex",alignItems:"center",gap:5}}><span style={{fontSize:8.5,fontWeight:600,color:"#0d2840",background:"#0a1e30",padding:"2px 7px",borderRadius:4,border:"1px solid #0e2844"}}>🗓 {spot.season}</span></div>}
@@ -645,7 +645,7 @@ function AtlasMerveilles() {
               }
               <div style={{position:"absolute",inset:0,background:"linear-gradient(to top,#030e1c 0%,rgba(3,14,28,.2) 55%,transparent 100%)"}}/>
               <div style={{position:"absolute",top:14,left:14,right:14,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                <span style={{fontSize:9,fontWeight:800,background:`${Cat(detailSpot.category).color}22`,color:Cat(detailSpot.category).color,padding:"4px 11px",borderRadius:5,border:`1px solid ${Cat(detailSpot.category).color}38`,letterSpacing:".07em"}}>{Cat(detailSpot.category).icon} {Cat(detailSpot.category).label}</span>
+                <span style={{fontSize:9,fontWeight:800,background:Cat(detailSpot.category).color+"22",color:Cat(detailSpot.category).color,padding:"4px 11px",borderRadius:5,border:"1px solid "+Cat(detailSpot.category).color+"38",letterSpacing:".07em"}}>{Cat(detailSpot.category).icon} {Cat(detailSpot.category).label}</span>
                 <button onClick={()=>setDetailSpot(null)} style={{background:"rgba(2,12,26,.75)",border:"1px solid #0d2540",borderRadius:7,width:32,height:32,color:"#5a90b8",cursor:"pointer",fontSize:17,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:300}}>×</button>
               </div>
               <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"18px 22px 22px"}}>
