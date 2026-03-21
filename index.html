@@ -322,7 +322,7 @@ function AtlasMerveilles() {
 
   useEffect(()=>{ (async()=>{
     try{
-      const s=await window.storage.get("atlas-v9");
+      const s=await window.storage.get("atlas-v10");
       if(s&&s.value){ setSpots(JSON.parse(s.value)); return; }
     }catch(e){}
     try{
@@ -331,7 +331,7 @@ function AtlasMerveilles() {
       setSpots(d);
     }catch(e){}
   })(); },[]);
-  useEffect(()=>{ (async()=>{ try{ await window.storage.set("atlas-v9",JSON.stringify(spots)); }catch(e){} })(); },[spots]);
+  useEffect(()=>{ (async()=>{ try{ await window.storage.set("atlas-v10",JSON.stringify(spots)); }catch(e){} })(); },[spots]);
 
   useEffect(()=>{
     (async()=>{
