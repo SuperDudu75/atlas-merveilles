@@ -367,28 +367,39 @@ const DEFAULT_SPOTS = {
 };
 
 const UNSPLASH_KEY = "E8CzwpYEHukJpmdfhJLiJTzJvgW9_lr1ECoJbIeGKs8";
-const IMG_CACHE2 = {};
+const IMG = function(kw) {
+  var q = encodeURIComponent((kw||"nature").trim().split(" ").slice(0,4).join(" "));
+  var seed = Math.abs((kw||"").split("").reduce(function(a,c){return a+c.charCodeAt(0);},0)%999);
+  return "https://api.unsplash.com/photos/random?query="+q+"&orientation=landscape&client_id="+UNSPLASH_KEY+"&_seed="+seed;
+};
 function SpotImg({kw, style, onError}) {
-  const [src, setSrc] = React.useState(null);
+  var [src, setSrc] = React.useState(null);
+  var [tried, setTried] = React.useState(false);
   React.useEffect(function(){
-    if(!kw) return;
-    if(IMG_CACHE2[kw]){ setSrc(IMG_CACHE2[kw]); return; }
-    fetch("https://api.unsplash.com/photos/random?query="+encodeURIComponent(kw)+"&orientation=landscape&client_id="+UNSPLASH_KEY)
-      .then(function(r){ return r.json(); })
-      .then(function(d){
-        var url = d && d.urls && (d.urls.regular || d.urls.small);
-        if(url){ IMG_CACHE2[kw]=url; setSrc(url); }
-        else throw new Error("no url");
-      })
-      .catch(function(){
-        var seed = Math.abs((kw||"").split("").reduce(function(a,c){return a+c.charCodeAt(0);},0)%9000)+1000;
-        var fb = "https://picsum.photos/seed/"+seed+"/900/500";
-        IMG_CACHE2[kw]=fb; setSrc(fb);
-      });
+    if(!kw){return;}
+    setSrc(null); setTried(false);
+    var q = encodeURIComponent((kw||"nature").trim().split(" ").slice(0,4).join(" "));
+    var url = "https://api.unsplash.com/photos/random?query="+q+"&orientation=landscape&client_id="+UNSPLASH_KEY;
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", url);
+    xhr.onload = function(){
+      try {
+        var d = JSON.parse(xhr.responseText);
+        var imgUrl = d && d.urls && (d.urls.regular || d.urls.small);
+        if(imgUrl){ setSrc(imgUrl); }
+        else { setTried(true); }
+      } catch(e){ setTried(true); }
+    };
+    xhr.onerror = function(){ setTried(true); };
+    xhr.send();
   },[kw]);
-  if(!src) return React.createElement("div",{style:{width:"100%",height:"100%",background:"linear-gradient(135deg,#061828,#020c18)",display:"flex",alignItems:"center",justifyContent:"center"}},
+  if(tried || (!src && tried)) {
+    var seed = Math.abs((kw||"").split("").reduce(function(a,c){return a+c.charCodeAt(0);},0)%9000)+1000;
+    return React.createElement("img",{src:"https://picsum.photos/seed/"+seed+"/900/500",style:style,onError:onError});
+  }
+  if(!src) return React.createElement("div",{style:Object.assign({},style,{background:"linear-gradient(135deg,#061828,#020c18)",display:"flex",alignItems:"center",justifyContent:"center"})},
     React.createElement("div",{style:{width:28,height:28,border:"2px solid #0c2040",borderTopColor:"#0ea5e9",borderRadius:"50%",animation:"spin .8s linear infinite"}}));
-  return React.createElement("img",{src:src, style:style, onError:onError});
+  return React.createElement("img",{src:src,style:style,onError:onError});
 }
 
 // ── COMPONENT ─────────────────────────────────────────────────────────────────
@@ -663,30 +674,23 @@ function AtlasMerveilles() {
               <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Rechercher un spot..." style={{width:"100%",background:"#06122a",border:"1px solid #0d2038",borderRadius:8,padding:"8px 12px",color:"#c0d8f0",fontSize:13,marginBottom:8,outline:"none"}}/>
               <div style={{display:"flex",gap:3,flexWrap:"wrap",marginBottom:8}}>
                 {[0,1,2,3,4,5,6,7,8,9,10,11,12].map(function(m){
-                  var ws = m===0 ? 3 : getWeather(selectedCountry||"default")[m-1];
-                  var wc = WC[ws];
+                  var ws = m===0 ? null : getWeather(selectedCountry||"default")[m-1];
+                  var wc = ws ? WC[ws] : "#0ea5e9";
                   var act = monthFilter===m;
                   return (
                     <button key={m} onClick={()=>setMonthFilter(m===monthFilter?0:m)}
                       title={m>0?MN[m-1]+": "+WL[ws]:"Tous les mois"}
-                      style={{background:act?wc:wc+"22",border:"2px solid "+(act?wc:wc+"55"),borderRadius:6,padding:"4px 8px",color:act?"#020c1a":wc,fontSize:10,fontWeight:act?800:600,cursor:"pointer",transition:"all .15s"}}>
+                      style={{background:act?wc:(m===0?"transparent":wc+"33"),
+                        border:"2px solid "+(act?wc:(m===0?(monthFilter===0?"#0ea5e9":"#0d2038"):wc+"88")),
+                        borderRadius:6,padding:"5px 9px",
+                        color:act?"#020c1a":(m===0?(monthFilter===0?"#0ea5e9":"#4a7898"):wc),
+                        fontSize:11,fontWeight:act?800:700,cursor:"pointer",transition:"all .15s"}}>
                       {m===0?"Tout":MN[m-1]}
                     </button>
                   );
                 })}
               </div>
-              {selectedCountry&&(
-                <div style={{marginTop:6,marginBottom:2}}>
-                  <div style={{display:"flex",gap:2,marginBottom:3}}>
-                    {getWeather(selectedCountry).map(function(sc,i){ return (
-                      <div key={i} title={MN[i]+": "+WL[sc]}
-                        style={{flex:1,height:12,borderRadius:3,background:WC[sc]}}>
-                      </div>
-                    ); })}
-                  </div>
-                  
-                </div>
-              )}
+              
             </div>
             <div style={{flex:1,overflowY:"auto",padding:"10px"}}>
               {filtered.length===0?(
