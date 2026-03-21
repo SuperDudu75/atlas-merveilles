@@ -392,37 +392,57 @@ function fetchWeather(cid, cb) {
   if(!coord) { cb(null); return; }
   var parts = coord.split(",");
   var lat = parts[0], lon = parts[1];
+  // Use daily data for 3 years, aggregate to monthly averages
   var url = "https://archive-api.open-meteo.com/v1/archive?latitude="+lat+"&longitude="+lon
-    +"&start_date=2015-01-01&end_date=2023-12-31"
-    +"&monthly=temperature_2m_max,temperature_2m_min,precipitation_sum,sunshine_duration"
-    +"&timezone=auto";
+    +"&start_date=2020-01-01&end_date=2022-12-31"
+    +"&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,shortwave_radiation_sum"
+    +"&timezone=UTC";
   var xhr = new XMLHttpRequest();
   xhr.open("GET", url);
-  xhr.timeout = 10000;
+  xhr.timeout = 15000;
   xhr.onload = function() {
     try {
       var d = JSON.parse(xhr.responseText);
-      if(!d.monthly) { cb(null); return; }
-      var m = d.monthly;
-      function avg(arr) {
-        var months = [[],[],[],[],[],[],[],[],[],[],[],[]];
-        (arr||[]).forEach(function(v,i){ if(v!==null&&v!==undefined) months[i%12].push(v); });
-        return months.map(function(ms){ return ms.length?Math.round(ms.reduce(function(a,b){return a+b;},0)/ms.length*10)/10:null; });
-      }
-      var tmax = avg(m.temperature_2m_max);
-      var tmin = avg(m.temperature_2m_min);
-      var rain = avg(m.precipitation_sum);
-      var sun = avg((m.sunshine_duration||[]).map(function(s){ return s!=null?s/3600:null; }));
+      if(!d.daily || !d.daily.time) { cb(null); return; }
+      var times = d.daily.time;
+      var tmaxD = d.daily.temperature_2m_max || [];
+      var tminD = d.daily.temperature_2m_min || [];
+      var rainD = d.daily.precipitation_sum || [];
+      var radD  = d.daily.shortwave_radiation_sum || [];
+      // Aggregate by month index (0-11)
+      var buckets = {tmax:[[],[],[],[],[],[],[],[],[],[],[],[]],
+                     tmin:[[],[],[],[],[],[],[],[],[],[],[],[]],
+                     rain:[[],[],[],[],[],[],[],[],[],[],[],[]],
+                     rad:[[],[],[],[],[],[],[],[],[],[],[],[]]};
+      times.forEach(function(t,i){
+        var mo = parseInt(t.slice(5,7),10)-1;
+        if(tmaxD[i]!=null) buckets.tmax[mo].push(tmaxD[i]);
+        if(tminD[i]!=null) buckets.tmin[mo].push(tminD[i]);
+        if(rainD[i]!=null) buckets.rain[mo].push(rainD[i]);
+        if(radD[i]!=null)  buckets.rad[mo].push(radD[i]);
+      });
+      function avg(arr){ return arr.length?Math.round(arr.reduce(function(a,b){return a+b;},0)/arr.length*10)/10:null; }
+      function avgMonth(bucket){ return bucket.map(avg); }
+      var tmax = avgMonth(buckets.tmax);
+      var tmin = avgMonth(buckets.tmin);
+      var rain = avgMonth(buckets.rain);
+      // Convert radiation MJ/m2/day to approx sunshine hours (/day)
+      var sun  = buckets.rad.map(function(ms){
+        var a = avg(ms);
+        return a!=null ? Math.round(a/3.6*10)/10 : null; // rough conversion
+      });
       function sc(t,r,s) {
         var v=3;
-        if(t>10&&t<33) v+=0.5; if(t>=20&&t<=29) v+=0.5;
-        if(r<30) v+=0.5; else if(r>120) v-=1; else if(r>60) v-=0.5;
-        if(s>7) v+=0.5; else if(s<3) v-=0.5;
+        if(t!=null){ if(t>10&&t<33) v+=0.5; if(t>=20&&t<=29) v+=0.5; }
+        if(r!=null){ if(r<1) v+=0.5; else if(r>4) v-=1; else if(r>2.5) v-=0.5; }
+        if(s!=null){ if(s>7) v+=0.5; else if(s<3) v-=0.5; }
         return Math.max(1,Math.min(5,Math.round(v)));
       }
-      var scores = tmax.map(function(_,i){ return sc(tmax[i]||15, rain[i]||50, sun[i]||5); });
-      cb({ scores:scores, tmax:tmax, tmin:tmin, rain:rain, sun:sun });
-    } catch(e) { cb(null); }
+      var scores = tmax.map(function(_,i){ return sc(tmax[i],rain[i],sun[i]); });
+      cb({ scores:scores, tmax:tmax, tmin:tmin,
+           rain:rain.map(function(v){ return v!=null?Math.round(v*30):null; }), // mm/day*30 = mm/month
+           sun:sun });
+    } catch(e) { console.log("weather parse error",e); cb(null); }
   };
   xhr.onerror = function(){ cb(null); };
   xhr.ontimeout = function(){ cb(null); };
