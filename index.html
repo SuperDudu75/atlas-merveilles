@@ -385,6 +385,49 @@ function SpotImg({kw, style, onError}) {
 }
 
 // ── COMPONENT ─────────────────────────────────────────────────────────────────
+const COORDS = {"4": "33.9,67.7", "8": "41.1,20.2", "12": "28.0,1.7", "20": "42.5,1.5", "24": "-11.2,17.9", "32": "-38.4,-63.6", "36": "-25.3,133.8", "40": "47.5,14.6", "50": "23.7,90.4", "56": "50.5,4.5", "64": "27.5,90.4", "68": "-16.3,-63.6", "72": "-22.3,24.7", "76": "-14.2,-51.9", "84": "17.2,-88.5", "100": "42.7,25.5", "104": "19.2,96.7", "116": "12.6,104.9", "120": "7.4,12.4", "124": "56.1,-106.3", "144": "7.9,80.8", "152": "-35.7,-71.5", "156": "35.9,104.2", "170": "4.1,-72.3", "188": "9.7,-83.8", "191": "45.1,15.2", "192": "21.5,-79.5", "208": "56.3,9.5", "218": "-1.8,-78.2", "231": "9.1,40.5", "246": "64.0,25.7", "250": "46.2,2.2", "276": "51.2,10.5", "288": "7.9,-1.0", "300": "39.1,21.8", "320": "15.8,-90.2", "340": "15.2,-86.2", "348": "47.2,19.5", "356": "20.6,79.1", "360": "-0.8,113.9", "364": "32.4,53.7", "372": "53.4,-8.2", "376": "31.0,34.9", "380": "41.9,12.6", "388": "18.1,-77.3", "392": "36.2,138.3", "398": "48.0,66.9", "400": "30.6,36.2", "404": "-0.0,37.9", "410": "35.9,127.8", "418": "19.9,102.5", "450": "-18.8,46.9", "458": "4.2,101.9", "480": "-20.3,57.6", "484": "23.6,-102.6", "496": "46.9,103.8", "504": "31.8,-7.1", "508": "-18.7,35.5", "512": "21.5,55.9", "516": "-22.0,17.1", "524": "28.4,84.1", "528": "52.1,5.3", "554": "-40.9,174.9", "566": "9.1,8.7", "578": "60.5,8.5", "586": "30.4,69.3", "591": "8.5,-80.8", "600": "-23.4,-58.4", "604": "-9.2,-75.0", "608": "12.9,121.8", "616": "51.9,19.1", "620": "39.4,-8.2", "634": "25.4,51.2", "642": "45.9,24.9", "643": "61.5,105.3", "646": "-1.9,29.9", "682": "23.9,45.1", "686": "14.5,-14.5", "702": "1.4,103.8", "704": "14.1,108.3", "710": "-28.5,24.7", "716": "-19.0,29.2", "724": "40.5,-3.7", "752": "63.1,18.6", "756": "46.8,8.2", "764": "15.9,100.9", "788": "33.9,9.5", "792": "38.9,35.2", "800": "1.4,32.3", "818": "26.8,30.8", "826": "55.4,-3.4", "834": "-6.4,34.9", "840": "39.5,-98.4", "858": "-32.5,-55.8", "862": "6.4,-66.6", "887": "15.6,48.5", "894": "-13.1,27.8"};
+
+function fetchWeather(cid, cb) {
+  var coord = COORDS[cid];
+  if(!coord) { cb(null); return; }
+  var parts = coord.split(",");
+  var lat = parts[0], lon = parts[1];
+  var url = "https://archive-api.open-meteo.com/v1/archive?latitude="+lat+"&longitude="+lon
+    +"&start_date=2015-01-01&end_date=2023-12-31"
+    +"&monthly=temperature_2m_max,temperature_2m_min,precipitation_sum,sunshine_duration"
+    +"&timezone=auto";
+  var xhr = new XMLHttpRequest();
+  xhr.open("GET", url);
+  xhr.timeout = 10000;
+  xhr.onload = function() {
+    try {
+      var d = JSON.parse(xhr.responseText);
+      if(!d.monthly) { cb(null); return; }
+      var m = d.monthly;
+      function avg(arr) {
+        var months = [[],[],[],[],[],[],[],[],[],[],[],[]];
+        (arr||[]).forEach(function(v,i){ if(v!==null&&v!==undefined) months[i%12].push(v); });
+        return months.map(function(ms){ return ms.length?Math.round(ms.reduce(function(a,b){return a+b;},0)/ms.length*10)/10:null; });
+      }
+      var tmax = avg(m.temperature_2m_max);
+      var tmin = avg(m.temperature_2m_min);
+      var rain = avg(m.precipitation_sum);
+      var sun = avg((m.sunshine_duration||[]).map(function(s){ return s!=null?s/3600:null; }));
+      function sc(t,r,s) {
+        var v=3;
+        if(t>10&&t<33) v+=0.5; if(t>=20&&t<=29) v+=0.5;
+        if(r<30) v+=0.5; else if(r>120) v-=1; else if(r>60) v-=0.5;
+        if(s>7) v+=0.5; else if(s<3) v-=0.5;
+        return Math.max(1,Math.min(5,Math.round(v)));
+      }
+      var scores = tmax.map(function(_,i){ return sc(tmax[i]||15, rain[i]||50, sun[i]||5); });
+      cb({ scores:scores, tmax:tmax, tmin:tmin, rain:rain, sun:sun });
+    } catch(e) { cb(null); }
+  };
+  xhr.onerror = function(){ cb(null); };
+  xhr.ontimeout = function(){ cb(null); };
+  xhr.send();
+}
 function AtlasMerveilles() {
   const canvasRef    = useRef(null);
   const projRef      = useRef(null);
@@ -412,11 +455,28 @@ function AtlasMerveilles() {
   const [loading,setLoading]                 = useState(true);
   const [animKey,setAnimKey]                 = useState(0);
   useEffect(()=>{ setModalErr(false); setImgErr(false); },[detailSpot]);
+  useEffect(function(){
+    if(!showWeather||!selectedCountry) return;
+    if(weatherCache[selectedCountry]) return;
+    setWeatherLoading(true);
+    fetchWeather(selectedCountry, function(data){
+      setWeatherLoading(false);
+      if(data){
+        setWeatherCache(function(prev){
+          var n = Object.assign({},prev);
+          n[selectedCountry] = data;
+          return n;
+        });
+      }
+    });
+  },[showWeather,selectedCountry]);
   const [imgErr,setImgErr]                   = useState(false);
   const [modalErr,setModalErr]               = useState(false);
   const [showWeather,setShowWeather]         = useState(false);
   const [showGlobalMonth,setShowGlobalMonth] = useState(false);
   const [globalMonth,setGlobalMonth]         = useState(0);
+  const [weatherCache,setWeatherCache]       = useState({});
+  const [weatherLoading,setWeatherLoading]   = useState(false);
   const [showLegend,setShowLegend]           = useState(false);
   const [search,setSearch]                   = useState('');
   const [monthFilter,setMonthFilter]         = useState(0);
@@ -428,6 +488,14 @@ function AtlasMerveilles() {
   useEffect(()=>{ spotsRef.current=spots; },[spots]);
   useEffect(()=>{ hoveredRef.current=hoveredCountry; },[hoveredCountry]);
   useEffect(()=>{ selectedRef.current=selectedCountry; },[selectedCountry]);
+  useEffect(function(){
+    if(!selectedCountry||weatherCache[selectedCountry]) return;
+    fetchWeather(selectedCountry, function(data){
+      if(data){
+        setWeatherCache(function(prev){ var n=Object.assign({},prev); n[selectedCountry]=data; return n; });
+      }
+    });
+  },[selectedCountry]);
 
   useEffect(()=>{ (async()=>{
     try{ const s=await window.storage.get("atlas-v11"); if(s&&s.value){ setSpots(JSON.parse(s.value)); return; } }catch(e){}
@@ -659,7 +727,7 @@ function AtlasMerveilles() {
               <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Rechercher un spot..." style={{width:"100%",background:"#06122a",border:"1px solid #0d2038",borderRadius:8,padding:"8px 12px",color:"#c0d8f0",fontSize:13,marginBottom:8,outline:"none"}}/>
               <div style={{display:"flex",gap:3,flexWrap:"wrap",marginBottom:8}}>
                 {[0,1,2,3,4,5,6,7,8,9,10,11,12].map(function(m){
-                  var ws = m===0 ? null : getWeather(selectedCountry||"default")[m-1];
+                  var liveScores = weatherCache[selectedCountry]; var ws = m===0 ? null : (liveScores?liveScores.scores[m-1]:getWeather(selectedCountry||"default")[m-1]);
                   var wc = ws ? WC[ws] : "#0ea5e9";
                   var act = monthFilter===m;
                   return (
@@ -794,11 +862,13 @@ function AtlasMerveilles() {
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
               <div>
                 <div style={{fontWeight:900,fontSize:22,color:"#e4f0fc"}}>{selectedName}</div>
-                <div style={{display:"flex",gap:4,marginTop:6,flexWrap:"wrap"}}>
-                  {getWeather(selectedCountry).map(function(sc,i){
+                <div style={{display:"flex",gap:4,marginTop:6,flexWrap:"wrap",alignItems:"center"}}>
+                  {(weatherCache[selectedCountry]?weatherCache[selectedCountry].scores:getWeather(selectedCountry)).map(function(sc,i){
                     return sc>=4 ? <span key={i} style={{background:WC[sc],color:"#020c1a",borderRadius:4,padding:"2px 7px",fontSize:11,fontWeight:800}}>{MN[i]}</span> : null;
                   })}
-                  <span style={{fontSize:11,color:"#2a5070",alignSelf:"center",marginLeft:4}}>← meilleurs mois</span>
+                  <span style={{fontSize:11,color:"#2a5070",marginLeft:4}}>← meilleurs mois</span>
+                  {weatherLoading&&<span style={{fontSize:11,color:"#0ea5e9",marginLeft:8}}>⟳ Chargement données réelles...</span>}
+                  {weatherCache[selectedCountry]&&<span style={{fontSize:10,color:"#22c55e",marginLeft:8}}>✓ Données Open-Meteo 2015-2023</span>}
                 </div>
                 <div style={{fontSize:12,color:"#2a5070",marginTop:2}}>Comparatif météo mensuel</div>
               </div>
@@ -810,7 +880,8 @@ function AtlasMerveilles() {
                   <tr>
                     <td style={{width:100,color:"#2a5070",fontSize:11,fontWeight:700,paddingBottom:8}}>Indicateur</td>
                     {MN.map(function(m,i){ 
-                    var sc = getWeather(selectedCountry)[i];
+                    var liveData = weatherCache[selectedCountry];
+                    var sc = liveData ? liveData.scores[i] : getWeather(selectedCountry)[i];
                     return <th key={m} style={{color:WC[sc],fontSize:11,fontWeight:800,textAlign:"center",width:42,paddingBottom:8}}>{m}</th>; 
                   })}
                   </tr>
@@ -818,13 +889,22 @@ function AtlasMerveilles() {
                 <tbody>
                   <tr>
                     <td style={{color:"#2a5070",fontSize:11,paddingRight:8,paddingBottom:6}}>Météo globale</td>
-                    {getWeather(selectedCountry).map(function(sc,i){ return (
+                    {(weatherCache[selectedCountry]?weatherCache[selectedCountry].scores:getWeather(selectedCountry)).map(function(sc,i){ return (
                       <td key={i} style={{textAlign:"center",paddingBottom:6}}>
                         <div style={{background:WC[sc],borderRadius:6,padding:"6px 2px",fontSize:10,fontWeight:800,color:"#020c1a"}}>{WL[sc].slice(0,4)}</div>
                       </td>
                     ); })}
                   </tr>
-                  {(WEATHER_DETAIL[selectedCountry]||WEATHER_DETAIL["default"]).map(function(row,ri){ return (
+                  {(function(){
+                  var live = weatherCache[selectedCountry];
+                  var rows = live ? [
+                    {label:"🌡 Max (°C)", values:live.tmax.map(function(v){return v!=null?v:"?"}), color:"#f97316", unit:"°"},
+                    {label:"❄ Min (°C)", values:live.tmin.map(function(v){return v!=null?v:"?"}), color:"#38bdf8", unit:"°"},
+                    {label:"🌧 Pluie (mm)", values:live.rain.map(function(v){return v!=null?Math.round(v):"?"}), color:"#60a5fa", unit:""},
+                    {label:"☀ Soleil (h)", values:live.sun.map(function(v){return v!=null?v:"?"}), color:"#fbbf24", unit:"h"},
+                  ] : (WEATHER_DETAIL[selectedCountry]||WEATHER_DETAIL["default"]);
+                  return rows;
+                })().map(function(row,ri){ return (
                     <tr key={ri}>
                       <td style={{color:"#2a5070",fontSize:11,paddingRight:8,paddingBottom:4,whiteSpace:"nowrap"}}>{row.label}</td>
                       {row.values.map(function(v,i){ 
