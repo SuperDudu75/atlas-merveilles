@@ -428,10 +428,10 @@ function AtlasMerveilles() {
   useEffect(()=>{ selectedRef.current=selectedCountry; },[selectedCountry]);
 
   useEffect(()=>{ (async()=>{
-    try{ const s=await window.storage.get("atlas-v12"); if(s&&s.value){ setSpots(JSON.parse(s.value)); return; } }catch(e){}
+    try{ const s=await window.storage.get("atlas-v11"); if(s&&s.value){ setSpots(JSON.parse(s.value)); return; } }catch(e){}
     try{ const r=await fetch("world_spots.json"); const d=await r.json(); setSpots(d); }catch(e){}
   })(); },[]);
-  useEffect(()=>{ (async()=>{ try{ await window.storage.set("atlas-v12",JSON.stringify(spots)); }catch(e){} })(); },[spots]);
+  useEffect(()=>{ (async()=>{ try{ await window.storage.set("atlas-v11",JSON.stringify(spots)); }catch(e){} })(); },[spots]);
 
   useEffect(()=>{
     (async()=>{
