@@ -70,83 +70,50 @@ const CATS = [
 ];
 const WEATHER = {
   "default":[3,3,3,4,4,4,4,4,4,3,3,3],
-  "124":[1,1,2,3,4,5,5,5,4,3,2,1],"840":[2,2,3,4,5,5,5,5,4,3,2,2],
-  "484":[4,4,4,3,3,2,3,3,3,3,4,4],"76":[3,3,3,3,2,1,1,1,2,3,3,3],
-  "250":[2,2,3,4,5,5,5,5,4,3,2,2],"826":[2,2,3,4,4,5,5,4,4,3,2,2],
-  "276":[1,2,3,4,5,5,5,5,4,3,2,1],"380":[2,3,4,5,5,5,5,5,5,4,3,2],
-  "724":[3,3,4,5,5,5,5,5,5,4,3,3],"300":[3,3,4,5,5,5,5,5,5,4,3,3],
-  "792":[3,3,4,5,5,5,5,5,5,4,3,3],"818":[4,5,5,5,4,3,3,3,4,5,5,4],
-  "504":[4,4,5,5,4,3,3,3,4,5,5,4],"788":[4,4,5,5,4,3,3,3,4,5,5,4],
-  "404":[3,3,3,3,2,1,2,2,3,4,4,3],"834":[3,3,3,3,2,1,2,2,3,4,4,3],
-  "516":[4,4,4,3,3,4,4,4,4,4,4,4],"710":[4,4,4,3,3,4,4,4,4,4,4,4],
-  "356":[4,4,5,5,3,1,1,1,2,4,4,4],"764":[4,4,5,4,2,1,1,1,2,4,4,4],
-  "392":[2,3,4,4,4,3,3,4,4,4,3,2],"360":[3,3,3,3,2,1,1,1,2,3,3,3],
-  "36":[5,5,4,4,3,3,3,3,4,4,5,5],"554":[5,5,4,4,3,3,3,3,4,4,5,5],
-  "643":[1,1,2,3,4,5,5,5,4,3,2,1],"156":[1,2,3,4,5,5,4,4,4,3,2,1],
-  "152":[5,5,4,3,2,1,1,1,2,3,4,5],"604":[4,4,3,3,2,1,1,1,2,3,4,4],
-  "578":[2,2,3,4,5,5,5,4,4,3,2,1],"352":[2,2,3,4,4,5,5,4,4,3,2,1],
-  "800":[4,4,4,4,3,2,2,2,3,4,5,4],"646":[4,4,4,4,3,2,2,2,3,4,5,4],
 };
+// Generate weather scores for ALL countries from COORDS using latitude-based climate zones
+Object.keys(COORDS).forEach(function(cid){
+  if(WEATHER[cid]) return;
+  var parts = COORDS[cid].split(",");
+  var lat = parseFloat(parts[0]);
+  var lon = parseFloat(parts[1]);
+  var abslat = Math.abs(lat);
+  // Determine climate zone
+  var scores;
+  if(abslat < 10) {
+    // Equatorial - hot all year, rain seasons vary
+    scores = [3,3,3,3,3,3,3,3,3,3,3,3];
+    if(lon > 30 && lon < 50) scores = [4,4,4,3,3,2,2,2,3,4,4,4]; // East Africa
+  } else if(abslat < 23) {
+    if(lat > 0) { // Northern tropics
+      scores = [4,5,5,4,3,2,2,2,3,4,4,4]; // dry winter good
+    } else { // Southern tropics
+      scores = [2,2,2,3,4,5,5,5,4,3,2,2];
+    }
+  } else if(abslat < 35) {
+    if(lat > 0) { // Mediterranean/subtropical North
+      scores = [3,3,4,5,5,5,5,5,4,4,3,3];
+      if(lon > 60 && lon < 120) scores = [2,3,4,5,5,4,3,3,4,4,3,2]; // Asia
+    } else { // Southern subtropical
+      scores = [5,5,4,4,3,3,3,3,4,4,5,5];
+    }
+  } else if(abslat < 50) {
+    if(lat > 0) { // Temperate North
+      scores = [1,2,3,4,5,5,5,5,4,3,2,1];
+      if(lon > 100) scores = [1,2,3,4,5,4,4,4,4,3,2,1]; // East Asia
+    } else { // Temperate South
+      scores = [5,5,4,3,2,1,1,2,3,4,5,5];
+    }
+  } else if(abslat < 60) {
+    if(lat > 0) scores = [1,1,2,3,4,5,5,5,4,3,1,1];
+    else scores = [5,4,3,2,1,1,1,1,2,3,4,5];
+  } else {
+    if(lat > 0) scores = [1,1,1,2,4,5,5,4,3,1,1,1];
+    else scores = [4,3,2,1,1,1,1,1,1,2,3,4];
+  }
+  WEATHER[cid] = scores;
+});
 
-// ── DONNÉES MÉTÉO DÉTAILLÉES ─────────────────────────────────────────────────
-const WEATHER_DETAIL = {
-  "default": [
-    {label:"🌡 Max (°C)",    values:[18,19,21,23,26,28,30,30,28,25,22,19], color:"#f97316", unit:"°"},
-    {label:"❄ Min (°C)",     values:[8,9,11,13,16,19,21,21,19,16,12,9],    color:"#38bdf8", unit:"°"},
-    {label:"🌧 Pluie (j)",   values:[8,7,7,6,6,4,3,3,5,7,8,8],            color:"#60a5fa", unit:"j"},
-    {label:"☀ Soleil (h)",  values:[4,5,6,7,8,9,10,9,7,5,4,3],           color:"#fbbf24", unit:"h"},
-    {label:"💧 Humidité",    values:[75,72,70,68,65,60,55,55,60,68,72,76], color:"#a78bfa", unit:"%"},
-  ],
-  "840": [ // USA (moyenne)
-    {label:"🌡 Max (°C)",    values:[8,10,14,19,24,28,31,30,26,20,13,8],   color:"#f97316", unit:"°"},
-    {label:"❄ Min (°C)",    values:[-2,0,4,9,14,19,22,21,17,10,4,-1],     color:"#38bdf8", unit:"°"},
-    {label:"🌧 Pluie (j)",     values:[10,9,10,10,11,9,8,8,8,8,9,10],        color:"#60a5fa", unit:"j"},
-    {label:"☀ Soleil (h)",values:[4,5,6,7,8,9,10,9,7,6,4,4],           color:"#fbbf24", unit:"h"},
-    {label:"💧 Humidité",      values:[65,63,62,60,62,62,63,64,64,63,65,66], color:"#a78bfa", unit:"%"},
-  ],
-  "250": [ // France
-    {label:"🌡 Max (°C)",    values:[8,9,13,16,20,24,26,26,22,17,11,8],    color:"#f97316", unit:"°"},
-    {label:"❄ Min (°C)",    values:[2,3,5,8,11,14,16,16,13,10,5,3],       color:"#38bdf8", unit:"°"},
-    {label:"🌧 Pluie (j)",     values:[11,9,10,10,11,9,8,8,8,10,11,12],      color:"#60a5fa", unit:"j"},
-    {label:"☀ Soleil (h)",values:[2,3,5,6,7,8,8,8,6,4,2,2],            color:"#fbbf24", unit:"h"},
-    {label:"💧 Humidité",      values:[84,81,76,72,72,70,68,69,74,80,84,86], color:"#a78bfa", unit:"%"},
-  ],
-  "724": [ // Espagne
-    {label:"🌡 Max (°C)",    values:[13,15,18,21,25,30,34,33,28,22,16,13], color:"#f97316", unit:"°"},
-    {label:"❄ Min (°C)",    values:[4,5,7,10,13,17,20,20,17,12,7,5],      color:"#38bdf8", unit:"°"},
-    {label:"🌧 Pluie (j)",     values:[8,7,8,8,7,4,2,2,5,8,9,9],            color:"#60a5fa", unit:"j"},
-    {label:"☀ Soleil (h)",values:[5,6,7,8,9,11,12,11,8,6,5,4],         color:"#fbbf24", unit:"h"},
-    {label:"💧 Humidité",      values:[74,70,65,60,58,52,46,48,58,67,73,76], color:"#a78bfa", unit:"%"},
-  ],
-  "764": [ // Thaïlande
-    {label:"🌡 Max (°C)",    values:[33,35,36,36,35,33,32,32,32,32,31,31], color:"#f97316", unit:"°"},
-    {label:"❄ Min (°C)",    values:[21,23,25,26,26,25,25,25,24,24,22,21], color:"#38bdf8", unit:"°"},
-    {label:"🌧 Pluie (j)",     values:[2,2,3,5,13,16,17,18,18,14,7,2],       color:"#60a5fa", unit:"j"},
-    {label:"☀ Soleil (h)",values:[9,10,10,9,7,5,5,5,5,6,7,8],          color:"#fbbf24", unit:"h"},
-    {label:"💧 Humidité",      values:[56,57,57,64,74,77,77,78,80,77,70,60], color:"#a78bfa", unit:"%"},
-  ],
-  "404": [ // Kenya
-    {label:"🌡 Max (°C)",    values:[27,28,28,27,25,24,23,24,26,27,27,27], color:"#f97316", unit:"°"},
-    {label:"❄ Min (°C)",    values:[14,14,15,15,13,12,11,11,12,13,14,14], color:"#38bdf8", unit:"°"},
-    {label:"🌧 Pluie (j)",     values:[4,4,9,16,15,6,4,4,5,10,13,6],         color:"#60a5fa", unit:"j"},
-    {label:"☀ Soleil (h)",values:[8,9,8,6,7,8,8,9,8,7,7,8],            color:"#fbbf24", unit:"h"},
-    {label:"💧 Humidité",      values:[62,61,66,74,73,64,63,62,62,68,72,65], color:"#a78bfa", unit:"%"},
-  ],
-  "392": [ // Japon
-    {label:"🌡 Max (°C)",    values:[9,10,13,19,23,27,30,32,28,22,16,11],  color:"#f97316", unit:"°"},
-    {label:"❄ Min (°C)",    values:[0,1,4,9,14,18,22,23,19,13,7,2],       color:"#38bdf8", unit:"°"},
-    {label:"🌧 Pluie (j)",     values:[6,6,10,11,11,13,12,9,12,10,7,5],      color:"#60a5fa", unit:"j"},
-    {label:"☀ Soleil (h)",values:[5,6,6,6,7,5,6,7,5,5,5,5],            color:"#fbbf24", unit:"h"},
-    {label:"💧 Humidité",      values:[52,52,57,63,68,76,76,72,72,66,63,55], color:"#a78bfa", unit:"%"},
-  ],
-  "360": [ // Indonésie
-    {label:"🌡 Max (°C)",    values:[30,30,31,32,32,31,31,31,32,32,31,30], color:"#f97316", unit:"°"},
-    {label:"❄ Min (°C)",    values:[23,23,23,24,24,23,23,23,23,23,23,23], color:"#38bdf8", unit:"°"},
-    {label:"🌧 Pluie (j)",     values:[17,15,15,13,11,8,7,7,9,13,16,18],     color:"#60a5fa", unit:"j"},
-    {label:"☀ Soleil (h)",values:[5,6,6,7,7,8,8,8,7,6,5,5],            color:"#fbbf24", unit:"h"},
-    {label:"💧 Humidité",      values:[85,84,83,82,81,79,78,78,79,82,84,85], color:"#a78bfa", unit:"%"},
-  ],
-};
 const getWeather = (cid) => WEATHER[String(cid)] || WEATHER["default"];
 const WC = ["","#ef4444","#f97316","#eab308","#22c55e","#06b6d4"];
 const WL = ["","Éviter","Correct","Bon","Très bon","Parfait"];
@@ -1006,12 +973,18 @@ function AtlasMerveilles() {
                         onClick={function(){ setShowGlobalMonth(false); setSelectedCountry(item.cid); setSelectedName(NM[item.cid]); setAnimKey(function(k){return k+1;}); }}
                         style={{background:"#040e1e",border:"1px solid "+WC[item.sc]+"55",borderRadius:10,padding:"12px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,transition:"all .15s"}}
                         className="btn">
-                        <div style={{width:12,height:12,borderRadius:3,background:WC[item.sc],flexShrink:0}}/>
-                        <div>
+                        <div style={{width:14,height:14,borderRadius:3,background:WC[item.sc],flexShrink:0}}/>
+                        <div style={{flex:1,minWidth:0}}>
                           <div style={{fontSize:13,fontWeight:700,color:"#d8eef8"}}>{item.name}</div>
-                          <div style={{fontSize:11,color:WC[item.sc],fontWeight:600}}>{WL[item.sc]}</div>
+                          <div style={{display:"flex",gap:8,marginTop:2,alignItems:"center"}}>
+                            <span style={{fontSize:11,color:WC[item.sc],fontWeight:600}}>{WL[item.sc]}</span>
+                            {weatherCache[item.cid]&&<span style={{fontSize:10,color:"#2a5070"}}>
+                              🌧{weatherCache[item.cid].rain[globalMonth-1]!=null?weatherCache[item.cid].rain[globalMonth-1]+"mm":""} 
+                              🌡{weatherCache[item.cid].tmax[globalMonth-1]!=null?weatherCache[item.cid].tmax[globalMonth-1]+"°":""}
+                            </span>}
+                          </div>
                         </div>
-                        <div style={{marginLeft:"auto",fontSize:10,color:"#1a3a56"}}>{spots[item.cid]?spots[item.cid].length+" spots":"→"}</div>
+                        <div style={{fontSize:10,color:"#1a3a56",flexShrink:0}}>{spots[item.cid]?spots[item.cid].length+" spots →":"→"}</div>
                       </div>
                     );
                   })}
