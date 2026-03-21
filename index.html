@@ -312,7 +312,8 @@ function AtlasMerveilles() {
   const [animKey,setAnimKey]                 = useState(0);
   const [imgErr,setImgErr]                   = useState(false);
   const [showLegend,setShowLegend]           = useState(false);
-  const isMobile                             = typeof window!=='undefined'&&window.innerWidth<=768;
+  const [isMobile, setIsMobile] = useState(typeof window!=='undefined'&&window.innerWidth<=768);
+  useEffect(()=>{ const fn=()=>setIsMobile(window.innerWidth<=768); window.addEventListener('resize',fn); return()=>window.removeEventListener('resize',fn); },[]);
   const [importRef]                          = useState(()=>({ current:null }));
   const [form,setForm] = useState({name:"",category:"marine",desc:"",why:"",season:"",tip:"",photo:""});
 
@@ -398,7 +399,7 @@ function AtlasMerveilles() {
       .on("end",e=>{
         draggingRef.current=false;
         const dx=Math.abs(e.x-dragStartRef.current[0]),dy=Math.abs(e.y-dragStartRef.current[1]);
-        if(dx<6&&dy<6){ const rect=canvas.getBoundingClientRect(); const _s2=e.sourceEvent;const _cx=_s2.clientX||(_s2.changedTouches&&_s2.changedTouches[0]?_s2.changedTouches[0].clientX:0)||0;const _cy=_s2.clientY||(_s2.changedTouches&&_s2.changedTouches[0]?_s2.changedTouches[0].clientY:0)||0;const px=_cx-rect.left, py=_cy-rect.top; const coords=projRef.current?.invert([px,py]); if(coords&&!isNaN(coords[0])){ const c=countriesRef.current.find(f=>d3.geoContains(f,coords)); if(c){ const id=String(parseInt(c.id,10)); setSelectedCountry(id); setSelectedName(NM[id]||`#${id}`); setAnimKey(k=>k+1); }}}
+        if(dx<(isMobile?20:6)&&dy<(isMobile?20:6)){ const rect=canvas.getBoundingClientRect(); const _s2=e.sourceEvent;const _cx=_s2.clientX||(_s2.changedTouches&&_s2.changedTouches[0]?_s2.changedTouches[0].clientX:0)||0;const _cy=_s2.clientY||(_s2.changedTouches&&_s2.changedTouches[0]?_s2.changedTouches[0].clientY:0)||0;const px=_cx-rect.left, py=_cy-rect.top; const coords=projRef.current?.invert([px,py]); if(coords&&!isNaN(coords[0])){ const c=countriesRef.current.find(f=>d3.geoContains(f,coords)); if(c){ const id=String(parseInt(c.id,10)); setSelectedCountry(id); setSelectedName(NM[id]||`#${id}`); setAnimKey(k=>k+1); }}}
         resumeRef.current=setTimeout(()=>{ autoSpinRef.current=true; },3000);
       });
     d3.select(canvas).call(drag);
@@ -518,7 +519,7 @@ function AtlasMerveilles() {
         </div>
 
         {/* ── SIDEBAR ── */}
-        <div style={{...(isMobile?{position:"fixed",bottom:0,left:0,right:0,width:"100%",height:selectedCountry?"75vh":"0",borderTop:"2px solid #0d2540",borderRadius:"16px 16px 0 0",transition:"height .3s ease",zIndex:200}:{width:selectedCountry?420:0,transition:"width .28s ease"}),overflow:"hidden",background:"#020e1c",borderLeft:isMobile?"none":"1px solid #0b1e34",display:"flex",flexDirection:"column",flexShrink:0}}>
+        <div style={{...(isMobile?{position:"fixed",bottom:0,left:0,right:0,width:"100%",height:selectedCountry?"75vh":0,borderTop:"2px solid #0d2540",borderRadius:"16px 16px 0 0",transition:"height .3s ease",zIndex:200}:{width:selectedCountry?420:0,transition:"width .28s ease"}),overflow:"hidden",background:"#020e1c",borderLeft:isMobile?"none":"1px solid #0b1e34",display:"flex",flexDirection:"column",flexShrink:0}}>
           <div style={{width:isMobile?"100%":420,height:"100%",display:"flex",flexDirection:"column"}}>
 
             {/* Country header */}
