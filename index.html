@@ -152,6 +152,7 @@ const WC = ["","#ef4444","#f97316","#eab308","#22c55e","#06b6d4"];
 const WL = ["","Éviter","Correct","Bon","Très bon","Parfait"];
 const MN = ["Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc"];
 
+const safeStr = function(v){ return v ? String(v) : ""; };
 const Cat = id => CATS.find(c=>c.id===id)||{ id:"unique", label:"Experience", icon:"⭐", color:"#fbbf24" };
 
 // ── 195 PAYS DU MONDE ─────────────────────────────────────────────────────────
@@ -367,39 +368,11 @@ const DEFAULT_SPOTS = {
 };
 
 const UNSPLASH_KEY = "E8CzwpYEHukJpmdfhJLiJTzJvgW9_lr1ECoJbIeGKs8";
-const IMG = function(kw) {
-  var q = encodeURIComponent((kw||"nature").trim().split(" ").slice(0,4).join(" "));
-  var seed = Math.abs((kw||"").split("").reduce(function(a,c){return a+c.charCodeAt(0);},0)%999);
-  return "https://api.unsplash.com/photos/random?query="+q+"&orientation=landscape&client_id="+UNSPLASH_KEY+"&_seed="+seed;
-};
 function SpotImg({kw, style, onError}) {
-  var [src, setSrc] = React.useState(null);
-  var [tried, setTried] = React.useState(false);
-  React.useEffect(function(){
-    if(!kw){return;}
-    setSrc(null); setTried(false);
-    var q = encodeURIComponent((kw||"nature").trim().split(" ").slice(0,4).join(" "));
-    var url = "https://api.unsplash.com/photos/random?query="+q+"&orientation=landscape&client_id="+UNSPLASH_KEY;
-    var xhr = new XMLHttpRequest();
-    xhr.open("GET", url);
-    xhr.onload = function(){
-      try {
-        var d = JSON.parse(xhr.responseText);
-        var imgUrl = d && d.urls && (d.urls.regular || d.urls.small);
-        if(imgUrl){ setSrc(imgUrl); }
-        else { setTried(true); }
-      } catch(e){ setTried(true); }
-    };
-    xhr.onerror = function(){ setTried(true); };
-    xhr.send();
-  },[kw]);
-  if(tried || (!src && tried)) {
-    var seed = Math.abs((kw||"").split("").reduce(function(a,c){return a+c.charCodeAt(0);},0)%9000)+1000;
-    return React.createElement("img",{src:"https://picsum.photos/seed/"+seed+"/900/500",style:style,onError:onError});
-  }
-  if(!src) return React.createElement("div",{style:Object.assign({},style,{background:"linear-gradient(135deg,#061828,#020c18)",display:"flex",alignItems:"center",justifyContent:"center"})},
-    React.createElement("div",{style:{width:28,height:28,border:"2px solid #0c2040",borderTopColor:"#0ea5e9",borderRadius:"50%",animation:"spin .8s linear infinite"}}));
-  return React.createElement("img",{src:src,style:style,onError:onError});
+  var seed = Math.abs((kw||"").split("").reduce(function(a,c){return a+c.charCodeAt(0);},0)%9999);
+  var q = encodeURIComponent((kw||"nature").trim().split(" ").slice(0,4).join(" "));
+  var src = "https://source.unsplash.com/900x500/?"+q+"&sig="+seed;
+  return React.createElement("img",{src:src, style:style, onError:onError, loading:"lazy"});
 }
 
 // ── COMPONENT ─────────────────────────────────────────────────────────────────
@@ -446,10 +419,10 @@ function AtlasMerveilles() {
   useEffect(()=>{ selectedRef.current=selectedCountry; },[selectedCountry]);
 
   useEffect(()=>{ (async()=>{
-    try{ const s=await window.storage.get("atlas-v11"); if(s&&s.value){ setSpots(JSON.parse(s.value)); return; } }catch(e){}
+    try{ const s=await window.storage.get("atlas-v12"); if(s&&s.value){ setSpots(JSON.parse(s.value)); return; } }catch(e){}
     try{ const r=await fetch("world_spots.json"); const d=await r.json(); setSpots(d); }catch(e){}
   })(); },[]);
-  useEffect(()=>{ (async()=>{ try{ await window.storage.set("atlas-v11",JSON.stringify(spots)); }catch(e){} })(); },[spots]);
+  useEffect(()=>{ (async()=>{ try{ await window.storage.set("atlas-v12",JSON.stringify(spots)); }catch(e){} })(); },[spots]);
 
   useEffect(()=>{
     (async()=>{
@@ -684,7 +657,7 @@ function AtlasMerveilles() {
                         border:"2px solid "+(act?wc:(m===0?(monthFilter===0?"#0ea5e9":"#0d2038"):wc+"88")),
                         borderRadius:6,padding:"5px 9px",
                         color:act?"#020c1a":(m===0?(monthFilter===0?"#0ea5e9":"#4a7898"):wc),
-                        fontSize:11,fontWeight:act?800:700,cursor:"pointer",transition:"all .15s"}}>
+                        fontSize:12,fontWeight:act?900:700,cursor:"pointer",transition:"all .15s",minWidth:36,textAlign:"center"}}>
                       {m===0?"Tout":MN[m-1]}
                     </button>
                   );
@@ -733,7 +706,7 @@ function AtlasMerveilles() {
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.88)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,backdropFilter:"blur(12px)",padding:"16px"}}
           onClick={()=>setDetailSpot(null)}>
           <div style={{background:"#030e1c",border:"1px solid #0d2540",borderRadius:16,width:"min(640px,96vw)",maxHeight:"88vh",overflow:"auto",boxShadow:"0 30px 80px rgba(0,0,0,.9)",animation:"modIn .22s ease both"}}
-            onClick={e=>e.stopPropagation()}>
+            onClick={function(e){e.stopPropagation();}}>
             <div style={{position:"relative",height:260,background:"#071424",overflow:"hidden",borderRadius:"16px 16px 0 0",flexShrink:0}}>
               {!imgErr
                 ? <img src={IMG(detailSpot.photo||detailSpot.name)} alt={detailSpot.name} style={{width:"100%",height:"100%",objectFit:"cover",opacity:.72}} onError={()=>setImgErr(true)}/>
@@ -750,8 +723,8 @@ function AtlasMerveilles() {
               </div>
             </div>
             <div style={{padding:"20px 22px 26px"}}>
-              {detailSpot.desc&&<div style={{fontSize:14,fontWeight:500,color:"#3a6a8a",marginBottom:16,lineHeight:1.55}}>{detailSpot.desc}</div>}
-              {detailSpot.why&&(
+              {safeStr(detailSpot.desc)&&<div style={{fontSize:14,fontWeight:500,color:"#3a6a8a",marginBottom:16,lineHeight:1.55}}>{detailSpot.desc}</div>}
+              {safeStr(detailSpot.why)&&(
                 <div style={{background:"#06142a",border:"1px solid #0d2a44",borderLeft:"3px solid #0ea5e9",borderRadius:10,padding:"14px 16px",marginBottom:14}}>
                   <div style={{fontSize:8,fontWeight:800,color:"#0ea5e9",letterSpacing:".16em",marginBottom:8}}>POURQUOI C'EST EXCEPTIONNEL</div>
                   <div style={{fontSize:13,fontWeight:400,color:"#7aaccf",lineHeight:1.8}}>{detailSpot.why}</div>
@@ -759,8 +732,8 @@ function AtlasMerveilles() {
               )}
               {(detailSpot.season||detailSpot.tip)&&(
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:18}}>
-                  {detailSpot.season&&(<div style={{background:"#050f1e",border:"1px solid #0d2038",borderRadius:8,padding:"12px 14px"}}><div style={{fontSize:8,fontWeight:800,color:"#0ea5e9",letterSpacing:".12em",marginBottom:6}}>🗓 MEILLEURE SAISON</div><div style={{fontSize:12,fontWeight:600,color:"#4a80a0",lineHeight:1.55}}>{detailSpot.season}</div></div>)}
-                  {detailSpot.tip&&(<div style={{background:"#050f1e",border:"1px solid #0d2038",borderRadius:8,padding:"12px 14px"}}><div style={{fontSize:8,fontWeight:800,color:"#0ea5e9",letterSpacing:".12em",marginBottom:6}}>💡 CONSEIL</div><div style={{fontSize:12,fontWeight:600,color:"#4a80a0",lineHeight:1.55}}>{detailSpot.tip}</div></div>)}
+                  {safeStr(detailSpot.season)&&(<div style={{background:"#050f1e",border:"1px solid #0d2038",borderRadius:8,padding:"12px 14px"}}><div style={{fontSize:8,fontWeight:800,color:"#0ea5e9",letterSpacing:".12em",marginBottom:6}}>🗓 MEILLEURE SAISON</div><div style={{fontSize:12,fontWeight:600,color:"#4a80a0",lineHeight:1.55}}>{detailSpot.season}</div></div>)}
+                  {safeStr(detailSpot.tip)&&(<div style={{background:"#050f1e",border:"1px solid #0d2038",borderRadius:8,padding:"12px 14px"}}><div style={{fontSize:8,fontWeight:800,color:"#0ea5e9",letterSpacing:".12em",marginBottom:6}}>💡 CONSEIL</div><div style={{fontSize:12,fontWeight:600,color:"#4a80a0",lineHeight:1.55}}>{detailSpot.tip}</div></div>)}
                 </div>
               )}
               <button className="btn" onClick={()=>{ toggleDone(selectedCountry,detailSpot.id); setDetailSpot(s=>({...s,done:!s.done})); }}
