@@ -467,6 +467,8 @@ function AtlasMerveilles() {
   const [monthFilter,setMonthFilter]         = useState(0);
   const [showWeather,setShowWeather]         = useState(false);
   const [showGlobalMonth,setShowGlobalMonth] = useState(false);
+  const [showCountryList,setShowCountryList] = useState(false);
+  const [countrySearch,setCountrySearch]     = useState('');
   const [globalMonth,setGlobalMonth]         = useState(0);
   const [weatherCache,setWeatherCache]       = useState({});
   const [weatherLoading,setWeatherLoading]   = useState(false);
@@ -662,6 +664,7 @@ function AtlasMerveilles() {
             );})}
           </div>
           <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+            <button className="btn" onClick={()=>setShowCountryList(true)} style={{background:"#06122a",border:"1px solid #0d2038",borderRadius:8,padding:"8px 12px",color:"#a78bfa",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}>🌍 Pays</button>
             <button className="btn" onClick={()=>setShowGlobalMonth(true)} style={{background:"#06122a",border:"1px solid #0d2038",borderRadius:8,padding:"8px 12px",color:"#0ea5e9",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}>🗓 Meilleur mois</button>
             <div style={{display:"flex",gap:3}}>{CN.map((n,i)=>(<div key={n} title={n} style={{width:12,height:12,borderRadius:"50%",background:CC[i],opacity:0.75}}/>))}</div>
             <div style={{width:100,height:5,background:"#0b1e34",borderRadius:2,overflow:"hidden"}}><div style={{width:(allSpots.length?(totalDone/allSpots.length*100):0)+"%",height:"100%",background:"linear-gradient(90deg,#0ea5e9,#22c55e)",transition:"width .6s"}}/></div>
@@ -853,6 +856,96 @@ function AtlasMerveilles() {
       )}
 
       
+      
+      {/* ── COUNTRY LIST MODAL ── */}
+      {showCountryList&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,backdropFilter:"blur(12px)",padding:"16px"}}
+          onClick={()=>setShowCountryList(false)}>
+          <div style={{background:"#030e1c",border:"1px solid #0d2540",borderRadius:16,width:"min(900px,96vw)",maxHeight:"90vh",display:"flex",flexDirection:"column",overflow:"hidden"}}
+            onClick={function(e){e.stopPropagation();}}>
+            <div style={{padding:"20px 24px 12px",borderBottom:"1px solid #0b1e34",flexShrink:0}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                <div style={{fontWeight:900,fontSize:22,color:"#e4f0fc"}}>🌍 Tous les pays</div>
+                <button onClick={()=>setShowCountryList(false)} style={{background:"#0b1e34",border:"1px solid #142840",borderRadius:8,width:32,height:32,color:"#3a6080",cursor:"pointer",fontSize:18}}>×</button>
+              </div>
+              <input
+                value={countrySearch}
+                onChange={e=>setCountrySearch(e.target.value)}
+                placeholder="🔍 Rechercher un pays..."
+                style={{width:"100%",background:"#06122a",border:"1px solid #0d2038",borderRadius:8,padding:"8px 14px",color:"#c0d8f0",fontSize:13,outline:"none"}}
+              />
+            </div>
+            <div style={{overflowY:"auto",padding:"12px 24px 20px"}}>
+              {CN.map(function(contName, ci){
+                var countries = Object.keys(NM).filter(function(cid){
+                  return gc(cid)===ci && (
+                    !countrySearch ||
+                    NM[cid].toLowerCase().includes(countrySearch.toLowerCase())
+                  );
+                }).sort(function(a,b){ return NM[a].localeCompare(NM[b],"fr"); });
+                if(countries.length===0) return null;
+                return (
+                  <div key={ci} style={{marginBottom:16}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,paddingBottom:6,borderBottom:"1px solid #0d2038"}}>
+                      <div style={{width:10,height:10,borderRadius:"50%",background:CC[ci]}}/>
+                      <span style={{fontSize:12,fontWeight:800,color:CC[ci],letterSpacing:".1em"}}>{contName.toUpperCase()}</span>
+                      <span style={{fontSize:11,color:"#1a3a56"}}>{countries.length} pays</span>
+                    </div>
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:6}}>
+                      {countries.map(function(cid){
+                        var hasSpots = spots[cid] && spots[cid].length>0;
+                        var done = hasSpots ? spots[cid].filter(function(s){return s.done;}).length : 0;
+                        var total = hasSpots ? spots[cid].length : 0;
+                        var isSelected = selectedCountry===cid;
+                        return (
+                          <div key={cid}
+                            onClick={function(){
+                              setShowCountryList(false);
+                              setSelectedCountry(cid);
+                              setSelectedName(NM[cid]);
+                              setAnimKey(function(k){return k+1;});
+                              // Rotate globe to country
+                              var coord = COORDS[cid];
+                              if(coord && projRef.current){
+                                var parts = coord.split(",");
+                                var lat = parseFloat(parts[0]);
+                                var lon = parseFloat(parts[1]);
+                                rotateRef.current = [-lon, -lat];
+                                projRef.current.rotate(rotateRef.current);
+                                autoSpinRef.current = false;
+                                clearTimeout(resumeRef.current);
+                                resumeRef.current = setTimeout(function(){ autoSpinRef.current=true; }, 5000);
+                              }
+                            }}
+                            className="btn"
+                            style={{
+                              background:isSelected?"#0c2848":(hasSpots?"#040e1e":"#020810"),
+                              border:"1px solid "+(isSelected?"#0ea5e9":(hasSpots?CC[ci]+"44":"#0a1828")),
+                              borderRadius:8,padding:"10px 12px",cursor:"pointer",
+                              transition:"all .15s"
+                            }}>
+                            <div style={{fontSize:13,fontWeight:700,color:isSelected?"#38bdf8":(hasSpots?"#d8eef8":"#2a4060"),marginBottom:hasSpots?3:0}}>{NM[cid]}</div>
+                            {hasSpots&&(
+                              <div style={{display:"flex",alignItems:"center",gap:6}}>
+                                <div style={{flex:1,height:3,background:"#0b1e34",borderRadius:2,overflow:"hidden"}}>
+                                  <div style={{width:total>0?(done/total*100)+"%":"0%",height:"100%",background:done===total&&total>0?"#22c55e":"#0ea5e9",transition:"width .4s"}}/>
+                                </div>
+                                <span style={{fontSize:10,color:done>0?"#4ade80":"#1a3a56",fontWeight:600,flexShrink:0}}>{done}/{total}</span>
+                              </div>
+                            )}
+                            {!hasSpots&&<div style={{fontSize:10,color:"#0a1828"}}>Aucun spot</div>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── WEATHER MODAL ── */}
       {showWeather&&selectedCountry&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.88)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,backdropFilter:"blur(12px)",padding:"16px"}}
