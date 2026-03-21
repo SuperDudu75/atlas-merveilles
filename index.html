@@ -470,7 +470,7 @@ function AtlasMerveilles() {
       else if(sd?.length){ if(sd.every(s=>s.done)) ctx.fillStyle="#0a2c18"; else if(sd.some(s=>s.done)) ctx.fillStyle="#2c1b04"; else ctx.fillStyle=C.active; }
       else ctx.fillStyle=C.base;
       ctx.fill();
-      const sw=(isH||isS||sd?.length)?(isS?1.8:isH?1.1:.9):.2;
+      const sw=(isH||isS||sd?.length)?(isS?1.8:isH?1.1:0.9):.2;
       const sc=isS?"#5ab0e8":sd?.length?(sd.every(s=>s.done)?"#22c55e":sd.some(s=>s.done)?"#f59e0b":CC[ci]):isH?"#2a6a9a":C.stroke;
       ctx.beginPath(); pathGen(f); ctx.strokeStyle=sc; ctx.lineWidth=sw; ctx.stroke();
     }
@@ -505,7 +505,7 @@ function AtlasMerveilles() {
         resumeRef.current=setTimeout(()=>{ autoSpinRef.current=true; },3000);
       });
     d3.select(canvas).call(drag);
-    const onWheel=e=>{ e.preventDefault(); const sc=projRef.current?.scale()||R; projRef.current?.scale(Math.max(R*.6,Math.min(sc*(e.deltaY>0?.88:1.14),R*6))); };
+    const onWheel=e=>{ e.preventDefault(); const sc=projRef.current?.scale()||R; projRef.current?.scale(Math.max(R*.6,Math.min(sc*(e.deltaY>0?0.88:1.14),R*6))); };
     canvas.addEventListener("wheel",onWheel,{passive:false});
     let hf=null;
     const onMove=e=>{ if(draggingRef.current||hf) return; hf=requestAnimationFrame(()=>{ const proj=projRef.current; if(!proj){hf=null;return;} const rect=canvas.getBoundingClientRect(); const coords=proj.invert([e.clientX-rect.left,e.clientY-rect.top]); if(coords&&!isNaN(coords[0])){ const c=countriesRef.current.find(f=>d3.geoContains(f,coords)); const nh=c?String(parseInt(c.id,10)):null; if(nh!==hoveredRef.current){hoveredRef.current=nh;setHoveredCountry(nh);}} hf=null; }); };
@@ -687,7 +687,7 @@ function AtlasMerveilles() {
                   return(
                     <div key={spot.id} className="sc rise"
                       onClick={()=>{ setDetailSpot(spot); setImgErr(false); }}
-                      style={{background:"#040e1e",border:"1px solid "+(spot.done?"#1a4428":"#0c1e34"),borderRadius:10,padding:"14px 14px 12px",marginBottom:9,opacity:spot.done?.55:1,borderLeft:"4px solid "+(spot.done?"#22c55e80":c.color+"90"),animationDelay:""+(i*.04)+"s"}}>
+                      style={{background:"#040e1e",border:"1px solid "+(spot.done?"#1a4428":"#0c1e34"),borderRadius:10,padding:"14px 14px 12px",marginBottom:9,opacity:spot.done?0.55:1,borderLeft:"4px solid "+(spot.done?"#22c55e80":c.color+"90"),animationDelay:""+(i*.04)+"s"}}>
                       <div style={{display:"flex",alignItems:"flex-start",gap:10}}>
                         <button className="chk" onClick={e=>{e.stopPropagation();toggleDone(selectedCountry,spot.id)}}
                           style={{width:22,height:22,borderRadius:"50%",flexShrink:0,border:"2px solid "+(spot.done?"#22c55e":"#1a3a5a"),background:spot.done?"#22c55e":"transparent",display:"flex",alignItems:"center",justifyContent:"center",color:spot.done?"#020c1a":"transparent",fontSize:11,marginTop:2,fontWeight:900}}>✓</button>
@@ -747,7 +747,7 @@ function AtlasMerveilles() {
               )}
               <button className="btn" onClick={function(){ try{ toggleDone(selectedCountry,detailSpot.id); setDetailSpot(function(s){ return Object.assign({},s,{done:!s.done}); }); }catch(e){} }}
                 style={{width:"100%",background:detailSpot.done?"linear-gradient(135deg,#0b2e1a,#062014)":"linear-gradient(135deg,#0c4880,#072a56)",border:"2px solid "+(detailSpot.done?"#22c55e40":"#1060a840"),borderRadius:10,padding:"14px",color:detailSpot.done?"#22c55e":"#7ec8f0",fontWeight:800,fontSize:12,letterSpacing:".1em",display:"flex",alignItems:"center",justifyContent:"center",gap:9}}>
-                {detailSpot.done?<><span style={{fontSize:18}}>✓</span> ACCOMPLI — CLIQUER POUR ANNULER</>:<><span style={{fontSize:18,fontWeight:300}}>○</span> MARQUER COMME ACCOMPLI</>}
+                {detailSpot.done?"✓ ACCOMPLI — CLIQUER POUR ANNULER":"○ MARQUER COMME ACCOMPLI"}
               </button>
             </div>
           </div>
