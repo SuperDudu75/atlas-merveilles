@@ -495,10 +495,10 @@ function AtlasMerveilles() {
   useEffect(()=>{ setModalErr(false); setImgErr(false); },[detailSpot]);
 
   useEffect(()=>{ (async()=>{
-    try{ const s=await window.storage.get("atlas-v11"); if(s&&s.value){ setSpots(JSON.parse(s.value)); return; } }catch(e){}
+    try{ const s=await window.storage.get("atlas-v12"); if(s&&s.value){ setSpots(JSON.parse(s.value)); return; } }catch(e){}
     try{ const r=await fetch("world_spots.json"); const d=await r.json(); setSpots(d); }catch(e){}
   })(); },[]);
-  useEffect(()=>{ (async()=>{ try{ await window.storage.set("atlas-v11",JSON.stringify(spots)); }catch(e){} })(); },[spots]);
+  useEffect(()=>{ (async()=>{ try{ await window.storage.set("atlas-v12",JSON.stringify(spots)); }catch(e){} })(); },[spots]);
 
   useEffect(()=>{
     (async()=>{
@@ -688,7 +688,7 @@ function AtlasMerveilles() {
             {CN.map((n,i)=>(<div key={n} style={{display:"flex",alignItems:"center",gap:5,marginBottom:3}}><div style={{width:9,height:9,background:CONT[i].active,border:"1.5px solid "+CC[i],borderRadius:2}}/><span style={{color:"#1e3a56",fontWeight:500}}>{n}</span></div>))}
             <div style={{borderTop:"1px solid #0b1e34",marginTop:7,paddingTop:6}}>
               {[{bg:"#062338",st:"#0ea5e9",l:"Spots à explorer"},{bg:"#2c1b04",st:"#f59e0b",l:"En cours"},{bg:"#0a2c18",st:"#22c55e",l:"Accompli"}].map(x=>(
-                <div key={x.l} style={{display:"flex",alignItems:"center",gap:5,marginBottom:2.5}}><div style={{width:9,height:9,background:x.bg,border:"1.5px solid "+x.st+",borderRadius:2"}}/><span style={{color:"#1e3a56",fontWeight:400}}>{x.l}</span></div>
+                <div key={x.l} style={{display:"flex",alignItems:"center",gap:5,marginBottom:2.5}}><div style={{width:9,height:9,background:x.bg,border:"1.5px solid "+x.st,borderRadius:2}}/><span style={{color:"#1e3a56",fontWeight:400}}>{x.l}</span></div>
               ))}
             </div>
             <div style={{color:"#0a1e30",marginTop:6,fontSize:8}}>Drag = tourner · Scroll = zoom</div>
