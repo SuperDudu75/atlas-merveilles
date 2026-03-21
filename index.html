@@ -988,12 +988,19 @@ function AtlasMerveilles() {
                   DESTINATIONS EN {MN[globalMonth-1].toUpperCase()} — CLASSÉES PAR SCORE MÉTÉO
                 </div>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:8}}>
-                  {Object.keys(WEATHER).filter(function(k){ return k!=="default"; }).map(function(cid){
-                    var sc = getWeather(cid)[globalMonth-1];
-                    var name = NM[cid];
-                    if(!name) return null;
-                    return {cid:cid, sc:sc, name:name};
-                  }).filter(Boolean).sort(function(a,b){ return b.sc-a.sc; }).map(function(item){
+                  {(function(){
+                    var items = Object.keys(WEATHER).filter(function(k){ return k!=="default"&&NM[k]; }).map(function(cid){
+                      var sc = getWeather(cid)[globalMonth-1];
+                      return {cid:cid, sc:sc, name:NM[cid], cont:gc(cid)};
+                    });
+                    // Sort: score desc, then continent, then alpha
+                    items.sort(function(a,b){
+                      if(b.sc!==a.sc) return b.sc-a.sc;
+                      if(a.cont!==b.cont) return a.cont-b.cont;
+                      return a.name.localeCompare(b.name,"fr");
+                    });
+                    return items;
+                  })().map(function(item){
                     return (
                       <div key={item.cid}
                         onClick={function(){ setShowGlobalMonth(false); setSelectedCountry(item.cid); setSelectedName(NM[item.cid]); setAnimKey(function(k){return k+1;}); }}
@@ -1016,24 +1023,42 @@ function AtlasMerveilles() {
             )}
             {globalMonth===0&&(
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:8}}>
-                {Object.keys(WEATHER).filter(function(k){ return k!=="default"; }).map(function(cid){
-                  var name = NM[cid];
-                  if(!name) return null;
-                  var scores = getWeather(cid);
-                  var best = Math.max.apply(null, scores);
-                  var bestMonths = scores.map(function(sc,i){ return sc===best?MN[i]:null; }).filter(Boolean);
-                  return (
-                    <div key={cid}
-                      onClick={function(){ setShowGlobalMonth(false); setSelectedCountry(cid); setSelectedName(NM[cid]); setAnimKey(function(k){return k+1;}); }}
-                      style={{background:"#040e1e",border:"1px solid #0c1e34",borderRadius:10,padding:"12px 14px",cursor:"pointer",transition:"all .15s"}}
-                      className="btn">
-                      <div style={{fontSize:13,fontWeight:700,color:"#d8eef8",marginBottom:4}}>{name}</div>
-                      <div style={{display:"flex",gap:3,flexWrap:"wrap"}}>
-                        {bestMonths.map(function(m){ return <span key={m} style={{background:WC[best],color:"#020c1a",borderRadius:3,padding:"1px 5px",fontSize:10,fontWeight:800}}>{m}</span>; })}
+                {(function(){
+                  var items = Object.keys(WEATHER).filter(function(k){ return k!=="default"&&NM[k]; }).map(function(cid){
+                    var scores = getWeather(cid);
+                    var best = Math.max.apply(null, scores);
+                    var bestMonths = scores.map(function(sc,i){ return sc===best?MN[i]:null; }).filter(Boolean);
+                    return {cid:cid, name:NM[cid], cont:gc(cid), best:best, bestMonths:bestMonths};
+                  });
+                  items.sort(function(a,b){
+                    if(a.cont!==b.cont) return a.cont-b.cont;
+                    return a.name.localeCompare(b.name,"fr");
+                  });
+                  var currentCont = -1;
+                  var result = [];
+                  items.forEach(function(item){
+                    if(item.cont!==currentCont){
+                      currentCont=item.cont;
+                      result.push(
+                        <div key={"cont"+item.cont} style={{gridColumn:"1/-1",borderBottom:"1px solid #0d2038",paddingBottom:6,marginBottom:2,marginTop:currentCont>0?8:0}}>
+                          <span style={{fontSize:11,fontWeight:800,color:CC[item.cont],letterSpacing:".1em"}}>{CN[item.cont].toUpperCase()}</span>
+                        </div>
+                      );
+                    }
+                    result.push(
+                      <div key={item.cid}
+                        onClick={function(){ setShowGlobalMonth(false); setSelectedCountry(item.cid); setSelectedName(NM[item.cid]); setAnimKey(function(k){return k+1;}); }}
+                        style={{background:"#040e1e",border:"1px solid #0c1e34",borderRadius:10,padding:"12px 14px",cursor:"pointer",transition:"all .15s"}}
+                        className="btn">
+                        <div style={{fontSize:13,fontWeight:700,color:"#d8eef8",marginBottom:4}}>{item.name}</div>
+                        <div style={{display:"flex",gap:3,flexWrap:"wrap"}}>
+                          {item.bestMonths.map(function(m){ return <span key={m} style={{background:WC[item.best],color:"#020c1a",borderRadius:3,padding:"1px 5px",fontSize:10,fontWeight:800}}>{m}</span>; })}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  });
+                  return result;
+                })()}
               </div>
             )}
           </div>
