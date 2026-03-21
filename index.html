@@ -68,6 +68,30 @@ const CATS = [
   { id:"unique",   label:"Expérience Unique",  icon:"⭐",color:"#fbbf24" },
   { id:"famous",   label:"Incontournables",    icon:"🏆",color:"#f0c040" },
 ];
+const WEATHER = {
+  "default":[3,3,3,4,4,4,4,4,4,3,3,3],
+  "124":[1,1,2,3,4,5,5,5,4,3,2,1],"840":[2,2,3,4,5,5,5,5,4,3,2,2],
+  "484":[4,4,4,3,3,2,3,3,3,3,4,4],"76":[3,3,3,3,2,1,1,1,2,3,3,3],
+  "250":[2,2,3,4,5,5,5,5,4,3,2,2],"826":[2,2,3,4,4,5,5,4,4,3,2,2],
+  "276":[1,2,3,4,5,5,5,5,4,3,2,1],"380":[2,3,4,5,5,5,5,5,5,4,3,2],
+  "724":[3,3,4,5,5,5,5,5,5,4,3,3],"300":[3,3,4,5,5,5,5,5,5,4,3,3],
+  "792":[3,3,4,5,5,5,5,5,5,4,3,3],"818":[4,5,5,5,4,3,3,3,4,5,5,4],
+  "504":[4,4,5,5,4,3,3,3,4,5,5,4],"788":[4,4,5,5,4,3,3,3,4,5,5,4],
+  "404":[3,3,3,3,2,1,2,2,3,4,4,3],"834":[3,3,3,3,2,1,2,2,3,4,4,3],
+  "516":[4,4,4,3,3,4,4,4,4,4,4,4],"710":[4,4,4,3,3,4,4,4,4,4,4,4],
+  "356":[4,4,5,5,3,1,1,1,2,4,4,4],"764":[4,4,5,4,2,1,1,1,2,4,4,4],
+  "392":[2,3,4,4,4,3,3,4,4,4,3,2],"360":[3,3,3,3,2,1,1,1,2,3,3,3],
+  "36":[5,5,4,4,3,3,3,3,4,4,5,5],"554":[5,5,4,4,3,3,3,3,4,4,5,5],
+  "643":[1,1,2,3,4,5,5,5,4,3,2,1],"156":[1,2,3,4,5,5,4,4,4,3,2,1],
+  "152":[5,5,4,3,2,1,1,1,2,3,4,5],"604":[4,4,3,3,2,1,1,1,2,3,4,4],
+  "578":[2,2,3,4,5,5,5,4,4,3,2,1],"352":[2,2,3,4,4,5,5,4,4,3,2,1],
+  "800":[4,4,4,4,3,2,2,2,3,4,5,4],"646":[4,4,4,4,3,2,2,2,3,4,5,4],
+};
+const getWeather = (cid) => WEATHER[String(cid)] || WEATHER["default"];
+const WC = ["","#ef4444","#f97316","#eab308","#22c55e","#06b6d4"];
+const WL = ["","Éviter","Correct","Bon","Très bon","Parfait"];
+const MN = ["Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc"];
+
 const Cat = id => CATS.find(c=>c.id===id)||{ id:"unique", label:"Experience", icon:"⭐", color:"#fbbf24" };
 
 // ── 195 PAYS DU MONDE ─────────────────────────────────────────────────────────
@@ -282,11 +306,7 @@ const DEFAULT_SPOTS = {
   ],
 };
 
-const IMG = (keywords) => {
-  const seed = Math.abs(keywords.split('').reduce((a,c)=>a+c.charCodeAt(0),0) % 1000);
-  const q = encodeURIComponent(keywords.trim().replace(/\s+/g,','));
-  return 'https://source.unsplash.com/900x500/?' + q + '&sig=' + seed;
-};
+const IMG = (kw) => { const seed=Math.abs((kw||"").split("").reduce((a,c)=>a+c.charCodeAt(0),0)%9000)+1000; return "https://picsum.photos/seed/"+seed+"/900/500"; };
 
 // ── COMPONENT ─────────────────────────────────────────────────────────────────
 function AtlasMerveilles() {
@@ -316,10 +336,10 @@ function AtlasMerveilles() {
   const [loading,setLoading]                 = useState(true);
   const [animKey,setAnimKey]                 = useState(0);
   const [imgErr,setImgErr]                   = useState(false);
+  const [showLegend,setShowLegend]           = useState(false);
   const [search,setSearch]                   = useState('');
   const [monthFilter,setMonthFilter]         = useState(0);
-  const [showLegend,setShowLegend]           = useState(false);
-  const [isMobile, setIsMobile] = useState(typeof window!=='undefined'&&window.innerWidth<=768);
+  const [isMobile, setIsMobile]              = useState(typeof window!=='undefined'&&window.innerWidth<=768);
   useEffect(()=>{ const fn=()=>setIsMobile(window.innerWidth<=768); window.addEventListener('resize',fn); return()=>window.removeEventListener('resize',fn); },[]);
   const [importRef]                          = useState(()=>({ current:null }));
   const [form,setForm] = useState({name:"",category:"marine",desc:"",why:"",season:"",tip:"",photo:""});
@@ -329,15 +349,8 @@ function AtlasMerveilles() {
   useEffect(()=>{ selectedRef.current=selectedCountry; },[selectedCountry]);
 
   useEffect(()=>{ (async()=>{
-    try{
-      const s=await window.storage.get("atlas-v11");
-      if(s&&s.value){ setSpots(JSON.parse(s.value)); return; }
-    }catch(e){}
-    try{
-      const r=await fetch("world_spots.json");
-      const d=await r.json();
-      setSpots(d);
-    }catch(e){}
+    try{ const s=await window.storage.get("atlas-v11"); if(s&&s.value){ setSpots(JSON.parse(s.value)); return; } }catch(e){}
+    try{ const r=await fetch("world_spots.json"); const d=await r.json(); setSpots(d); }catch(e){}
   })(); },[]);
   useEffect(()=>{ (async()=>{ try{ await window.storage.set("atlas-v11",JSON.stringify(spots)); }catch(e){} })(); },[spots]);
 
@@ -432,11 +445,10 @@ function AtlasMerveilles() {
   const totalDone=allSpots.filter(s=>s.done).length;
   const nCountries=Object.keys(spots).length;
   const sideSpots=selectedCountry?(spots[selectedCountry]||[]):[];
-  const MONTHS = ['','Jan','Fev','Mar','Avr','Mai','Jun','Jul','Aou','Sep','Oct','Nov','Dec'];
   const filtered=(filter==="all"?sideSpots:sideSpots.filter(s=>s.category===filter))
-    .filter(s=>!search||((s.name||'')+(s.desc||'')).toLowerCase().includes(search.toLowerCase()))
-    .filter(s=>{ if(!monthFilter) return true; const mo=MONTHS[monthFilter]; const se=(s.season||'').toLowerCase(); return se.includes(mo.toLowerCase()); })
-    .slice().sort((a,b)=>a.name.localeCompare(b.name,undefined,{sensitivity:'base'}));
+    .filter(s=>!search||((s.name||"")+(s.desc||"")).toLowerCase().includes(search.toLowerCase()))
+    .filter(s=>{ if(!monthFilter) return true; const mo=MN[monthFilter-1].toLowerCase().slice(0,3); return (s.season||"").toLowerCase().includes(mo)||((s.season||"").toLowerCase().includes("toute")); })
+    .slice().sort((a,b)=>a.name.localeCompare(b.name,undefined,{sensitivity:"base"}));
   const ci=selectedCountry?gc(selectedCountry):0;
 
   return (
@@ -465,13 +477,13 @@ function AtlasMerveilles() {
             <span style={{fontSize:24,flexShrink:0}}>🌍</span>
             <div><div style={{fontWeight:900,fontSize:17,color:"#8ecce8"}}>Mes Pokémons Rares</div>
             <div style={{fontSize:11,color:"#4a80a8",fontWeight:500,marginTop:1}}>
-              <span style={{color:"#38bdf8",fontWeight:800}}>{nCountries}</span> pays · <span style={{color:"#38bdf8",fontWeight:800}}>{allSpots.length}</span> exp. · <span style={{color:"#4ade80",fontWeight:800}}>{totalDone}</span> accomplies
+              <span style={{color:"#38bdf8",fontWeight:800}}>{nCountries}</span> pays · <span style={{color:"#38bdf8",fontWeight:800}}>{allSpots.length}</span> exp.
             </div></div>
           </div>
           <div style={{display:"flex",gap:6,padding:"4px 12px 10px",overflowX:"auto",WebkitOverflowScrolling:"touch",flexWrap:"nowrap",scrollbarWidth:"none",msOverflowStyle:"none"}}>
             {CATS.map(c=>{ const a=filter===c.id; return(
               <button key={c.id} className="btn" onClick={()=>setFilter(c.id)}
-                style={{background:a?`${c.color}22`:"#0b1e34",border:`1.5px solid ${a?c.color+"88":"#1a3050"}`,borderRadius:20,padding:"6px 13px",color:a?c.color:"#4a7898",fontSize:12,fontWeight:a?800:600,display:"flex",alignItems:"center",gap:4,whiteSpace:"nowrap",flexShrink:0}}>
+                style={{background:a?c.color+"22":"#0b1e34",border:"1.5px solid "+(a?c.color+"88":"#1a3050"),borderRadius:20,padding:"6px 13px",color:a?c.color:"#4a7898",fontSize:12,fontWeight:a?800:600,display:"flex",alignItems:"center",gap:4,whiteSpace:"nowrap",flexShrink:0}}>
                 {c.icon} {c.label}
               </button>
             );})}
@@ -491,14 +503,14 @@ function AtlasMerveilles() {
           <div style={{display:"flex",gap:8,flexWrap:"wrap",flex:1,minWidth:0}}>
             {CATS.map(c=>{ const a=filter===c.id; return(
               <button key={c.id} className="btn" onClick={()=>setFilter(c.id)}
-                style={{background:a?`${c.color}18`:"transparent",border:`1px solid ${a?c.color+"55":"#1a3a5a"}`,borderRadius:7,padding:"8px 16px",color:a?c.color:"#7aaccf",fontSize:14,fontWeight:a?700:600,display:"flex",alignItems:"center",gap:4,whiteSpace:"nowrap"}}>
+                style={{background:a?c.color+"18":"transparent",border:"1px solid "+(a?c.color+"55":"#1a3a5a"),borderRadius:7,padding:"8px 16px",color:a?c.color:"#7aaccf",fontSize:14,fontWeight:a?700:600,display:"flex",alignItems:"center",gap:4,whiteSpace:"nowrap"}}>
                 {c.icon} {c.label}
               </button>
             );})}
           </div>
           <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
             <div style={{display:"flex",gap:3}}>{CN.map((n,i)=>(<div key={n} title={n} style={{width:12,height:12,borderRadius:"50%",background:CC[i],opacity:.75}}/>))}</div>
-            <div style={{width:100,height:5,background:"#0b1e34",borderRadius:2,overflow:"hidden"}}><div style={{width:`${allSpots.length?(totalDone/allSpots.length)*100:0}%`,height:"100%",background:"linear-gradient(90deg,#0ea5e9,#22c55e)",transition:"width .6s"}}/></div>
+            <div style={{width:100,height:5,background:"#0b1e34",borderRadius:2,overflow:"hidden"}}><div style={{width:(allSpots.length?(totalDone/allSpots.length*100):0)+"%",height:"100%",background:"linear-gradient(90deg,#0ea5e9,#22c55e)",transition:"width .6s"}}/></div>
             <span style={{fontSize:14,color:"#4a90b0",fontWeight:700}}>{totalDone}/{allSpots.length}</span>
           </div>
         </div>
@@ -517,7 +529,7 @@ function AtlasMerveilles() {
               {NM[hoveredCountry]}
             </div>
           )}
-          {!loading&&(<div style={{position:"absolute",bottom:14,left:14}}><button onClick={()=>setShowLegend(p=>!p)} style={{display:"block",background:"#020e1cf0",border:"1px solid #0b1e34",borderRadius:7,padding:"5px 10px",color:"#4a8ab0",fontSize:9,fontWeight:700,cursor:"pointer",letterSpacing:".06em",marginBottom:showLegend?5:0}}>{showLegend?"v LEGENDE":"+ LEGENDE"}</button>{showLegend&&<div style={{background:"#020e1ce8",backdropFilter:"blur(12px)",border:"1px solid #0b1e34",borderRadius:10,padding:"10px 12px",fontSize:9}}>
+          {!loading&&(<div style={{position:"absolute",bottom:14,left:14,background:"#020e1ce8",backdropFilter:"blur(12px)",border:"1px solid #0b1e34",borderRadius:10,padding:"10px 12px",fontSize:9}}>
             <div style={{fontWeight:700,color:"#1a3a56",letterSpacing:".1em",marginBottom:7,fontSize:8}}>CONTINENTS</div>
             {CN.map((n,i)=>(<div key={n} style={{display:"flex",alignItems:"center",gap:5,marginBottom:3}}><div style={{width:9,height:9,background:CONT[i].active,border:`1.5px solid ${CC[i]}`,borderRadius:2}}/><span style={{color:"#1e3a56",fontWeight:500}}>{n}</span></div>))}
             <div style={{borderTop:"1px solid #0b1e34",marginTop:7,paddingTop:6}}>
@@ -533,7 +545,7 @@ function AtlasMerveilles() {
         </div>
 
         {/* ── SIDEBAR ── */}
-        <div style={{...(isMobile?{position:"fixed",bottom:0,left:0,right:0,width:"100%",height:selectedCountry?"75vh":"0px",minHeight:0,borderTop:selectedCountry?"2px solid #0d2540":"none",borderRadius:"16px 16px 0 0",transition:"height .3s ease",zIndex:200}:{width:selectedCountry?420:0,transition:"width .28s ease"}),overflow:"hidden",background:"#020e1c",borderLeft:isMobile?"none":"1px solid #0b1e34",display:"flex",flexDirection:"column",flexShrink:0}}>
+        <div style={{...(isMobile?{position:"fixed",bottom:0,left:0,right:0,width:"100%",height:selectedCountry?"75vh":"0px",borderTop:"2px solid #0d2540",borderRadius:"16px 16px 0 0",transition:"height .3s ease",zIndex:200}:{width:selectedCountry?420:0,transition:"width .28s ease"}),overflow:"hidden",background:"#020e1c",borderLeft:isMobile?"none":"1px solid #0b1e34",display:"flex",flexDirection:"column",flexShrink:0}}>
           <div style={{width:isMobile?"100%":420,height:"100%",display:"flex",flexDirection:"column"}}>
 
             {/* Country header */}
@@ -548,6 +560,25 @@ function AtlasMerveilles() {
                 </div>
                 <button onClick={()=>setSelectedCountry(null)} style={{background:"#0b1e34",border:"1px solid #142840",borderRadius:6,width:28,height:28,color:"#3a6080",cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontWeight:300}}>×</button>
               </div>
+              {selectedCountry&&(
+                <div style={{marginBottom:8}}>
+                  <div style={{display:"flex",gap:2,marginBottom:3}}>
+                    {getWeather(selectedCountry).map((sc,i)=>(
+                      <div key={i} title={MN[i]+": "+WL[sc]}
+                        style={{flex:1,height:16,borderRadius:3,background:WC[sc],cursor:"default",position:"relative"}}>
+                        {sc>=4&&<span style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:7,fontWeight:800,color:"#020c1a"}}>{MN[i].slice(0,1)}</span>}
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{fontSize:9,color:"#1a3a56"}}>
+                    <span style={{color:WC[5]}}>■</span> Parfait &nbsp;
+                    <span style={{color:WC[4]}}>■</span> Très bon &nbsp;
+                    <span style={{color:WC[3]}}>■</span> Bon &nbsp;
+                    <span style={{color:WC[2]}}>■</span> Correct &nbsp;
+                    <span style={{color:WC[1]}}>■</span> Éviter
+                  </div>
+                </div>
+              )}
               {sideSpots.length>0&&(<div style={{marginBottom:11}}><div style={{height:3,background:"#0b1e34",borderRadius:2,overflow:"hidden"}}><div style={{width:`${(sideSpots.filter(s=>s.done).length/sideSpots.length)*100}%`,height:"100%",background:"linear-gradient(90deg,#0ea5e9,#22c55e)",transition:"width .5s",borderRadius:2}}/></div></div>)}
               <div style={{display:"flex",gap:6}}>
                 <button className="btn" onClick={()=>setShowModal(true)} style={{flex:1,background:"linear-gradient(135deg,#0c4880,#072a56)",border:"1px solid #1060a840",borderRadius:8,padding:"10px",color:"#7ec8f0",fontWeight:800,fontSize:10,letterSpacing:".1em",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
@@ -560,14 +591,18 @@ function AtlasMerveilles() {
 
             {/* Spots */}
             <div style={{padding:"8px 12px 0",borderBottom:"1px solid #0b1e34",flexShrink:0}}>
-              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Rechercher un spot..." style={{width:"100%",background:"#06122a",border:"1px solid #0d2038",borderRadius:8,padding:"8px 12px",color:"#c0d8f0",fontSize:13,marginBottom:8}}/>
-              <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:8}}>
-                {[0,1,2,3,4,5,6,7,8,9,10,11,12].map(m=>(
-                  <button key={m} onClick={()=>setMonthFilter(m===monthFilter?0:m)}
-                    style={{background:monthFilter===m?"#0ea5e920":"transparent",border:"1px solid "+(monthFilter===m?"#0ea5e9":"#0d2038"),borderRadius:5,padding:"3px 7px",color:monthFilter===m?"#0ea5e9":"#2a5070",fontSize:10,fontWeight:600,cursor:"pointer"}}>
-                    {m===0?"Tout":['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'][m-1]}
-                  </button>
-                ))}
+              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Rechercher un spot..." style={{width:"100%",background:"#06122a",border:"1px solid #0d2038",borderRadius:8,padding:"8px 12px",color:"#c0d8f0",fontSize:13,marginBottom:8,outline:"none"}}/>
+              <div style={{display:"flex",gap:3,flexWrap:"wrap",marginBottom:8}}>
+                {[0,1,2,3,4,5,6,7,8,9,10,11,12].map(m=>{
+                  const ws=m===0?null:getWeather(selectedCountry||"default")[m-1];
+                  const wc=ws?WC[ws]:"#94a3b8";
+                  const act=monthFilter===m;
+                  return(<button key={m} onClick={()=>setMonthFilter(m===monthFilter?0:m)}
+                    title={m>0?MN[m-1]+": "+WL[ws]:"Tous"}
+                    style={{background:act?(m===0?"#0ea5e920":wc+"33"):"transparent",border:"1px solid "+(act?(m===0?"#0ea5e9":wc):"#0d2038"),borderRadius:5,padding:"3px 7px",color:act?(m===0?"#0ea5e9":wc):(m===0?"#2a5070":wc+"aa"),fontSize:10,fontWeight:600,cursor:"pointer"}}>
+                    {m===0?"Tout":MN[m-1]}
+                  </button>);
+                })}
               </div>
             </div>
             <div style={{flex:1,overflowY:"auto",padding:"10px"}}>
@@ -614,7 +649,7 @@ function AtlasMerveilles() {
             onClick={e=>e.stopPropagation()}>
             <div style={{position:"relative",height:260,background:"#071424",overflow:"hidden",borderRadius:"16px 16px 0 0",flexShrink:0}}>
               {!imgErr
-                ? <WikiImg keywords={detailSpot.photo||detailSpot.name} alt={detailSpot.name} onError={()=>setImgErr(true)}/>
+                ? <img src={IMG(detailSpot.photo||detailSpot.name)} alt={detailSpot.name} style={{width:"100%",height:"100%",objectFit:"cover",opacity:.72}} onError={()=>setImgErr(true)}/>
                 : <div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",background:"radial-gradient(circle at 40% 40%,#0c2a44,#020c1a)"}}><span style={{fontSize:64}}>{Cat(detailSpot.category).icon}</span></div>
               }
               <div style={{position:"absolute",inset:0,background:"linear-gradient(to top,#030e1c 0%,rgba(3,14,28,.2) 55%,transparent 100%)"}}/>
@@ -641,7 +676,7 @@ function AtlasMerveilles() {
                   {detailSpot.tip&&(<div style={{background:"#050f1e",border:"1px solid #0d2038",borderRadius:8,padding:"12px 14px"}}><div style={{fontSize:8,fontWeight:800,color:"#0ea5e9",letterSpacing:".12em",marginBottom:6}}>💡 CONSEIL</div><div style={{fontSize:12,fontWeight:600,color:"#4a80a0",lineHeight:1.55}}>{detailSpot.tip}</div></div>)}
                 </div>
               )}
-              <button className="btn" onClick={()=>{ if(selectedCountry&&detailSpot) { toggleDone(selectedCountry,detailSpot.id); setDetailSpot(s=>({...s,done:!s.done})); } }}
+              <button className="btn" onClick={()=>{ toggleDone(selectedCountry,detailSpot.id); setDetailSpot(s=>({...s,done:!s.done})); }}
                 style={{width:"100%",background:detailSpot.done?"linear-gradient(135deg,#0b2e1a,#062014)":"linear-gradient(135deg,#0c4880,#072a56)",border:`2px solid ${detailSpot.done?"#22c55e40":"#1060a840"}`,borderRadius:10,padding:"14px",color:detailSpot.done?"#22c55e":"#7ec8f0",fontWeight:800,fontSize:12,letterSpacing:".1em",display:"flex",alignItems:"center",justifyContent:"center",gap:9}}>
                 {detailSpot.done?<><span style={{fontSize:18}}>✓</span> ACCOMPLI — CLIQUER POUR ANNULER</>:<><span style={{fontSize:18,fontWeight:300}}>○</span> MARQUER COMME ACCOMPLI</>}
               </button>
