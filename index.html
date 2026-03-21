@@ -66,8 +66,9 @@ const CATS = [
   { id:"nature",   label:"Nature & Forêts",    icon:"🌿",color:"#4ade80" },
   { id:"heritage", label:"Patrimoine",         icon:"🏛️",color:"#c084fc" },
   { id:"unique",   label:"Expérience Unique",  icon:"⭐",color:"#fbbf24" },
+  { id:"famous",   label:"Incontournables",    icon:"🏆",color:"#f0c040" },
 ];
-const Cat = id => CATS.find(c=>c.id===id)||CATS[1];
+const Cat = id => CATS.find(c=>c.id===id)||{ id:"unique", label:"Experience", icon:"⭐", color:"#fbbf24" };
 
 // ── 195 PAYS DU MONDE ─────────────────────────────────────────────────────────
 const NM = {
@@ -623,7 +624,7 @@ function AtlasMerveilles() {
                   {detailSpot.tip&&(<div style={{background:"#050f1e",border:"1px solid #0d2038",borderRadius:8,padding:"12px 14px"}}><div style={{fontSize:8,fontWeight:800,color:"#0ea5e9",letterSpacing:".12em",marginBottom:6}}>💡 CONSEIL</div><div style={{fontSize:12,fontWeight:600,color:"#4a80a0",lineHeight:1.55}}>{detailSpot.tip}</div></div>)}
                 </div>
               )}
-              <button className="btn" onClick={()=>{ toggleDone(selectedCountry,detailSpot.id); setDetailSpot(s=>({...s,done:!s.done})); }}
+              <button className="btn" onClick={()=>{ if(selectedCountry&&detailSpot) { toggleDone(selectedCountry,detailSpot.id); setDetailSpot(s=>({...s,done:!s.done})); } }}
                 style={{width:"100%",background:detailSpot.done?"linear-gradient(135deg,#0b2e1a,#062014)":"linear-gradient(135deg,#0c4880,#072a56)",border:`2px solid ${detailSpot.done?"#22c55e40":"#1060a840"}`,borderRadius:10,padding:"14px",color:detailSpot.done?"#22c55e":"#7ec8f0",fontWeight:800,fontSize:12,letterSpacing:".1em",display:"flex",alignItems:"center",justifyContent:"center",gap:9}}>
                 {detailSpot.done?<><span style={{fontSize:18}}>✓</span> ACCOMPLI — CLIQUER POUR ANNULER</>:<><span style={{fontSize:18,fontWeight:300}}>○</span> MARQUER COMME ACCOMPLI</>}
               </button>
