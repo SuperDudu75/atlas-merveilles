@@ -152,6 +152,15 @@ const WC = ["","#ef4444","#f97316","#eab308","#22c55e","#06b6d4"];
 const WL = ["","Éviter","Correct","Bon","Très bon","Parfait"];
 const MN = ["Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc"];
 
+const IMG = function(kw) {
+  try {
+    var seed = Math.abs((kw||"").split("").reduce(function(a,c){return a+c.charCodeAt(0);},0)%9999);
+    var q = encodeURIComponent((kw||"nature").replace(/[^a-zA-Z0-9 ]/g," ").trim().split(/\s+/).slice(0,4).join(","));
+    return "https://source.unsplash.com/900x500/?"+q+"&sig="+seed;
+  } catch(e) {
+    return "https://picsum.photos/seed/42/900/500";
+  }
+};
 const safeStr = function(v){ return v ? String(v) : ""; };
 const Cat = id => CATS.find(c=>c.id===id)||{ id:"unique", label:"Experience", icon:"⭐", color:"#fbbf24" };
 
@@ -702,14 +711,14 @@ function AtlasMerveilles() {
       </div>
 
       {/* ── DETAIL MODAL ── */}
-      {detailSpot&&!modalErr&&(
+      {detailSpot&&!modalErr&&detailSpot.id&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.88)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,backdropFilter:"blur(12px)",padding:"16px"}}
           onClick={()=>setDetailSpot(null)}>
           <div style={{background:"#030e1c",border:"1px solid #0d2540",borderRadius:16,width:"min(640px,96vw)",maxHeight:"88vh",overflow:"auto",boxShadow:"0 30px 80px rgba(0,0,0,.9)",animation:"modIn .22s ease both"}}
             onClick={function(e){e.stopPropagation();}}>
             <div style={{position:"relative",height:260,background:"#071424",overflow:"hidden",borderRadius:"16px 16px 0 0",flexShrink:0}}>
               {!imgErr
-                ? <img src={IMG(detailSpot.photo||detailSpot.name)} alt={detailSpot.name} style={{width:"100%",height:"100%",objectFit:"cover",opacity:.72}} onError={()=>setImgErr(true)}/>
+                ? <img src={IMG((detailSpot.photo||detailSpot.name||"nature"))} alt="" style={{width:"100%",height:"100%",objectFit:"cover",opacity:.72}} onError={()=>setImgErr(true)}/>
                 : <div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",background:"radial-gradient(circle at 40% 40%,#0c2a44,#020c1a)"}}><span style={{fontSize:64}}>{Cat(detailSpot.category).icon}</span></div>
               }
               <div style={{position:"absolute",inset:0,background:"linear-gradient(to top,#030e1c 0%,rgba(3,14,28,.2) 55%,transparent 100%)"}}/>
@@ -719,7 +728,7 @@ function AtlasMerveilles() {
               </div>
               <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"18px 22px 22px"}}>
                 <div style={{fontSize:8.5,fontWeight:800,color:CC[selectedCountry?gc(selectedCountry):0],letterSpacing:".12em",marginBottom:6}}>{selectedName} · {CN[selectedCountry?gc(selectedCountry):0]}</div>
-                <div style={{fontSize:22,fontWeight:900,color:"#e8f4fc",lineHeight:1.15,letterSpacing:"-.02em"}}>{detailSpot.name}</div>
+                <div style={{fontSize:22,fontWeight:900,color:"#e8f4fc",lineHeight:1.15,letterSpacing:"-.02em"}}>{detailSpot.name||""}</div>
               </div>
             </div>
             <div style={{padding:"20px 22px 26px"}}>
@@ -736,7 +745,7 @@ function AtlasMerveilles() {
                   {safeStr(detailSpot.tip)&&(<div style={{background:"#050f1e",border:"1px solid #0d2038",borderRadius:8,padding:"12px 14px"}}><div style={{fontSize:8,fontWeight:800,color:"#0ea5e9",letterSpacing:".12em",marginBottom:6}}>💡 CONSEIL</div><div style={{fontSize:12,fontWeight:600,color:"#4a80a0",lineHeight:1.55}}>{detailSpot.tip}</div></div>)}
                 </div>
               )}
-              <button className="btn" onClick={()=>{ toggleDone(selectedCountry,detailSpot.id); setDetailSpot(s=>({...s,done:!s.done})); }}
+              <button className="btn" onClick={function(){ try{ toggleDone(selectedCountry,detailSpot.id); setDetailSpot(function(s){ return Object.assign({},s,{done:!s.done}); }); }catch(e){} }}
                 style={{width:"100%",background:detailSpot.done?"linear-gradient(135deg,#0b2e1a,#062014)":"linear-gradient(135deg,#0c4880,#072a56)",border:"2px solid "+(detailSpot.done?"#22c55e40":"#1060a840"),borderRadius:10,padding:"14px",color:detailSpot.done?"#22c55e":"#7ec8f0",fontWeight:800,fontSize:12,letterSpacing:".1em",display:"flex",alignItems:"center",justifyContent:"center",gap:9}}>
                 {detailSpot.done?<><span style={{fontSize:18}}>✓</span> ACCOMPLI — CLIQUER POUR ANNULER</>:<><span style={{fontSize:18,fontWeight:300}}>○</span> MARQUER COMME ACCOMPLI</>}
               </button>
