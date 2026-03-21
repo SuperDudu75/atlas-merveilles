@@ -438,7 +438,7 @@ function AtlasMerveilles() {
         @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
         @keyframes slid{from{opacity:0;transform:translateX(22px)}to{opacity:1;transform:translateX(0)}}
         @keyframes pulse{0%,100%{opacity:.22}50%{opacity:.6}}
-        @keyframes min{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+        @keyframes modIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
         .rise{animation:rise .32s ease both}.slid{animation:slid .28s cubic-bezier(.4,0,.2,1) both}
         .btn{transition:all .18s;cursor:pointer}.btn:hover{filter:brightness(1.1);transform:translateY(-1px)}.btn:active{transform:translateY(0)}
         input,textarea{transition:border-color .2s}input:focus,textarea:focus{border-color:#0ea5e9!important;outline:none}
@@ -588,7 +588,7 @@ function AtlasMerveilles() {
       {detailSpot&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.88)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,backdropFilter:"blur(12px)",padding:"16px"}}
           onClick={()=>setDetailSpot(null)}>
-          <div style={{background:"#030e1c",border:"1px solid #0d2540",borderRadius:16,width:"min(640px,96vw)",maxHeight:"88vh",overflow:"auto",boxShadow:"0 30px 80px rgba(0,0,0,.9)",animation:"min .22s ease both"}}
+          <div style={{background:"#030e1c",border:"1px solid #0d2540",borderRadius:16,width:"min(640px,96vw)",maxHeight:"88vh",overflow:"auto",boxShadow:"0 30px 80px rgba(0,0,0,.9)",animation:"modIn .22s ease both"}}
             onClick={e=>e.stopPropagation()}>
             <div style={{position:"relative",height:260,background:"#071424",overflow:"hidden",borderRadius:"16px 16px 0 0",flexShrink:0}}>
               {!imgErr
