@@ -91,60 +91,60 @@ const WEATHER = {
 // ── DONNÉES MÉTÉO DÉTAILLÉES ─────────────────────────────────────────────────
 const WEATHER_DETAIL = {
   "default": [
-    {label:"Temp. max (°C)",    values:[18,19,21,23,26,28,30,30,28,25,22,19], color:"#f97316", unit:"°"},
-    {label:"Temp. min (°C)",    values:[8,9,11,13,16,19,21,21,19,16,12,9],    color:"#38bdf8", unit:"°"},
-    {label:"Pluie (jours)",     values:[8,7,7,6,6,4,3,3,5,7,8,8],            color:"#60a5fa", unit:"j"},
-    {label:"Ensoleillement (h)",values:[4,5,6,7,8,9,10,9,7,5,4,3],           color:"#fbbf24", unit:"h"},
-    {label:"Humidité (%)",      values:[75,72,70,68,65,60,55,55,60,68,72,76], color:"#a78bfa", unit:"%"},
+    {label:"🌡 Max (°C)",    values:[18,19,21,23,26,28,30,30,28,25,22,19], color:"#f97316", unit:"°"},
+    {label:"❄ Min (°C)",     values:[8,9,11,13,16,19,21,21,19,16,12,9],    color:"#38bdf8", unit:"°"},
+    {label:"🌧 Pluie (j)",   values:[8,7,7,6,6,4,3,3,5,7,8,8],            color:"#60a5fa", unit:"j"},
+    {label:"☀ Soleil (h)",  values:[4,5,6,7,8,9,10,9,7,5,4,3],           color:"#fbbf24", unit:"h"},
+    {label:"💧 Humidité",    values:[75,72,70,68,65,60,55,55,60,68,72,76], color:"#a78bfa", unit:"%"},
   ],
   "840": [ // USA (moyenne)
-    {label:"Temp. max (°C)",    values:[8,10,14,19,24,28,31,30,26,20,13,8],   color:"#f97316", unit:"°"},
-    {label:"Temp. min (°C)",    values:[-2,0,4,9,14,19,22,21,17,10,4,-1],     color:"#38bdf8", unit:"°"},
-    {label:"Pluie (jours)",     values:[10,9,10,10,11,9,8,8,8,8,9,10],        color:"#60a5fa", unit:"j"},
-    {label:"Ensoleillement (h)",values:[4,5,6,7,8,9,10,9,7,6,4,4],           color:"#fbbf24", unit:"h"},
-    {label:"Humidité (%)",      values:[65,63,62,60,62,62,63,64,64,63,65,66], color:"#a78bfa", unit:"%"},
+    {label:"🌡 Max (°C)",    values:[8,10,14,19,24,28,31,30,26,20,13,8],   color:"#f97316", unit:"°"},
+    {label:"❄ Min (°C)",    values:[-2,0,4,9,14,19,22,21,17,10,4,-1],     color:"#38bdf8", unit:"°"},
+    {label:"🌧 Pluie (j)",     values:[10,9,10,10,11,9,8,8,8,8,9,10],        color:"#60a5fa", unit:"j"},
+    {label:"☀ Soleil (h)",values:[4,5,6,7,8,9,10,9,7,6,4,4],           color:"#fbbf24", unit:"h"},
+    {label:"💧 Humidité",      values:[65,63,62,60,62,62,63,64,64,63,65,66], color:"#a78bfa", unit:"%"},
   ],
   "250": [ // France
-    {label:"Temp. max (°C)",    values:[8,9,13,16,20,24,26,26,22,17,11,8],    color:"#f97316", unit:"°"},
-    {label:"Temp. min (°C)",    values:[2,3,5,8,11,14,16,16,13,10,5,3],       color:"#38bdf8", unit:"°"},
-    {label:"Pluie (jours)",     values:[11,9,10,10,11,9,8,8,8,10,11,12],      color:"#60a5fa", unit:"j"},
-    {label:"Ensoleillement (h)",values:[2,3,5,6,7,8,8,8,6,4,2,2],            color:"#fbbf24", unit:"h"},
-    {label:"Humidité (%)",      values:[84,81,76,72,72,70,68,69,74,80,84,86], color:"#a78bfa", unit:"%"},
+    {label:"🌡 Max (°C)",    values:[8,9,13,16,20,24,26,26,22,17,11,8],    color:"#f97316", unit:"°"},
+    {label:"❄ Min (°C)",    values:[2,3,5,8,11,14,16,16,13,10,5,3],       color:"#38bdf8", unit:"°"},
+    {label:"🌧 Pluie (j)",     values:[11,9,10,10,11,9,8,8,8,10,11,12],      color:"#60a5fa", unit:"j"},
+    {label:"☀ Soleil (h)",values:[2,3,5,6,7,8,8,8,6,4,2,2],            color:"#fbbf24", unit:"h"},
+    {label:"💧 Humidité",      values:[84,81,76,72,72,70,68,69,74,80,84,86], color:"#a78bfa", unit:"%"},
   ],
   "724": [ // Espagne
-    {label:"Temp. max (°C)",    values:[13,15,18,21,25,30,34,33,28,22,16,13], color:"#f97316", unit:"°"},
-    {label:"Temp. min (°C)",    values:[4,5,7,10,13,17,20,20,17,12,7,5],      color:"#38bdf8", unit:"°"},
-    {label:"Pluie (jours)",     values:[8,7,8,8,7,4,2,2,5,8,9,9],            color:"#60a5fa", unit:"j"},
-    {label:"Ensoleillement (h)",values:[5,6,7,8,9,11,12,11,8,6,5,4],         color:"#fbbf24", unit:"h"},
-    {label:"Humidité (%)",      values:[74,70,65,60,58,52,46,48,58,67,73,76], color:"#a78bfa", unit:"%"},
+    {label:"🌡 Max (°C)",    values:[13,15,18,21,25,30,34,33,28,22,16,13], color:"#f97316", unit:"°"},
+    {label:"❄ Min (°C)",    values:[4,5,7,10,13,17,20,20,17,12,7,5],      color:"#38bdf8", unit:"°"},
+    {label:"🌧 Pluie (j)",     values:[8,7,8,8,7,4,2,2,5,8,9,9],            color:"#60a5fa", unit:"j"},
+    {label:"☀ Soleil (h)",values:[5,6,7,8,9,11,12,11,8,6,5,4],         color:"#fbbf24", unit:"h"},
+    {label:"💧 Humidité",      values:[74,70,65,60,58,52,46,48,58,67,73,76], color:"#a78bfa", unit:"%"},
   ],
   "764": [ // Thaïlande
-    {label:"Temp. max (°C)",    values:[33,35,36,36,35,33,32,32,32,32,31,31], color:"#f97316", unit:"°"},
-    {label:"Temp. min (°C)",    values:[21,23,25,26,26,25,25,25,24,24,22,21], color:"#38bdf8", unit:"°"},
-    {label:"Pluie (jours)",     values:[2,2,3,5,13,16,17,18,18,14,7,2],       color:"#60a5fa", unit:"j"},
-    {label:"Ensoleillement (h)",values:[9,10,10,9,7,5,5,5,5,6,7,8],          color:"#fbbf24", unit:"h"},
-    {label:"Humidité (%)",      values:[56,57,57,64,74,77,77,78,80,77,70,60], color:"#a78bfa", unit:"%"},
+    {label:"🌡 Max (°C)",    values:[33,35,36,36,35,33,32,32,32,32,31,31], color:"#f97316", unit:"°"},
+    {label:"❄ Min (°C)",    values:[21,23,25,26,26,25,25,25,24,24,22,21], color:"#38bdf8", unit:"°"},
+    {label:"🌧 Pluie (j)",     values:[2,2,3,5,13,16,17,18,18,14,7,2],       color:"#60a5fa", unit:"j"},
+    {label:"☀ Soleil (h)",values:[9,10,10,9,7,5,5,5,5,6,7,8],          color:"#fbbf24", unit:"h"},
+    {label:"💧 Humidité",      values:[56,57,57,64,74,77,77,78,80,77,70,60], color:"#a78bfa", unit:"%"},
   ],
   "404": [ // Kenya
-    {label:"Temp. max (°C)",    values:[27,28,28,27,25,24,23,24,26,27,27,27], color:"#f97316", unit:"°"},
-    {label:"Temp. min (°C)",    values:[14,14,15,15,13,12,11,11,12,13,14,14], color:"#38bdf8", unit:"°"},
-    {label:"Pluie (jours)",     values:[4,4,9,16,15,6,4,4,5,10,13,6],         color:"#60a5fa", unit:"j"},
-    {label:"Ensoleillement (h)",values:[8,9,8,6,7,8,8,9,8,7,7,8],            color:"#fbbf24", unit:"h"},
-    {label:"Humidité (%)",      values:[62,61,66,74,73,64,63,62,62,68,72,65], color:"#a78bfa", unit:"%"},
+    {label:"🌡 Max (°C)",    values:[27,28,28,27,25,24,23,24,26,27,27,27], color:"#f97316", unit:"°"},
+    {label:"❄ Min (°C)",    values:[14,14,15,15,13,12,11,11,12,13,14,14], color:"#38bdf8", unit:"°"},
+    {label:"🌧 Pluie (j)",     values:[4,4,9,16,15,6,4,4,5,10,13,6],         color:"#60a5fa", unit:"j"},
+    {label:"☀ Soleil (h)",values:[8,9,8,6,7,8,8,9,8,7,7,8],            color:"#fbbf24", unit:"h"},
+    {label:"💧 Humidité",      values:[62,61,66,74,73,64,63,62,62,68,72,65], color:"#a78bfa", unit:"%"},
   ],
   "392": [ // Japon
-    {label:"Temp. max (°C)",    values:[9,10,13,19,23,27,30,32,28,22,16,11],  color:"#f97316", unit:"°"},
-    {label:"Temp. min (°C)",    values:[0,1,4,9,14,18,22,23,19,13,7,2],       color:"#38bdf8", unit:"°"},
-    {label:"Pluie (jours)",     values:[6,6,10,11,11,13,12,9,12,10,7,5],      color:"#60a5fa", unit:"j"},
-    {label:"Ensoleillement (h)",values:[5,6,6,6,7,5,6,7,5,5,5,5],            color:"#fbbf24", unit:"h"},
-    {label:"Humidité (%)",      values:[52,52,57,63,68,76,76,72,72,66,63,55], color:"#a78bfa", unit:"%"},
+    {label:"🌡 Max (°C)",    values:[9,10,13,19,23,27,30,32,28,22,16,11],  color:"#f97316", unit:"°"},
+    {label:"❄ Min (°C)",    values:[0,1,4,9,14,18,22,23,19,13,7,2],       color:"#38bdf8", unit:"°"},
+    {label:"🌧 Pluie (j)",     values:[6,6,10,11,11,13,12,9,12,10,7,5],      color:"#60a5fa", unit:"j"},
+    {label:"☀ Soleil (h)",values:[5,6,6,6,7,5,6,7,5,5,5,5],            color:"#fbbf24", unit:"h"},
+    {label:"💧 Humidité",      values:[52,52,57,63,68,76,76,72,72,66,63,55], color:"#a78bfa", unit:"%"},
   ],
   "360": [ // Indonésie
-    {label:"Temp. max (°C)",    values:[30,30,31,32,32,31,31,31,32,32,31,30], color:"#f97316", unit:"°"},
-    {label:"Temp. min (°C)",    values:[23,23,23,24,24,23,23,23,23,23,23,23], color:"#38bdf8", unit:"°"},
-    {label:"Pluie (jours)",     values:[17,15,15,13,11,8,7,7,9,13,16,18],     color:"#60a5fa", unit:"j"},
-    {label:"Ensoleillement (h)",values:[5,6,6,7,7,8,8,8,7,6,5,5],            color:"#fbbf24", unit:"h"},
-    {label:"Humidité (%)",      values:[85,84,83,82,81,79,78,78,79,82,84,85], color:"#a78bfa", unit:"%"},
+    {label:"🌡 Max (°C)",    values:[30,30,31,32,32,31,31,31,32,32,31,30], color:"#f97316", unit:"°"},
+    {label:"❄ Min (°C)",    values:[23,23,23,24,24,23,23,23,23,23,23,23], color:"#38bdf8", unit:"°"},
+    {label:"🌧 Pluie (j)",     values:[17,15,15,13,11,8,7,7,9,13,16,18],     color:"#60a5fa", unit:"j"},
+    {label:"☀ Soleil (h)",values:[5,6,6,7,7,8,8,8,7,6,5,5],            color:"#fbbf24", unit:"h"},
+    {label:"💧 Humidité",      values:[85,84,83,82,81,79,78,78,79,82,84,85], color:"#a78bfa", unit:"%"},
   ],
 };
 const getWeather = (cid) => WEATHER[String(cid)] || WEATHER["default"];
@@ -661,7 +661,7 @@ function AtlasMerveilles() {
                   var act = monthFilter===m;
                   return (
                     <button key={m} onClick={()=>setMonthFilter(m===monthFilter?0:m)}
-                      title={m>0?MN[m-1]+": "+WL[ws]:"Tous les mois"}
+                      title={m>0&&ws?MN[m-1]+": "+WL[ws]:"Tous les mois"}
                       style={{background:act?wc:(m===0?"transparent":wc+"33"),
                         border:"2px solid "+(act?wc:(m===0?(monthFilter===0?"#0ea5e9":"#0d2038"):wc+"88")),
                         borderRadius:6,padding:"5px 9px",
@@ -791,6 +791,12 @@ function AtlasMerveilles() {
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
               <div>
                 <div style={{fontWeight:900,fontSize:22,color:"#e4f0fc"}}>{selectedName}</div>
+                <div style={{display:"flex",gap:4,marginTop:6,flexWrap:"wrap"}}>
+                  {getWeather(selectedCountry).map(function(sc,i){
+                    return sc>=4 ? <span key={i} style={{background:WC[sc],color:"#020c1a",borderRadius:4,padding:"2px 7px",fontSize:11,fontWeight:800}}>{MN[i]}</span> : null;
+                  })}
+                  <span style={{fontSize:11,color:"#2a5070",alignSelf:"center",marginLeft:4}}>← meilleurs mois</span>
+                </div>
                 <div style={{fontSize:12,color:"#2a5070",marginTop:2}}>Comparatif météo mensuel</div>
               </div>
               <button onClick={()=>setShowWeather(false)} style={{background:"#0b1e34",border:"1px solid #142840",borderRadius:8,width:32,height:32,color:"#3a6080",cursor:"pointer",fontSize:18}}>×</button>
@@ -800,7 +806,10 @@ function AtlasMerveilles() {
                 <thead>
                   <tr>
                     <td style={{width:100,color:"#2a5070",fontSize:11,fontWeight:700,paddingBottom:8}}>Indicateur</td>
-                    {MN.map(function(m){ return <th key={m} style={{color:"#4a90b0",fontSize:11,fontWeight:700,textAlign:"center",width:48,paddingBottom:8}}>{m}</th>; })}
+                    {MN.map(function(m,i){ 
+                    var sc = getWeather(selectedCountry)[i];
+                    return <th key={m} style={{color:WC[sc],fontSize:11,fontWeight:800,textAlign:"center",width:42,paddingBottom:8}}>{m}</th>; 
+                  })}
                   </tr>
                 </thead>
                 <tbody>
@@ -815,11 +824,16 @@ function AtlasMerveilles() {
                   {(WEATHER_DETAIL[selectedCountry]||WEATHER_DETAIL["default"]).map(function(row,ri){ return (
                     <tr key={ri}>
                       <td style={{color:"#2a5070",fontSize:11,paddingRight:8,paddingBottom:4,whiteSpace:"nowrap"}}>{row.label}</td>
-                      {row.values.map(function(v,i){ return (
-                        <td key={i} style={{textAlign:"center",paddingBottom:4}}>
-                          <div style={{background:"#06122a",borderRadius:5,padding:"5px 2px",fontSize:11,fontWeight:600,color:row.color||"#4a90b0",border:"1px solid #0d2038"}}>{v}{row.unit||""}</div>
-                        </td>
-                      ); })}
+                      {row.values.map(function(v,i){ 
+                        var sc = getWeather(selectedCountry)[i];
+                        return (
+                          <td key={i} style={{textAlign:"center",paddingBottom:4}}>
+                            <div style={{background:"#06122a",borderRadius:5,padding:"5px 2px",fontSize:11,fontWeight:700,color:row.color||"#4a90b0",border:"1px solid "+WC[sc]+"44"}}>
+                              {v}{row.unit||""}
+                            </div>
+                          </td>
+                        ); 
+                      })}
                     </tr>
                   ); })}
                 </tbody>
