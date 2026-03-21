@@ -316,6 +316,8 @@ function AtlasMerveilles() {
   const [loading,setLoading]                 = useState(true);
   const [animKey,setAnimKey]                 = useState(0);
   const [imgErr,setImgErr]                   = useState(false);
+  const [search,setSearch]                   = useState('');
+  const [monthFilter,setMonthFilter]         = useState(0);
   const [showLegend,setShowLegend]           = useState(false);
   const [isMobile, setIsMobile] = useState(typeof window!=='undefined'&&window.innerWidth<=768);
   useEffect(()=>{ const fn=()=>setIsMobile(window.innerWidth<=768); window.addEventListener('resize',fn); return()=>window.removeEventListener('resize',fn); },[]);
@@ -430,7 +432,11 @@ function AtlasMerveilles() {
   const totalDone=allSpots.filter(s=>s.done).length;
   const nCountries=Object.keys(spots).length;
   const sideSpots=selectedCountry?(spots[selectedCountry]||[]):[];
-  const filtered=(filter==="all"?sideSpots:sideSpots.filter(s=>s.category===filter)).slice().sort((a,b)=>a.name.localeCompare(b.name,undefined,{sensitivity:'base'}));
+  const MONTHS = ['','Jan','Fev','Mar','Avr','Mai','Jun','Jul','Aou','Sep','Oct','Nov','Dec'];
+  const filtered=(filter==="all"?sideSpots:sideSpots.filter(s=>s.category===filter))
+    .filter(s=>!search||((s.name||'')+(s.desc||'')).toLowerCase().includes(search.toLowerCase()))
+    .filter(s=>{ if(!monthFilter) return true; const mo=MONTHS[monthFilter]; const se=(s.season||'').toLowerCase(); return se.includes(mo.toLowerCase()); })
+    .slice().sort((a,b)=>a.name.localeCompare(b.name,undefined,{sensitivity:'base'}));
   const ci=selectedCountry?gc(selectedCountry):0;
 
   return (
@@ -553,6 +559,17 @@ function AtlasMerveilles() {
             </div>
 
             {/* Spots */}
+            <div style={{padding:"8px 12px 0",borderBottom:"1px solid #0b1e34",flexShrink:0}}>
+              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Rechercher un spot..." style={{width:"100%",background:"#06122a",border:"1px solid #0d2038",borderRadius:8,padding:"8px 12px",color:"#c0d8f0",fontSize:13,marginBottom:8}}/>
+              <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:8}}>
+                {[0,1,2,3,4,5,6,7,8,9,10,11,12].map(m=>(
+                  <button key={m} onClick={()=>setMonthFilter(m===monthFilter?0:m)}
+                    style={{background:monthFilter===m?"#0ea5e920":"transparent",border:"1px solid "+(monthFilter===m?"#0ea5e9":"#0d2038"),borderRadius:5,padding:"3px 7px",color:monthFilter===m?"#0ea5e9":"#2a5070",fontSize:10,fontWeight:600,cursor:"pointer"}}>
+                    {m===0?"Tout":['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'][m-1]}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div style={{flex:1,overflowY:"auto",padding:"10px"}}>
               {filtered.length===0?(
                 <div style={{textAlign:"center",marginTop:60}}>
@@ -597,7 +614,7 @@ function AtlasMerveilles() {
             onClick={e=>e.stopPropagation()}>
             <div style={{position:"relative",height:260,background:"#071424",overflow:"hidden",borderRadius:"16px 16px 0 0",flexShrink:0}}>
               {!imgErr
-                ? <img src={IMG(detailSpot.photo||detailSpot.name)} alt={detailSpot.name} style={{width:"100%",height:"100%",objectFit:"cover",opacity:.72}} onError={()=>setImgErr(true)}/>
+                ? <WikiImg keywords={detailSpot.photo||detailSpot.name} alt={detailSpot.name} onError={()=>setImgErr(true)}/>
                 : <div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",background:"radial-gradient(circle at 40% 40%,#0c2a44,#020c1a)"}}><span style={{fontSize:64}}>{Cat(detailSpot.category).icon}</span></div>
               }
               <div style={{position:"absolute",inset:0,background:"linear-gradient(to top,#030e1c 0%,rgba(3,14,28,.2) 55%,transparent 100%)"}}/>
