@@ -281,7 +281,11 @@ const DEFAULT_SPOTS = {
   ],
 };
 
-const IMG = (keywords) => `https://loremflickr.com/900/500/${encodeURIComponent(keywords.split(' ').slice(0,3).join(','))}/all?lock=${Math.abs(keywords.split('').reduce((a,c)=>a+c.charCodeAt(0),0)%9999)}`;
+const IMG = (keywords) => {
+  const seed = Math.abs(keywords.split('').reduce((a,c)=>a+c.charCodeAt(0),0) % 1000);
+  const q = encodeURIComponent(keywords.trim().replace(/\s+/g,','));
+  return 'https://source.unsplash.com/900x500/?' + q + '&sig=' + seed;
+};
 
 // ── COMPONENT ─────────────────────────────────────────────────────────────────
 function AtlasMerveilles() {
