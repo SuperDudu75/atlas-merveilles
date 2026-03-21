@@ -19,6 +19,109 @@ const{useState,useEffect,useRef,useCallback}=React;
 </script>
 <script type="text/babel">
 
+const WC = ["","#ef4444","#f97316","#eab308","#22c55e","#06b6d4"];
+const WL = ["","Éviter","Correct","Bon","Très bon","Parfait"];
+const MN = ["Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc"];
+
+const COORDS = {
+  "4":"33.9,67.7","8":"41.1,20.2","12":"28.0,1.7","20":"42.5,1.5","24":"-11.2,17.9",
+  "32":"-38.4,-63.6","36":"-25.3,133.8","40":"47.5,14.6","50":"23.7,90.4",
+  "56":"50.5,4.5","64":"27.5,90.4","68":"-16.3,-63.6","72":"-22.3,24.7",
+  "76":"-14.2,-51.9","84":"17.2,-88.5","100":"42.7,25.5","104":"19.2,96.7",
+  "116":"12.6,104.9","120":"7.4,12.4","124":"56.1,-106.3","144":"7.9,80.8",
+  "152":"-35.7,-71.5","156":"35.9,104.2","170":"4.1,-72.3","188":"9.7,-83.8",
+  "191":"45.1,15.2","192":"21.5,-79.5","208":"56.3,9.5","218":"-1.8,-78.2",
+  "231":"9.1,40.5","246":"64.0,25.7","250":"46.2,2.2","276":"51.2,10.5",
+  "288":"7.9,-1.0","300":"39.1,21.8","320":"15.8,-90.2","340":"15.2,-86.2",
+  "348":"47.2,19.5","356":"20.6,79.1","360":"-0.8,113.9","364":"32.4,53.7",
+  "372":"53.4,-8.2","376":"31.0,34.9","380":"41.9,12.6","388":"18.1,-77.3",
+  "392":"36.2,138.3","398":"48.0,66.9","400":"30.6,36.2","404":"-0.0,37.9",
+  "410":"35.9,127.8","418":"19.9,102.5","450":"-18.8,46.9","458":"4.2,101.9",
+  "480":"-20.3,57.6","484":"23.6,-102.6","496":"46.9,103.8","504":"31.8,-7.1",
+  "508":"-18.7,35.5","512":"21.5,55.9","516":"-22.0,17.1","524":"28.4,84.1",
+  "528":"52.1,5.3","554":"-40.9,174.9","566":"9.1,8.7","578":"60.5,8.5",
+  "586":"30.4,69.3","591":"8.5,-80.8","600":"-23.4,-58.4","604":"-9.2,-75.0",
+  "608":"12.9,121.8","616":"51.9,19.1","620":"39.4,-8.2","634":"25.4,51.2",
+  "642":"45.9,24.9","643":"61.5,105.3","646":"-1.9,29.9","682":"23.9,45.1",
+  "686":"14.5,-14.5","702":"1.4,103.8","704":"14.1,108.3","710":"-28.5,24.7",
+  "716":"-19.0,29.2","724":"40.5,-3.7","752":"63.1,18.6","756":"46.8,8.2",
+  "764":"15.9,100.9","788":"33.9,9.5","792":"38.9,35.2","800":"1.4,32.3",
+  "818":"26.8,30.8","826":"55.4,-3.4","834":"-6.4,34.9","840":"39.5,-98.4",
+  "858":"-32.5,-55.8","862":"6.4,-66.6","887":"15.6,48.5","894":"-13.1,27.8"
+};
+
+const WEATHER = {"default":[3,3,3,4,4,4,4,4,4,3,3,3]};
+Object.keys(COORDS).forEach(function(cid){
+  if(WEATHER[cid]) return;
+  var lat = parseFloat(COORDS[cid].split(",")[0]);
+  var a = Math.abs(lat);
+  var s;
+  if(a<10)      s=[3,3,3,3,3,3,3,3,3,3,3,3];
+  else if(a<23) s=lat>0?[4,5,5,4,3,2,2,2,3,4,4,4]:[2,2,2,3,4,5,5,5,4,3,2,2];
+  else if(a<35) s=lat>0?[3,3,4,5,5,5,5,5,4,4,3,3]:[5,5,4,4,3,3,3,3,4,4,5,5];
+  else if(a<50) s=lat>0?[1,2,3,4,5,5,5,5,4,3,2,1]:[5,5,4,3,2,1,1,2,3,4,5,5];
+  else if(a<60) s=lat>0?[1,1,2,3,4,5,5,5,4,3,1,1]:[5,4,3,2,1,1,1,1,2,3,4,5];
+  else          s=lat>0?[1,1,1,2,4,5,5,4,3,1,1,1]:[4,3,2,1,1,1,1,1,1,2,3,4];
+  WEATHER[cid]=s;
+});
+const getWeather = function(cid){ return WEATHER[String(cid)]||WEATHER["default"]; };
+
+function fetchWeather(cid, cb) {
+  var coord = COORDS[cid];
+  if(!coord){ cb(null); return; }
+  var parts = coord.split(",");
+  var lat=parts[0], lon=parts[1];
+  var url = "https://archive-api.open-meteo.com/v1/archive?latitude="+lat+"&longitude="+lon
+    +"&start_date=2020-01-01&end_date=2022-12-31"
+    +"&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=UTC";
+  var xhr = new XMLHttpRequest();
+  xhr.open("GET", url); xhr.timeout=15000;
+  xhr.onload = function(){
+    try {
+      var d=JSON.parse(xhr.responseText);
+      if(!d.daily||!d.daily.time){cb(null);return;}
+      var times=d.daily.time, tmD=d.daily.temperature_2m_max||[], tnD=d.daily.temperature_2m_min||[], rD=d.daily.precipitation_sum||[];
+      var bk={tm:[[],[],[],[],[],[],[],[],[],[],[],[]],tn:[[],[],[],[],[],[],[],[],[],[],[],[]],r:[[],[],[],[],[],[],[],[],[],[],[],[]]};
+      times.forEach(function(t,i){ var mo=parseInt(t.slice(5,7),10)-1; if(tmD[i]!=null)bk.tm[mo].push(tmD[i]); if(tnD[i]!=null)bk.tn[mo].push(tnD[i]); if(rD[i]!=null)bk.r[mo].push(rD[i]); });
+      function avg(arr){ return arr.length?Math.round(arr.reduce(function(a,b){return a+b;},0)/arr.length*10)/10:null; }
+      var tmax=bk.tm.map(avg), tmin=bk.tn.map(avg), rain=bk.r.map(avg);
+      var la=parseFloat(lat);
+      var sun=rain.map(function(r,mo){
+        var sf=[0.4,0.5,0.7,0.8,0.9,1.0,1.0,0.95,0.8,0.65,0.45,0.35][mo];
+        if(la<0) sf=[1.0,0.95,0.8,0.65,0.45,0.35,0.4,0.5,0.7,0.8,0.9,1.0][mo];
+        var base=Math.abs(la)>60?6:Math.abs(la)>40?7:9;
+        var h=base*sf; if(r!=null&&r>4)h*=0.7; if(r!=null&&r<1)h*=1.15;
+        return Math.round(h*10)/10;
+      });
+      function sc(t,r){ var v=3; if(t!=null){if(t>10&&t<33)v+=0.5;if(t>=20&&t<=29)v+=0.5;} if(r!=null){if(r<1.5)v+=0.5;else if(r>5)v-=1;else if(r>3)v-=0.5;} return Math.max(1,Math.min(5,Math.round(v))); }
+      var scores=tmax.map(function(_,i){return sc(tmax[i],rain[i]);});
+      cb({scores:scores,tmax:tmax,tmin:tmin,rain:rain.map(function(v){return v!=null?Math.round(v*30):null;}),sun:sun});
+    } catch(e){cb(null);}
+  };
+  xhr.onerror=function(){cb(null);}; xhr.ontimeout=function(){cb(null);}; xhr.send();
+}
+
+const WEATHER_DETAIL = {
+  "default":[
+    {label:"🌡 Max (°C)",values:[18,19,21,23,26,28,30,30,28,25,22,19],color:"#f97316",unit:"°"},
+    {label:"❄ Min (°C)",values:[8,9,11,13,16,19,21,21,19,16,12,9],color:"#38bdf8",unit:"°"},
+    {label:"🌧 Pluie (mm)",values:[80,70,70,60,60,40,30,30,50,70,80,80],color:"#60a5fa",unit:""},
+    {label:"☀ Soleil (h)",values:[4,5,6,7,8,9,10,9,7,5,4,3],color:"#fbbf24",unit:"h"},
+  ],
+  "250":[
+    {label:"🌡 Max (°C)",values:[8,9,13,16,20,24,26,26,22,17,11,8],color:"#f97316",unit:"°"},
+    {label:"❄ Min (°C)",values:[2,3,5,8,11,14,16,16,13,10,5,3],color:"#38bdf8",unit:"°"},
+    {label:"🌧 Pluie (mm)",values:[90,70,80,75,80,65,60,60,65,85,90,100],color:"#60a5fa",unit:""},
+    {label:"☀ Soleil (h)",values:[2,3,5,6,7,8,8,8,6,4,2,2],color:"#fbbf24",unit:"h"},
+  ],
+  "840":[
+    {label:"🌡 Max (°C)",values:[8,10,14,19,24,28,31,30,26,20,13,8],color:"#f97316",unit:"°"},
+    {label:"❄ Min (°C)",values:[-2,0,4,9,14,19,22,21,17,10,4,-1],color:"#38bdf8",unit:"°"},
+    {label:"🌧 Pluie (mm)",values:[80,70,80,80,85,75,65,65,70,75,85,85],color:"#60a5fa",unit:""},
+    {label:"☀ Soleil (h)",values:[4,5,6,7,8,9,10,9,7,6,4,4],color:"#fbbf24",unit:"h"},
+  ],
+};
+
 // ── CONTINENT MAP ─────────────────────────────────────────────────────────────
 const CM = {
   "12":0,"24":0,"72":0,"108":0,"120":0,"132":0,"140":0,"148":0,"174":0,"178":0,
@@ -68,67 +171,8 @@ const CATS = [
   { id:"unique",   label:"Expérience Unique",  icon:"⭐",color:"#fbbf24" },
   { id:"famous",   label:"Incontournables",    icon:"🏆",color:"#f0c040" },
 ];
-const WEATHER = {
-  "default":[3,3,3,4,4,4,4,4,4,3,3,3],
-};
-// Generate weather scores for ALL countries from COORDS using latitude-based climate zones
-Object.keys(COORDS).forEach(function(cid){
-  if(WEATHER[cid]) return;
-  var parts = COORDS[cid].split(",");
-  var lat = parseFloat(parts[0]);
-  var lon = parseFloat(parts[1]);
-  var abslat = Math.abs(lat);
-  // Determine climate zone
-  var scores;
-  if(abslat < 10) {
-    // Equatorial - hot all year, rain seasons vary
-    scores = [3,3,3,3,3,3,3,3,3,3,3,3];
-    if(lon > 30 && lon < 50) scores = [4,4,4,3,3,2,2,2,3,4,4,4]; // East Africa
-  } else if(abslat < 23) {
-    if(lat > 0) { // Northern tropics
-      scores = [4,5,5,4,3,2,2,2,3,4,4,4]; // dry winter good
-    } else { // Southern tropics
-      scores = [2,2,2,3,4,5,5,5,4,3,2,2];
-    }
-  } else if(abslat < 35) {
-    if(lat > 0) { // Mediterranean/subtropical North
-      scores = [3,3,4,5,5,5,5,5,4,4,3,3];
-      if(lon > 60 && lon < 120) scores = [2,3,4,5,5,4,3,3,4,4,3,2]; // Asia
-    } else { // Southern subtropical
-      scores = [5,5,4,4,3,3,3,3,4,4,5,5];
-    }
-  } else if(abslat < 50) {
-    if(lat > 0) { // Temperate North
-      scores = [1,2,3,4,5,5,5,5,4,3,2,1];
-      if(lon > 100) scores = [1,2,3,4,5,4,4,4,4,3,2,1]; // East Asia
-    } else { // Temperate South
-      scores = [5,5,4,3,2,1,1,2,3,4,5,5];
-    }
-  } else if(abslat < 60) {
-    if(lat > 0) scores = [1,1,2,3,4,5,5,5,4,3,1,1];
-    else scores = [5,4,3,2,1,1,1,1,2,3,4,5];
-  } else {
-    if(lat > 0) scores = [1,1,1,2,4,5,5,4,3,1,1,1];
-    else scores = [4,3,2,1,1,1,1,1,1,2,3,4];
-  }
-  WEATHER[cid] = scores;
-});
-
-const getWeather = (cid) => WEATHER[String(cid)] || WEATHER["default"];
-const WC = ["","#ef4444","#f97316","#eab308","#22c55e","#06b6d4"];
-const WL = ["","Éviter","Correct","Bon","Très bon","Parfait"];
-const MN = ["Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc"];
-
-const IMG = function(kw) {
-  try {
-    var seed = Math.abs((kw||"").split("").reduce(function(a,c){return a+c.charCodeAt(0);},0)%9999);
-    var q = encodeURIComponent((kw||"nature").replace(/[^a-zA-Z0-9 ]/g," ").trim().split(/\s+/).slice(0,4).join(","));
-    return "https://source.unsplash.com/900x500/?"+q+"&sig="+seed;
-  } catch(e) {
-    return "https://picsum.photos/seed/42/900/500";
-  }
-};
 const safeStr = function(v){ return v ? String(v) : ""; };
+const IMG = function(kw){ var seed=Math.abs((kw||"").split("").reduce(function(a,c){return a+c.charCodeAt(0);},0)%9999); var q=encodeURIComponent((kw||"nature").replace(/[^\w ]/g," ").trim().split(/\s+/).slice(0,4).join(",")); return "https://source.unsplash.com/900x500/?"+q+"&sig="+seed; };
 const Cat = id => CATS.find(c=>c.id===id)||{ id:"unique", label:"Experience", icon:"⭐", color:"#fbbf24" };
 
 // ── 195 PAYS DU MONDE ─────────────────────────────────────────────────────────
@@ -343,87 +387,9 @@ const DEFAULT_SPOTS = {
   ],
 };
 
-const UNSPLASH_KEY = "E8CzwpYEHukJpmdfhJLiJTzJvgW9_lr1ECoJbIeGKs8";
-function SpotImg({kw, style, onError}) {
-  var seed = Math.abs((kw||"").split("").reduce(function(a,c){return a+c.charCodeAt(0);},0)%9999);
-  var q = encodeURIComponent((kw||"nature").trim().split(" ").slice(0,4).join(" "));
-  var src = "https://source.unsplash.com/900x500/?"+q+"&sig="+seed;
-  return React.createElement("img",{src:src, style:style, onError:onError, loading:"lazy"});
-}
+const IMG = (keywords) => `https://loremflickr.com/900/500/${encodeURIComponent(keywords.split(' ').slice(0,3).join(','))}/all?lock=${Math.abs(keywords.split('').reduce((a,c)=>a+c.charCodeAt(0),0)%9999)}`;
 
 // ── COMPONENT ─────────────────────────────────────────────────────────────────
-const COORDS = {"4": "33.9,67.7", "8": "41.1,20.2", "12": "28.0,1.7", "20": "42.5,1.5", "24": "-11.2,17.9", "32": "-38.4,-63.6", "36": "-25.3,133.8", "40": "47.5,14.6", "50": "23.7,90.4", "56": "50.5,4.5", "64": "27.5,90.4", "68": "-16.3,-63.6", "72": "-22.3,24.7", "76": "-14.2,-51.9", "84": "17.2,-88.5", "100": "42.7,25.5", "104": "19.2,96.7", "116": "12.6,104.9", "120": "7.4,12.4", "124": "56.1,-106.3", "144": "7.9,80.8", "152": "-35.7,-71.5", "156": "35.9,104.2", "170": "4.1,-72.3", "188": "9.7,-83.8", "191": "45.1,15.2", "192": "21.5,-79.5", "208": "56.3,9.5", "218": "-1.8,-78.2", "231": "9.1,40.5", "246": "64.0,25.7", "250": "46.2,2.2", "276": "51.2,10.5", "288": "7.9,-1.0", "300": "39.1,21.8", "320": "15.8,-90.2", "340": "15.2,-86.2", "348": "47.2,19.5", "356": "20.6,79.1", "360": "-0.8,113.9", "364": "32.4,53.7", "372": "53.4,-8.2", "376": "31.0,34.9", "380": "41.9,12.6", "388": "18.1,-77.3", "392": "36.2,138.3", "398": "48.0,66.9", "400": "30.6,36.2", "404": "-0.0,37.9", "410": "35.9,127.8", "418": "19.9,102.5", "450": "-18.8,46.9", "458": "4.2,101.9", "480": "-20.3,57.6", "484": "23.6,-102.6", "496": "46.9,103.8", "504": "31.8,-7.1", "508": "-18.7,35.5", "512": "21.5,55.9", "516": "-22.0,17.1", "524": "28.4,84.1", "528": "52.1,5.3", "554": "-40.9,174.9", "566": "9.1,8.7", "578": "60.5,8.5", "586": "30.4,69.3", "591": "8.5,-80.8", "600": "-23.4,-58.4", "604": "-9.2,-75.0", "608": "12.9,121.8", "616": "51.9,19.1", "620": "39.4,-8.2", "634": "25.4,51.2", "642": "45.9,24.9", "643": "61.5,105.3", "646": "-1.9,29.9", "682": "23.9,45.1", "686": "14.5,-14.5", "702": "1.4,103.8", "704": "14.1,108.3", "710": "-28.5,24.7", "716": "-19.0,29.2", "724": "40.5,-3.7", "752": "63.1,18.6", "756": "46.8,8.2", "764": "15.9,100.9", "788": "33.9,9.5", "792": "38.9,35.2", "800": "1.4,32.3", "818": "26.8,30.8", "826": "55.4,-3.4", "834": "-6.4,34.9", "840": "39.5,-98.4", "858": "-32.5,-55.8", "862": "6.4,-66.6", "887": "15.6,48.5", "894": "-13.1,27.8"};
-
-function fetchWeather(cid, cb) {
-  var coord = COORDS[cid];
-  if(!coord) { cb(null); return; }
-  var parts = coord.split(",");
-  var lat = parts[0], lon = parts[1];
-  // Use daily data for 3 years, aggregate to monthly averages
-  var url = "https://archive-api.open-meteo.com/v1/archive?latitude="+lat+"&longitude="+lon
-    +"&start_date=2020-01-01&end_date=2022-12-31"
-    +"&daily=temperature_2m_max,temperature_2m_min,precipitation_sum"
-    +"&timezone=UTC";
-  var xhr = new XMLHttpRequest();
-  xhr.open("GET", url);
-  xhr.timeout = 15000;
-  xhr.onload = function() {
-    try {
-      var d = JSON.parse(xhr.responseText);
-      if(!d.daily || !d.daily.time) { cb(null); return; }
-      var times = d.daily.time;
-      var tmaxD = d.daily.temperature_2m_max || [];
-      var tminD = d.daily.temperature_2m_min || [];
-      var rainD = d.daily.precipitation_sum || [];
-      var radD  = [];
-      // Aggregate by month index (0-11)
-      var buckets = {tmax:[[],[],[],[],[],[],[],[],[],[],[],[]],
-                     tmin:[[],[],[],[],[],[],[],[],[],[],[],[]],
-                     rain:[[],[],[],[],[],[],[],[],[],[],[],[]],
-                     rad:[[],[],[],[],[],[],[],[],[],[],[],[]]};
-      times.forEach(function(t,i){
-        var mo = parseInt(t.slice(5,7),10)-1;
-        if(tmaxD[i]!=null) buckets.tmax[mo].push(tmaxD[i]);
-        if(tminD[i]!=null) buckets.tmin[mo].push(tminD[i]);
-        if(rainD[i]!=null) buckets.rain[mo].push(rainD[i]);
-        if(radD[i]!=null)  buckets.rad[mo].push(radD[i]);
-      });
-      function avg(arr){ return arr.length?Math.round(arr.reduce(function(a,b){return a+b;},0)/arr.length*10)/10:null; }
-      function avgMonth(bucket){ return bucket.map(avg); }
-      var tmax = avgMonth(buckets.tmax);
-      var tmin = avgMonth(buckets.tmin);
-      var rain = avgMonth(buckets.rain);
-      // Convert radiation MJ/m2/day to approx sunshine hours (/day)
-      // Estimate sunshine hours from latitude and rainfall
-      var lat_v = parseFloat(lat);
-      var sun = rain.map(function(r_mm, mo){
-        // Base sunshine by latitude and season
-        var season_factor = [0.4,0.5,0.7,0.8,0.9,1.0,1.0,0.95,0.8,0.65,0.45,0.35][mo];
-        if(lat_v < 0) season_factor = [1.0,0.95,0.8,0.65,0.45,0.35,0.4,0.5,0.7,0.8,0.9,1.0][mo];
-        var base = Math.abs(lat_v) > 60 ? 6 : Math.abs(lat_v) > 40 ? 7 : 9;
-        var sun_h = base * season_factor;
-        if(r_mm != null && r_mm > 4) sun_h *= 0.7;
-        if(r_mm != null && r_mm < 1) sun_h *= 1.15;
-        return Math.round(sun_h * 10) / 10;
-      });
-      function sc(t,r,s) {
-        var v=3;
-        if(t!=null){ if(t>10&&t<33) v+=0.5; if(t>=20&&t<=29) v+=0.5; }
-        // r is mm/day average
-        if(r!=null){ if(r<1.5) v+=0.5; else if(r>5) v-=1; else if(r>3) v-=0.5; }
-        if(s!=null){ if(s>7) v+=0.5; else if(s<3) v-=0.5; }
-        return Math.max(1,Math.min(5,Math.round(v)));
-      }
-      var scores = tmax.map(function(_,i){ return sc(tmax[i],rain[i],sun[i]); });
-      cb({ scores:scores, tmax:tmax, tmin:tmin,
-           rain:rain.map(function(v){ return v!=null?Math.round(v*30):null; }), // mm/day*30 = mm/month
-           sun:sun });
-    } catch(e) { console.log("weather parse error",e); cb(null); }
-  };
-  xhr.onerror = function(){ cb(null); };
-  xhr.ontimeout = function(){ cb(null); };
-  xhr.send();
-}
 function AtlasMerveilles() {
   const canvasRef    = useRef(null);
   const projRef      = useRef(null);
@@ -450,32 +416,16 @@ function AtlasMerveilles() {
   const [worldData,setWorldData]             = useState(null);
   const [loading,setLoading]                 = useState(true);
   const [animKey,setAnimKey]                 = useState(0);
-  useEffect(()=>{ setModalErr(false); setImgErr(false); },[detailSpot]);
-  useEffect(function(){
-    if(!showWeather||!selectedCountry) return;
-    if(weatherCache[selectedCountry]) return;
-    setWeatherLoading(true);
-    fetchWeather(selectedCountry, function(data){
-      setWeatherLoading(false);
-      if(data){
-        setWeatherCache(function(prev){
-          var n = Object.assign({},prev);
-          n[selectedCountry] = data;
-          return n;
-        });
-      }
-    });
-  },[showWeather,selectedCountry]);
   const [imgErr,setImgErr]                   = useState(false);
   const [modalErr,setModalErr]               = useState(false);
+  const [showLegend,setShowLegend]           = useState(false);
+  const [search,setSearch]                   = useState('');
+  const [monthFilter,setMonthFilter]         = useState(0);
   const [showWeather,setShowWeather]         = useState(false);
   const [showGlobalMonth,setShowGlobalMonth] = useState(false);
   const [globalMonth,setGlobalMonth]         = useState(0);
   const [weatherCache,setWeatherCache]       = useState({});
   const [weatherLoading,setWeatherLoading]   = useState(false);
-  const [showLegend,setShowLegend]           = useState(false);
-  const [search,setSearch]                   = useState('');
-  const [monthFilter,setMonthFilter]         = useState(0);
   const [isMobile, setIsMobile]              = useState(typeof window!=='undefined'&&window.innerWidth<=768);
   useEffect(()=>{ const fn=()=>setIsMobile(window.innerWidth<=768); window.addEventListener('resize',fn); return()=>window.removeEventListener('resize',fn); },[]);
   const [importRef]                          = useState(()=>({ current:null }));
@@ -487,11 +437,18 @@ function AtlasMerveilles() {
   useEffect(function(){
     if(!selectedCountry||weatherCache[selectedCountry]) return;
     fetchWeather(selectedCountry, function(data){
-      if(data){
-        setWeatherCache(function(prev){ var n=Object.assign({},prev); n[selectedCountry]=data; return n; });
-      }
+      if(data){ setWeatherCache(function(prev){ var n=Object.assign({},prev); n[selectedCountry]=data; return n; }); }
     });
   },[selectedCountry]);
+  useEffect(function(){
+    if(!showWeather||!selectedCountry||weatherCache[selectedCountry]) return;
+    setWeatherLoading(true);
+    fetchWeather(selectedCountry, function(data){
+      setWeatherLoading(false);
+      if(data){ setWeatherCache(function(prev){ var n=Object.assign({},prev); n[selectedCountry]=data; return n; }); }
+    });
+  },[showWeather,selectedCountry]);
+  useEffect(()=>{ setModalErr(false); setImgErr(false); },[detailSpot]);
 
   useEffect(()=>{ (async()=>{
     try{ const s=await window.storage.get("atlas-v11"); if(s&&s.value){ setSpots(JSON.parse(s.value)); return; } }catch(e){}
@@ -536,7 +493,7 @@ function AtlasMerveilles() {
       else if(sd?.length){ if(sd.every(s=>s.done)) ctx.fillStyle="#0a2c18"; else if(sd.some(s=>s.done)) ctx.fillStyle="#2c1b04"; else ctx.fillStyle=C.active; }
       else ctx.fillStyle=C.base;
       ctx.fill();
-      const sw=(isH||isS||sd?.length)?(isS?1.8:isH?1.1:0.9):.2;
+      const sw=(isH||isS||sd?.length)?(isS?1.8:isH?1.1:.9):.2;
       const sc=isS?"#5ab0e8":sd?.length?(sd.every(s=>s.done)?"#22c55e":sd.some(s=>s.done)?"#f59e0b":CC[ci]):isH?"#2a6a9a":C.stroke;
       ctx.beginPath(); pathGen(f); ctx.strokeStyle=sc; ctx.lineWidth=sw; ctx.stroke();
     }
@@ -592,7 +549,14 @@ function AtlasMerveilles() {
   const sideSpots=selectedCountry?(spots[selectedCountry]||[]):[];
   const filtered=(filter==="all"?sideSpots:sideSpots.filter(s=>s.category===filter))
     .filter(s=>!search||((s.name||"")+(s.desc||"")).toLowerCase().includes(search.toLowerCase()))
-    .filter(s=>{ if(!monthFilter) return true; const mo=MN[monthFilter-1].toLowerCase().slice(0,3); return (s.season||"").toLowerCase().includes(mo)||((s.season||"").toLowerCase().includes("toute")); })
+    .filter(s=>{
+      if(!monthFilter) return true;
+      var se=(s.season||"").toLowerCase();
+      if(se.includes("toute")||se.includes("all year")||se.includes("year-round")) return true;
+      var FR=["jan","fev","mar","avr","mai","jun","jul","aou","sep","oct","nov","dec"];
+      var EN=["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
+      return se.includes(FR[monthFilter-1])||se.includes(EN[monthFilter-1]);
+    })
     .slice().sort((a,b)=>a.name.localeCompare(b.name,undefined,{sensitivity:"base"}));
   const ci=selectedCountry?gc(selectedCountry):0;
 
@@ -655,7 +619,7 @@ function AtlasMerveilles() {
           </div>
           <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
             <button className="btn" onClick={()=>setShowGlobalMonth(true)} style={{background:"#06122a",border:"1px solid #0d2038",borderRadius:8,padding:"8px 12px",color:"#0ea5e9",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}>🗓 Meilleur mois</button>
-            <div style={{display:"flex",gap:3}}>{CN.map((n,i)=>(<div key={n} title={n} style={{width:12,height:12,borderRadius:"50%",background:CC[i],opacity:.75}}/>))}</div>
+            <div style={{display:"flex",gap:3}}>{CN.map((n,i)=>(<div key={n} title={n} style={{width:12,height:12,borderRadius:"50%",background:CC[i],opacity:0.75}}/>))}</div>
             <div style={{width:100,height:5,background:"#0b1e34",borderRadius:2,overflow:"hidden"}}><div style={{width:(allSpots.length?(totalDone/allSpots.length*100):0)+"%",height:"100%",background:"linear-gradient(90deg,#0ea5e9,#22c55e)",transition:"width .6s"}}/></div>
             <span style={{fontSize:14,color:"#4a90b0",fontWeight:700}}>{totalDone}/{allSpots.length}</span>
           </div>
@@ -680,10 +644,10 @@ function AtlasMerveilles() {
             {CN.map((n,i)=>(<div key={n} style={{display:"flex",alignItems:"center",gap:5,marginBottom:3}}><div style={{width:9,height:9,background:CONT[i].active,border:"1.5px solid "+CC[i],borderRadius:2}}/><span style={{color:"#1e3a56",fontWeight:500}}>{n}</span></div>))}
             <div style={{borderTop:"1px solid #0b1e34",marginTop:7,paddingTop:6}}>
               {[{bg:"#062338",st:"#0ea5e9",l:"Spots à explorer"},{bg:"#2c1b04",st:"#f59e0b",l:"En cours"},{bg:"#0a2c18",st:"#22c55e",l:"Accompli"}].map(x=>(
-                <div key={x.l} style={{display:"flex",alignItems:"center",gap:5,marginBottom:2.5}}><div style={{width:9,height:9,background:x.bg,border:"1.5px solid "+x.st,borderRadius:2}}/><span style={{color:"#1e3a56",fontWeight:400}}>{x.l}</span></div>
+                <div key={x.l} style={{display:"flex",alignItems:"center",gap:5,marginBottom:2.5}}><div style={{width:9,height:9,background:x.bg,border:"1.5px solid "+x.st+",borderRadius:2"}}/><span style={{color:"#1e3a56",fontWeight:400}}>{x.l}</span></div>
               ))}
             </div>
-            <div style={{color:"#0a1e30",marginTop:6,fontSize:8}}>Drag = tourner · Scroll = zoom</div>
+            <div style={{color:"#0a1e30",marginTop:6,fontSize:8}}>Drag = tourner · Scroll = zoom</div></div>}
           </div>)}
           {!selectedCountry&&!loading&&(<div style={{position:"absolute",bottom:"44%",left:"50%",transform:"translateX(-50%)",pointerEvents:"none"}}>
             <div style={{fontSize:9,color:"#0d2540",fontWeight:700,letterSpacing:".3em",animation:"pulse 3s ease infinite"}}>CLIQUEZ SUR UN PAYS</div>
@@ -706,10 +670,8 @@ function AtlasMerveilles() {
                 </div>
                 <button onClick={()=>setSelectedCountry(null)} style={{background:"#0b1e34",border:"1px solid #142840",borderRadius:6,width:28,height:28,color:"#3a6080",cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontWeight:300}}>×</button>
               </div>
-              
               {sideSpots.length>0&&(<div style={{marginBottom:11}}><div style={{height:3,background:"#0b1e34",borderRadius:2,overflow:"hidden"}}><div style={{width:""+(sideSpots.filter(s=>s.done).length/sideSpots.length*100)+"%",height:"100%",background:"linear-gradient(90deg,#0ea5e9,#22c55e)",transition:"width .5s",borderRadius:2}}/></div></div>)}
               <div style={{display:"flex",gap:6}}>
-                <button className="btn" onClick={()=>setShowWeather(true)} title="Météo détaillée" style={{background:"#06122a",border:"1px solid #0d2038",borderRadius:8,padding:"10px 12px",color:"#38bdf8",fontWeight:700,fontSize:14,cursor:"pointer"}}>🌤</button>
                 <button className="btn" onClick={()=>setShowModal(true)} style={{flex:1,background:"linear-gradient(135deg,#0c4880,#072a56)",border:"1px solid #1060a840",borderRadius:8,padding:"10px",color:"#7ec8f0",fontWeight:800,fontSize:10,letterSpacing:".1em",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
                   <span style={{fontSize:13,fontWeight:300}}>+</span> AJOUTER
                 </button>
@@ -720,26 +682,23 @@ function AtlasMerveilles() {
 
             {/* Spots */}
             <div style={{padding:"8px 12px 0",borderBottom:"1px solid #0b1e34",flexShrink:0}}>
+              <button onClick={()=>setShowWeather(true)} title="Météo détaillée" style={{float:"right",background:"#06122a",border:"1px solid #0d2038",borderRadius:7,padding:"4px 9px",color:"#38bdf8",fontWeight:700,fontSize:13,cursor:"pointer",marginTop:2}}>🌤</button>
               <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Rechercher un spot..." style={{width:"100%",background:"#06122a",border:"1px solid #0d2038",borderRadius:8,padding:"8px 12px",color:"#c0d8f0",fontSize:13,marginBottom:8,outline:"none"}}/>
-              <div style={{display:"flex",gap:3,flexWrap:"wrap",marginBottom:8}}>
+              <div style={{display:"flex",gap:3,flexWrap:"wrap",marginBottom:6}}>
                 {[0,1,2,3,4,5,6,7,8,9,10,11,12].map(function(m){
-                  var liveScores = weatherCache[selectedCountry]; var ws = m===0 ? null : (liveScores?liveScores.scores[m-1]:getWeather(selectedCountry||"default")[m-1]);
+                  var liveScores = weatherCache[selectedCountry];
+                  var ws = m===0 ? null : (liveScores?liveScores.scores[m-1]:getWeather(selectedCountry||"default")[m-1]);
                   var wc = ws ? WC[ws] : "#0ea5e9";
                   var act = monthFilter===m;
                   return (
                     <button key={m} onClick={()=>setMonthFilter(m===monthFilter?0:m)}
                       title={m>0&&ws?MN[m-1]+": "+WL[ws]:"Tous les mois"}
-                      style={{background:act?wc:(m===0?"transparent":wc+"33"),
-                        border:"2px solid "+(act?wc:(m===0?(monthFilter===0?"#0ea5e9":"#0d2038"):wc+"88")),
-                        borderRadius:6,padding:"5px 9px",
-                        color:act?"#020c1a":(m===0?(monthFilter===0?"#0ea5e9":"#4a7898"):wc),
-                        fontSize:12,fontWeight:act?900:700,cursor:"pointer",transition:"all .15s",minWidth:36,textAlign:"center"}}>
+                      style={{background:act?wc:(m===0?"transparent":wc+"33"),border:"2px solid "+(act?wc:(m===0?(monthFilter===0?"#0ea5e9":"#0d2038"):wc+"88")),borderRadius:6,padding:"5px 9px",color:act?"#020c1a":(m===0?(monthFilter===0?"#0ea5e9":"#4a7898"):wc),fontSize:12,fontWeight:act?900:700,cursor:"pointer",minWidth:36,textAlign:"center"}}>
                       {m===0?"Tout":MN[m-1]}
                     </button>
                   );
                 })}
               </div>
-              
             </div>
             <div style={{flex:1,overflowY:"auto",padding:"10px"}}>
               {filtered.length===0?(
@@ -782,10 +741,10 @@ function AtlasMerveilles() {
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.88)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,backdropFilter:"blur(12px)",padding:"16px"}}
           onClick={()=>setDetailSpot(null)}>
           <div style={{background:"#030e1c",border:"1px solid #0d2540",borderRadius:16,width:"min(640px,96vw)",maxHeight:"88vh",overflow:"auto",boxShadow:"0 30px 80px rgba(0,0,0,.9)",animation:"modIn .22s ease both"}}
-            onClick={function(e){e.stopPropagation();}}>
+            onClick={e=>e.stopPropagation()}>
             <div style={{position:"relative",height:260,background:"#071424",overflow:"hidden",borderRadius:"16px 16px 0 0",flexShrink:0}}>
               {!imgErr
-                ? <img src={IMG((detailSpot.photo||detailSpot.name||"nature"))} alt="" style={{width:"100%",height:"100%",objectFit:"cover",opacity:.72}} onError={()=>setImgErr(true)}/>
+                ? <img src={IMG((detailSpot.photo||detailSpot.name||"nature"))} alt="" style={{width:"100%",height:"100%",objectFit:"cover",opacity:0.72}} onError={()=>setImgErr(true)}/>
                 : <div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",background:"radial-gradient(circle at 40% 40%,#0c2a44,#020c1a)"}}><span style={{fontSize:64}}>{Cat(detailSpot.category).icon}</span></div>
               }
               <div style={{position:"absolute",inset:0,background:"linear-gradient(to top,#030e1c 0%,rgba(3,14,28,.2) 55%,transparent 100%)"}}/>
@@ -812,7 +771,7 @@ function AtlasMerveilles() {
                   {safeStr(detailSpot.tip)&&(<div style={{background:"#050f1e",border:"1px solid #0d2038",borderRadius:8,padding:"12px 14px"}}><div style={{fontSize:8,fontWeight:800,color:"#0ea5e9",letterSpacing:".12em",marginBottom:6}}>💡 CONSEIL</div><div style={{fontSize:12,fontWeight:600,color:"#4a80a0",lineHeight:1.55}}>{detailSpot.tip}</div></div>)}
                 </div>
               )}
-              <button className="btn" onClick={function(){ try{ toggleDone(selectedCountry,detailSpot.id); setDetailSpot(function(s){ return Object.assign({},s,{done:!s.done}); }); }catch(e){} }}
+              <button className="btn" onClick={()=>{ toggleDone(selectedCountry,detailSpot.id); setDetailSpot(function(s){ return Object.assign({},s,{done:!s.done}); }); }}
                 style={{width:"100%",background:detailSpot.done?"linear-gradient(135deg,#0b2e1a,#062014)":"linear-gradient(135deg,#0c4880,#072a56)",border:"2px solid "+(detailSpot.done?"#22c55e40":"#1060a840"),borderRadius:10,padding:"14px",color:detailSpot.done?"#22c55e":"#7ec8f0",fontWeight:800,fontSize:12,letterSpacing:".1em",display:"flex",alignItems:"center",justifyContent:"center",gap:9}}>
                 {detailSpot.done?"✓ ACCOMPLI — CLIQUER POUR ANNULER":"○ MARQUER COMME ACCOMPLI"}
               </button>
@@ -849,87 +808,67 @@ function AtlasMerveilles() {
         </div>
       )}
 
+      
       {/* ── WEATHER MODAL ── */}
       {showWeather&&selectedCountry&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.88)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,backdropFilter:"blur(12px)",padding:"16px"}}
           onClick={()=>setShowWeather(false)}>
-          <div style={{background:"#030e1c",border:"1px solid #0d2540",borderRadius:16,width:"min(700px,96vw)",maxHeight:"88vh",overflow:"auto",padding:"24px"}}
+          <div style={{background:"#030e1c",border:"1px solid #0d2540",borderRadius:16,width:"min(760px,96vw)",maxHeight:"90vh",overflow:"auto",padding:"24px"}}
             onClick={function(e){e.stopPropagation();}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
               <div>
                 <div style={{fontWeight:900,fontSize:22,color:"#e4f0fc"}}>{selectedName}</div>
                 <div style={{display:"flex",gap:4,marginTop:6,flexWrap:"wrap",alignItems:"center"}}>
                   {(weatherCache[selectedCountry]?weatherCache[selectedCountry].scores:getWeather(selectedCountry)).map(function(sc,i){
-                    return sc>=4 ? <span key={i} style={{background:WC[sc],color:"#020c1a",borderRadius:4,padding:"2px 7px",fontSize:11,fontWeight:800}}>{MN[i]}</span> : null;
+                    return sc>=4?<span key={i} style={{background:WC[sc],color:"#020c1a",borderRadius:4,padding:"2px 7px",fontSize:11,fontWeight:800}}>{MN[i]}</span>:null;
                   })}
-                  <span style={{fontSize:11,color:"#2a5070",marginLeft:4}}>← meilleurs mois</span>
-                  {weatherLoading&&<span style={{fontSize:11,color:"#0ea5e9",marginLeft:8}}>⟳ Chargement données réelles...</span>}
-                  {weatherCache[selectedCountry]&&<span style={{fontSize:10,color:"#22c55e",marginLeft:8}}>✓ Données Open-Meteo 2015-2023</span>}
+                  <span style={{fontSize:11,color:"#2a5070",marginLeft:4}}>meilleurs mois</span>
+                  {weatherLoading&&<span style={{fontSize:11,color:"#0ea5e9",marginLeft:8}}>⟳ Chargement...</span>}
+                  {weatherCache[selectedCountry]&&<span style={{fontSize:10,color:"#22c55e",marginLeft:8}}>✓ Open-Meteo</span>}
                 </div>
-                <div style={{fontSize:12,color:"#2a5070",marginTop:2}}>Comparatif météo mensuel</div>
+                <div style={{fontSize:12,color:"#2a5070",marginTop:4}}>Comparatif météo mensuel</div>
               </div>
-              <button onClick={()=>setShowWeather(false)} style={{background:"#0b1e34",border:"1px solid #142840",borderRadius:8,width:32,height:32,color:"#3a6080",cursor:"pointer",fontSize:18}}>×</button>
+              <button onClick={()=>setShowWeather(false)} style={{background:"#0b1e34",border:"1px solid #142840",borderRadius:8,width:32,height:32,color:"#3a6080",cursor:"pointer",fontSize:18,flexShrink:0}}>×</button>
             </div>
             <div style={{overflowX:"auto"}}>
-              <table style={{width:"100%",borderCollapse:"separate",borderSpacing:"4px"}}>
-                <thead>
-                  <tr>
-                    <td style={{width:100,color:"#2a5070",fontSize:11,fontWeight:700,paddingBottom:8}}>Indicateur</td>
-                    {MN.map(function(m,i){ 
-                    var liveData = weatherCache[selectedCountry];
-                    var sc = liveData ? liveData.scores[i] : getWeather(selectedCountry)[i];
-                    return <th key={m} style={{color:WC[sc],fontSize:11,fontWeight:800,textAlign:"center",width:42,paddingBottom:8}}>{m}</th>; 
-                  })}
-                  </tr>
-                </thead>
+              <table style={{width:"100%",borderCollapse:"separate",borderSpacing:"3px"}}>
+                <thead><tr>
+                  <td style={{color:"#2a5070",fontSize:11,fontWeight:700,paddingBottom:8,width:110}}>Indicateur</td>
+                  {MN.map(function(m,i){ var sc=(weatherCache[selectedCountry]?weatherCache[selectedCountry].scores:getWeather(selectedCountry))[i]; return <th key={m} style={{color:WC[sc],fontSize:11,fontWeight:800,textAlign:"center",width:42,paddingBottom:8}}>{m}</th>; })}
+                </tr></thead>
                 <tbody>
                   <tr>
-                    <td style={{color:"#2a5070",fontSize:11,paddingRight:8,paddingBottom:6}}>Météo globale</td>
-                    {(weatherCache[selectedCountry]?weatherCache[selectedCountry].scores:getWeather(selectedCountry)).map(function(sc,i){ return (
-                      <td key={i} style={{textAlign:"center",paddingBottom:6}}>
-                        <div style={{background:WC[sc],borderRadius:6,padding:"6px 2px",fontSize:10,fontWeight:800,color:"#020c1a"}}>{WL[sc].slice(0,4)}</div>
-                      </td>
-                    ); })}
+                    <td style={{color:"#2a5070",fontSize:11,paddingBottom:6}}>Météo globale</td>
+                    {(weatherCache[selectedCountry]?weatherCache[selectedCountry].scores:getWeather(selectedCountry)).map(function(sc,i){ return <td key={i} style={{textAlign:"center",paddingBottom:6}}><div style={{background:WC[sc],borderRadius:6,padding:"5px 2px",fontSize:10,fontWeight:800,color:"#020c1a"}}>{WL[sc].slice(0,4)}</div></td>; })}
                   </tr>
                   {(function(){
-                  var live = weatherCache[selectedCountry];
-                  var rows = live ? [
-                    {label:"🌡 Max (°C)", values:live.tmax.map(function(v){return v!=null?v:"?"}), color:"#f97316", unit:"°"},
-                    {label:"❄ Min (°C)", values:live.tmin.map(function(v){return v!=null?v:"?"}), color:"#38bdf8", unit:"°"},
-                    {label:"🌧 Pluie (mm)", values:live.rain.map(function(v){return v!=null?Math.round(v):"?"}), color:"#60a5fa", unit:""},
-                    {label:"☀ Soleil (h)", values:live.sun.map(function(v){return v!=null?v:"?"}), color:"#fbbf24", unit:"h"},
-                  ] : (WEATHER_DETAIL[selectedCountry]||WEATHER_DETAIL["default"]);
-                  return rows;
-                })().map(function(row,ri){ return (
-                    <tr key={ri}>
-                      <td style={{color:"#2a5070",fontSize:11,paddingRight:8,paddingBottom:4,whiteSpace:"nowrap"}}>{row.label}</td>
-                      {row.values.map(function(v,i){ 
-                        var sc = getWeather(selectedCountry)[i];
-                        return (
-                          <td key={i} style={{textAlign:"center",paddingBottom:4}}>
-                            <div style={{background:"#06122a",borderRadius:5,padding:"5px 2px",fontSize:11,fontWeight:700,color:row.color||"#4a90b0",border:"1px solid "+WC[sc]+"44"}}>
-                              {v}{row.unit||""}
-                            </div>
-                          </td>
-                        ); 
-                      })}
-                    </tr>
-                  ); })}
+                    var live=weatherCache[selectedCountry];
+                    var rows=live?[
+                      {label:"🌡 Max (°C)",values:live.tmax.map(function(v){return v!=null?v+"°":"?"}),color:"#f97316"},
+                      {label:"❄ Min (°C)",values:live.tmin.map(function(v){return v!=null?v+"°":"?"}),color:"#38bdf8"},
+                      {label:"🌧 Pluie (mm)",values:live.rain.map(function(v){return v!=null?v:"?"}),color:"#60a5fa"},
+                      {label:"☀ Soleil (h)",values:live.sun.map(function(v){return v!=null?v+"h":"?"}),color:"#fbbf24"},
+                    ]:(WEATHER_DETAIL[selectedCountry]||WEATHER_DETAIL["default"]).map(function(r){ return {label:r.label,values:r.values.map(function(v){return v+(r.unit||"")}),color:r.color}; });
+                    return rows.map(function(row,ri){ return (
+                      <tr key={ri}>
+                        <td style={{color:"#2a5070",fontSize:11,paddingBottom:4,whiteSpace:"nowrap"}}>{row.label}</td>
+                        {row.values.map(function(v,i){ var sc=(weatherCache[selectedCountry]?weatherCache[selectedCountry].scores:getWeather(selectedCountry))[i]; return <td key={i} style={{textAlign:"center",paddingBottom:4}}><div style={{background:"#06122a",borderRadius:5,padding:"5px 2px",fontSize:11,fontWeight:700,color:row.color,border:"1px solid "+WC[sc]+"44"}}>{v}</div></td>; })}
+                      </tr>
+                    ); });
+                  })()}
                 </tbody>
               </table>
             </div>
-            <div style={{marginTop:16,fontSize:10,color:"#1a3a56",textAlign:"center"}}>
-              Données indicatives. Cliquez sur un mois pour filtrer les spots.
-            </div>
+            <div style={{marginTop:12,fontSize:10,color:"#1a3a56",textAlign:"center"}}>Données Open-Meteo 2020-2022. Cliquez sur un mois pour filtrer les spots.</div>
           </div>
         </div>
       )}
-      
+
       {/* ── GLOBAL MONTH MODAL ── */}
       {showGlobalMonth&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,backdropFilter:"blur(12px)",padding:"16px"}}
           onClick={()=>setShowGlobalMonth(false)}>
-          <div style={{background:"#030e1c",border:"1px solid #0d2540",borderRadius:16,width:"min(900px,96vw)",maxHeight:"90vh",overflow:"auto",padding:"24px"}}
+          <div style={{background:"#030e1c",border:"1px solid #0d2540",borderRadius:16,width:"min(960px,96vw)",maxHeight:"90vh",overflow:"auto",padding:"24px"}}
             onClick={function(e){e.stopPropagation();}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
               <div>
@@ -940,100 +879,65 @@ function AtlasMerveilles() {
             </div>
             <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:20}}>
               {[0,1,2,3,4,5,6,7,8,9,10,11,12].map(function(m){
-                var act = globalMonth===m;
-                return (
-                  <button key={m} onClick={()=>setGlobalMonth(m)}
-                    style={{background:act?"#0ea5e9":"#06122a",border:"1px solid "+(act?"#0ea5e9":"#0d2038"),borderRadius:8,padding:"8px 14px",color:act?"#020c1a":"#4a90b0",fontSize:13,fontWeight:act?800:600,cursor:"pointer"}}>
-                    {m===0?"Tous les mois":MN[m-1]}
-                  </button>
-                );
+                var act=globalMonth===m;
+                return <button key={m} onClick={()=>setGlobalMonth(m)} style={{background:act?"#0ea5e9":"#06122a",border:"1px solid "+(act?"#0ea5e9":"#0d2038"),borderRadius:8,padding:"8px 14px",color:act?"#020c1a":"#4a90b0",fontSize:13,fontWeight:act?800:600,cursor:"pointer"}}>{m===0?"Tous les mois":MN[m-1]}</button>;
               })}
             </div>
-            {globalMonth>0&&(
+            {globalMonth===0&&(
               <div>
-                <div style={{fontSize:12,color:"#2a5070",marginBottom:12,fontWeight:700,letterSpacing:".08em"}}>
-                  DESTINATIONS EN {MN[globalMonth-1].toUpperCase()} — CLASSÉES PAR SCORE MÉTÉO
-                </div>
-                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:8}}>
-                  {(function(){
-                    var items = Object.keys(WEATHER).filter(function(k){ return k!=="default"&&NM[k]; }).map(function(cid){
-                      var sc = getWeather(cid)[globalMonth-1];
-                      return {cid:cid, sc:sc, name:NM[cid], cont:gc(cid)};
-                    });
-                    // Sort: score desc, then continent, then alpha
-                    items.sort(function(a,b){
-                      if(b.sc!==a.sc) return b.sc-a.sc;
-                      if(a.cont!==b.cont) return a.cont-b.cont;
-                      return a.name.localeCompare(b.name,"fr");
-                    });
-                    return items;
-                  })().map(function(item){
-                    return (
-                      <div key={item.cid}
-                        onClick={function(){ setShowGlobalMonth(false); setSelectedCountry(item.cid); setSelectedName(NM[item.cid]); setAnimKey(function(k){return k+1;}); }}
-                        style={{background:"#040e1e",border:"1px solid "+WC[item.sc]+"55",borderRadius:10,padding:"12px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,transition:"all .15s"}}
-                        className="btn">
-                        <div style={{width:14,height:14,borderRadius:3,background:WC[item.sc],flexShrink:0}}/>
-                        <div style={{flex:1,minWidth:0}}>
-                          <div style={{fontSize:13,fontWeight:700,color:"#d8eef8"}}>{item.name}</div>
-                          <div style={{display:"flex",gap:8,marginTop:2,alignItems:"center"}}>
-                            <span style={{fontSize:11,color:WC[item.sc],fontWeight:600}}>{WL[item.sc]}</span>
-                            {weatherCache[item.cid]&&<span style={{fontSize:10,color:"#2a5070"}}>
-                              🌧{weatherCache[item.cid].rain[globalMonth-1]!=null?weatherCache[item.cid].rain[globalMonth-1]+"mm":""} 
-                              🌡{weatherCache[item.cid].tmax[globalMonth-1]!=null?weatherCache[item.cid].tmax[globalMonth-1]+"°":""}
-                            </span>}
+                {CN.map(function(contName,ci){
+                  var items=Object.keys(WEATHER).filter(function(k){return k!=="default"&&NM[k]&&gc(k)===ci;}).map(function(cid){
+                    var sc=getWeather(cid); var best=Math.max.apply(null,sc);
+                    var bm=sc.map(function(s,i){return s===best?MN[i]:null;}).filter(Boolean);
+                    return {cid:cid,name:NM[cid],best:best,bm:bm};
+                  }).sort(function(a,b){return a.name.localeCompare(b.name,"fr");});
+                  if(!items.length) return null;
+                  return <div key={ci}>
+                    <div style={{borderBottom:"1px solid #0d2038",paddingBottom:6,marginBottom:8,marginTop:ci>0?16:0}}>
+                      <span style={{fontSize:11,fontWeight:800,color:CC[ci],letterSpacing:".1em"}}>{contName.toUpperCase()}</span>
+                    </div>
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:8,marginBottom:8}}>
+                      {items.map(function(item){return(
+                        <div key={item.cid} onClick={function(){setShowGlobalMonth(false);setSelectedCountry(item.cid);setSelectedName(NM[item.cid]);setAnimKey(function(k){return k+1;});}}
+                          style={{background:"#040e1e",border:"1px solid #0c1e34",borderRadius:10,padding:"12px",cursor:"pointer",transition:"all .15s"}} className="btn">
+                          <div style={{fontSize:13,fontWeight:700,color:"#d8eef8",marginBottom:4}}>{item.name}</div>
+                          <div style={{display:"flex",gap:3,flexWrap:"wrap"}}>
+                            {item.bm.map(function(m){return <span key={m} style={{background:WC[item.best],color:"#020c1a",borderRadius:3,padding:"1px 5px",fontSize:10,fontWeight:800}}>{m}</span>;})}
                           </div>
                         </div>
-                        <div style={{fontSize:10,color:"#1a3a56",flexShrink:0}}>{spots[item.cid]?spots[item.cid].length+" spots →":"→"}</div>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div style={{marginTop:14,padding:"10px 14px",background:"#06122a",borderRadius:8,fontSize:11,color:"#1a4060",borderLeft:"3px solid #0ea5e9"}}>
-                  💡 Données indicatives basées sur les moyennes climatiques historiques. Clique sur un pays pour voir ses spots.
-                </div>
+                      );})}
+                    </div>
+                  </div>;
+                })}
               </div>
             )}
-            {globalMonth===0&&(
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:8}}>
-                {CN.map(function(contName, ci){
-                  var countryItems = Object.keys(WEATHER).filter(function(k){ return k!=="default"&&NM[k]&&gc(k)===ci; }).map(function(cid){
-                    var scores = getWeather(cid);
-                    var best = Math.max.apply(null, scores);
-                    var bestMonths = scores.map(function(sc,i){ return sc===best?MN[i]:null; }).filter(Boolean);
-                    return {cid:cid, name:NM[cid], best:best, bestMonths:bestMonths};
-                  }).sort(function(a,b){ return a.name.localeCompare(b.name,"fr"); });
-                  if(countryItems.length===0) return null;
-                  return (
-                    <div key={ci} style={{gridColumn:"1 / -1"}}>
-                      <div style={{borderBottom:"1px solid #0d2038",paddingBottom:6,marginBottom:8,marginTop:ci>0?16:0}}>
-                        <span style={{fontSize:11,fontWeight:800,color:CC[ci],letterSpacing:".1em"}}>{contName.toUpperCase()}</span>
+            {globalMonth>0&&(
+              <div>
+                <div style={{fontSize:12,color:"#2a5070",marginBottom:12,fontWeight:700,letterSpacing:".08em"}}>DESTINATIONS EN {MN[globalMonth-1].toUpperCase()} — PAR SCORE MÉTÉO</div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:8}}>
+                  {Object.keys(WEATHER).filter(function(k){return k!=="default"&&NM[k];}).map(function(cid){
+                    return {cid:cid,name:NM[cid],sc:getWeather(cid)[globalMonth-1]};
+                  }).sort(function(a,b){return b.sc-a.sc||a.name.localeCompare(b.name,"fr");}).map(function(item){return(
+                    <div key={item.cid} onClick={function(){setShowGlobalMonth(false);setSelectedCountry(item.cid);setSelectedName(NM[item.cid]);setAnimKey(function(k){return k+1;});}}
+                      style={{background:"#040e1e",border:"1px solid "+WC[item.sc]+"55",borderRadius:10,padding:"12px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,transition:"all .15s"}} className="btn">
+                      <div style={{width:14,height:14,borderRadius:3,background:WC[item.sc],flexShrink:0}}/>
+                      <div style={{flex:1}}>
+                        <div style={{fontSize:13,fontWeight:700,color:"#d8eef8"}}>{item.name}</div>
+                        <div style={{fontSize:11,color:WC[item.sc],fontWeight:600}}>{WL[item.sc]}</div>
                       </div>
-                      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:8}}>
-                        {countryItems.map(function(item){
-                          return (
-                            <div key={item.cid}
-                              onClick={function(){ setShowGlobalMonth(false); setSelectedCountry(item.cid); setSelectedName(NM[item.cid]); setAnimKey(function(k){return k+1;}); }}
-                              style={{background:"#040e1e",border:"1px solid #0c1e34",borderRadius:10,padding:"12px 14px",cursor:"pointer",transition:"all .15s"}}
-                              className="btn">
-                              <div style={{fontSize:13,fontWeight:700,color:"#d8eef8",marginBottom:4}}>{item.name}</div>
-                              <div style={{display:"flex",gap:3,flexWrap:"wrap"}}>
-                                {item.bestMonths.map(function(m){ return <span key={m} style={{background:WC[item.best],color:"#020c1a",borderRadius:3,padding:"1px 5px",fontSize:10,fontWeight:800}}>{m}</span>; })}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
+                      <div style={{fontSize:10,color:"#1a3a56",flexShrink:0}}>{spots[item.cid]?spots[item.cid].length+" →":"→"}</div>
                     </div>
-                  );
-                })}
+                  );})}
+                </div>
+                <div style={{marginTop:14,padding:"10px 14px",background:"#06122a",borderRadius:8,fontSize:11,color:"#1a4060",borderLeft:"3px solid #0ea5e9"}}>
+                  Données climatiques indicatives. Cliquez sur un pays pour voir ses spots.
+                </div>
               </div>
             )}
           </div>
         </div>
       )}
-
-      {/* ── DELETE CONFIRM ── */}
+{/* ── DELETE CONFIRM ── */}
       {deleteConfirm&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.88)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1001,backdropFilter:"blur(12px)"}} onClick={()=>setDeleteConfirm(null)}>
           <div className="rise" style={{background:"#030e1c",border:"1px solid #2a1010",borderRadius:14,padding:"28px 24px",width:380,maxWidth:"92vw",textAlign:"center",boxShadow:"0 30px 80px rgba(0,0,0,.9)"}} onClick={e=>e.stopPropagation()}>
