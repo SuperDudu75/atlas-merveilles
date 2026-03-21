@@ -398,7 +398,10 @@ function AtlasMerveilles() {
       .on("drag",e=>{ const _dm=e.sourceEvent; const _tx2=(_dm.touches&&_dm.touches[0]?_dm.touches[0].clientX:e.x); const _ty2=(_dm.touches&&_dm.touches[0]?_dm.touches[0].clientY:e.y); const dx=_tx2-dragMoveRef.current[0],dy=_ty2-dragMoveRef.current[1]; dragMoveRef.current=[_tx2,_ty2]; const sc=projRef.current?.scale()||R; const r=rotateRef.current; rotateRef.current=[r[0]+dx*65/sc,r[1]-dy*65/sc]; projRef.current?.rotate(rotateRef.current); })
       .on("end",e=>{
         draggingRef.current=false;
-        const dx=Math.abs(e.x-dragStartRef.current[0]),dy=Math.abs(e.y-dragStartRef.current[1]);
+        const _se=e.sourceEvent;
+        const _ex=_se.changedTouches&&_se.changedTouches[0]?_se.changedTouches[0].clientX:e.x;
+        const _ey=_se.changedTouches&&_se.changedTouches[0]?_se.changedTouches[0].clientY:e.y;
+        const dx=Math.abs(_ex-dragStartRef.current[0]),dy=Math.abs(_ey-dragStartRef.current[1]);
         if(dx<(isMobile?20:6)&&dy<(isMobile?20:6)){ const rect=canvas.getBoundingClientRect(); const _s2=e.sourceEvent;const _cx=_s2.clientX||(_s2.changedTouches&&_s2.changedTouches[0]?_s2.changedTouches[0].clientX:0)||0;const _cy=_s2.clientY||(_s2.changedTouches&&_s2.changedTouches[0]?_s2.changedTouches[0].clientY:0)||0;const px=_cx-rect.left, py=_cy-rect.top; const coords=projRef.current?.invert([px,py]); if(coords&&!isNaN(coords[0])){ const c=countriesRef.current.find(f=>d3.geoContains(f,coords)); if(c){ const id=String(parseInt(c.id,10)); setSelectedCountry(id); setSelectedName(NM[id]||`#${id}`); setAnimKey(k=>k+1); }}}
         resumeRef.current=setTimeout(()=>{ autoSpinRef.current=true; },3000);
       });
