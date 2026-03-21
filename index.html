@@ -415,6 +415,8 @@ function AtlasMerveilles() {
   const [imgErr,setImgErr]                   = useState(false);
   const [modalErr,setModalErr]               = useState(false);
   const [showWeather,setShowWeather]         = useState(false);
+  const [showGlobalMonth,setShowGlobalMonth] = useState(false);
+  const [globalMonth,setGlobalMonth]         = useState(0);
   const [showLegend,setShowLegend]           = useState(false);
   const [search,setSearch]                   = useState('');
   const [monthFilter,setMonthFilter]         = useState(0);
@@ -588,6 +590,7 @@ function AtlasMerveilles() {
             );})}
           </div>
           <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+            <button className="btn" onClick={()=>setShowGlobalMonth(true)} style={{background:"#06122a",border:"1px solid #0d2038",borderRadius:8,padding:"8px 12px",color:"#0ea5e9",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}>🗓 Meilleur mois</button>
             <div style={{display:"flex",gap:3}}>{CN.map((n,i)=>(<div key={n} title={n} style={{width:12,height:12,borderRadius:"50%",background:CC[i],opacity:.75}}/>))}</div>
             <div style={{width:100,height:5,background:"#0b1e34",borderRadius:2,overflow:"hidden"}}><div style={{width:(allSpots.length?(totalDone/allSpots.length*100):0)+"%",height:"100%",background:"linear-gradient(90deg,#0ea5e9,#22c55e)",transition:"width .6s"}}/></div>
             <span style={{fontSize:14,color:"#4a90b0",fontWeight:700}}>{totalDone}/{allSpots.length}</span>
@@ -845,6 +848,89 @@ function AtlasMerveilles() {
           </div>
         </div>
       )}
+      
+      {/* ── GLOBAL MONTH MODAL ── */}
+      {showGlobalMonth&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,backdropFilter:"blur(12px)",padding:"16px"}}
+          onClick={()=>setShowGlobalMonth(false)}>
+          <div style={{background:"#030e1c",border:"1px solid #0d2540",borderRadius:16,width:"min(900px,96vw)",maxHeight:"90vh",overflow:"auto",padding:"24px"}}
+            onClick={function(e){e.stopPropagation();}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+              <div>
+                <div style={{fontWeight:900,fontSize:22,color:"#e4f0fc"}}>🗓 Meilleur moment pour voyager</div>
+                <div style={{fontSize:12,color:"#2a5070",marginTop:2}}>Sélectionne un mois pour voir les meilleures destinations</div>
+              </div>
+              <button onClick={()=>setShowGlobalMonth(false)} style={{background:"#0b1e34",border:"1px solid #142840",borderRadius:8,width:32,height:32,color:"#3a6080",cursor:"pointer",fontSize:18}}>×</button>
+            </div>
+            <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:20}}>
+              {[0,1,2,3,4,5,6,7,8,9,10,11,12].map(function(m){
+                var act = globalMonth===m;
+                return (
+                  <button key={m} onClick={()=>setGlobalMonth(m)}
+                    style={{background:act?"#0ea5e9":"#06122a",border:"1px solid "+(act?"#0ea5e9":"#0d2038"),borderRadius:8,padding:"8px 14px",color:act?"#020c1a":"#4a90b0",fontSize:13,fontWeight:act?800:600,cursor:"pointer"}}>
+                    {m===0?"Tous les mois":MN[m-1]}
+                  </button>
+                );
+              })}
+            </div>
+            {globalMonth>0&&(
+              <div>
+                <div style={{fontSize:12,color:"#2a5070",marginBottom:12,fontWeight:700,letterSpacing:".08em"}}>
+                  DESTINATIONS EN {MN[globalMonth-1].toUpperCase()} — CLASSÉES PAR SCORE MÉTÉO
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:8}}>
+                  {Object.keys(WEATHER).filter(function(k){ return k!=="default"; }).map(function(cid){
+                    var sc = getWeather(cid)[globalMonth-1];
+                    var name = NM[cid];
+                    if(!name) return null;
+                    return {cid:cid, sc:sc, name:name};
+                  }).filter(Boolean).sort(function(a,b){ return b.sc-a.sc; }).map(function(item){
+                    return (
+                      <div key={item.cid}
+                        onClick={function(){ setShowGlobalMonth(false); setSelectedCountry(item.cid); setSelectedName(NM[item.cid]); setAnimKey(function(k){return k+1;}); }}
+                        style={{background:"#040e1e",border:"1px solid "+WC[item.sc]+"55",borderRadius:10,padding:"12px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,transition:"all .15s"}}
+                        className="btn">
+                        <div style={{width:12,height:12,borderRadius:3,background:WC[item.sc],flexShrink:0}}/>
+                        <div>
+                          <div style={{fontSize:13,fontWeight:700,color:"#d8eef8"}}>{item.name}</div>
+                          <div style={{fontSize:11,color:WC[item.sc],fontWeight:600}}>{WL[item.sc]}</div>
+                        </div>
+                        <div style={{marginLeft:"auto",fontSize:10,color:"#1a3a56"}}>{spots[item.cid]?spots[item.cid].length+" spots":"→"}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{marginTop:14,padding:"10px 14px",background:"#06122a",borderRadius:8,fontSize:11,color:"#1a4060",borderLeft:"3px solid #0ea5e9"}}>
+                  💡 Données indicatives basées sur les moyennes climatiques historiques. Clique sur un pays pour voir ses spots.
+                </div>
+              </div>
+            )}
+            {globalMonth===0&&(
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:8}}>
+                {Object.keys(WEATHER).filter(function(k){ return k!=="default"; }).map(function(cid){
+                  var name = NM[cid];
+                  if(!name) return null;
+                  var scores = getWeather(cid);
+                  var best = Math.max.apply(null, scores);
+                  var bestMonths = scores.map(function(sc,i){ return sc===best?MN[i]:null; }).filter(Boolean);
+                  return (
+                    <div key={cid}
+                      onClick={function(){ setShowGlobalMonth(false); setSelectedCountry(cid); setSelectedName(NM[cid]); setAnimKey(function(k){return k+1;}); }}
+                      style={{background:"#040e1e",border:"1px solid #0c1e34",borderRadius:10,padding:"12px 14px",cursor:"pointer",transition:"all .15s"}}
+                      className="btn">
+                      <div style={{fontSize:13,fontWeight:700,color:"#d8eef8",marginBottom:4}}>{name}</div>
+                      <div style={{display:"flex",gap:3,flexWrap:"wrap"}}>
+                        {bestMonths.map(function(m){ return <span key={m} style={{background:WC[best],color:"#020c1a",borderRadius:3,padding:"1px 5px",fontSize:10,fontWeight:800}}>{m}</span>; })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* ── DELETE CONFIRM ── */}
       {deleteConfirm&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.88)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1001,backdropFilter:"blur(12px)"}} onClick={()=>setDeleteConfirm(null)}>
