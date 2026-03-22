@@ -1234,50 +1234,54 @@ function AtlasMerveilles() {
                     <div style={{fontSize:12,marginTop:8}}>Essaie en anglais ou avec un terme plus général</div>
                   </div>
                 );
-                return results.slice(0,80).map(function(item){
-                  var s=item.s; var cid=item.cid;
-                  var cat=Cat(s.category);
-                  var q2=globalQuery.toLowerCase();
-                  var nameMatch=norm(s.name).includes(norm(q2));
-                  return(
-                    <div key={s.id||s.name+cid}
-                      onClick={function(){
-                        setShowGlobalSearch(false);
-                        setSelectedCountry(cid);
-                        setSelectedName(NM[cid]||"");
-                        setAnimKey(function(k){return k+1;});
-                        var coord=COORDS[cid];
-                        if(coord&&projRef.current){
-                          var pts=coord.split(",");
-                          rotateRef.current=[-parseFloat(pts[1]),-parseFloat(pts[0])];
-                          projRef.current.rotate(rotateRef.current);
-                          autoSpinRef.current=false;
-                          clearTimeout(resumeRef.current);
-                          resumeRef.current=setTimeout(function(){autoSpinRef.current=true;},5000);
-                        }
-                      }}
-                      className="btn"
-                      style={{display:"flex",alignItems:"flex-start",gap:12,padding:"12px 14px",marginBottom:6,background:nameMatch?"#080e22":"#040e1e",border:"1px solid "+(nameMatch?cat.color+"66":"#0c1e34"),borderRadius:10,cursor:"pointer",transition:"all .15s"}}>
-                      <div style={{flexShrink:0,marginTop:2}}>
-                        <span style={{background:cat.color+"22",color:cat.color,borderRadius:4,padding:"2px 7px",fontSize:10,fontWeight:700}}>{cat.icon} {cat.label}</span>
-                      </div>
-                      <div style={{flex:1,minWidth:0}}>
-                        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
-                          <div style={{fontSize:14,fontWeight:800,color:nameMatch?"#e4f0fc":"#b0ccdf"}}>{s.name}</div>
-                          {liked[s.id]&&<span style={{color:"#f43f5e",fontSize:12}}>♥</span>}
-                          {s.done&&<span style={{color:"#22c55e",fontSize:12}}>✓</span>}
+                (function(){
+                  // Sort alphabetically by country name
+                  var sorted = results.slice(0,120).sort(function(a,b){
+                    var na=NM[a.cid]||a.cid; var nb=NM[b.cid]||b.cid;
+                    if(na!==nb) return na.localeCompare(nb,"fr");
+                    return norm(a.s.name).localeCompare(norm(b.s.name),"fr");
+                  });
+                  function goTo(cid){
+                    setShowGlobalSearch(false);
+                    setSelectedCountry(cid); setSelectedName(NM[cid]||"");
+                    setAnimKey(function(k){return k+1;});
+                    var coord=COORDS[cid];
+                    if(coord&&projRef.current){
+                      var pts=coord.split(",");
+                      rotateRef.current=[-parseFloat(pts[1]),-parseFloat(pts[0])];
+                      projRef.current.rotate(rotateRef.current);
+                      autoSpinRef.current=false;
+                      clearTimeout(resumeRef.current);
+                      resumeRef.current=setTimeout(function(){autoSpinRef.current=true;},5000);
+                    }
+                  }
+                  return sorted.map(function(item){
+                    var s=item.s; var cid=item.cid; var ci=gc(cid);
+                    var cat=Cat(s.category);
+                    var nm=norm(s.name).includes(norm(globalQuery));
+                    return(
+                      <div key={(s.id||s.name)+cid} onClick={function(){goTo(cid);}}
+                        className="btn"
+                        style={{display:"flex",alignItems:"stretch",marginBottom:5,borderRadius:10,overflow:"hidden",border:"1px solid "+(nm?cat.color+"55":"#0c1e34"),cursor:"pointer"}}>
+                        <div style={{width:120,minWidth:120,background:CC[ci]+"1a",borderRight:"2px solid "+CC[ci]+"44",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"8px 6px",gap:3}}>
+                          <div style={{width:8,height:8,borderRadius:"50%",background:CC[ci]}}/>
+                          <div style={{fontSize:11,fontWeight:800,color:CC[ci],textAlign:"center",lineHeight:1.2}}>{NM[cid]||cid}</div>
+                          <div style={{fontSize:9,color:"#2a5070",textAlign:"center"}}>{CN[ci]}</div>
                         </div>
-                        <div style={{fontSize:12,color:"#2a5070",marginBottom:4,lineHeight:1.4}}>{s.desc}</div>
-                        <div style={{display:"flex",alignItems:"center",gap:6}}>
-                          <div style={{background:CC[gc(cid)]+"33",color:CC[gc(cid)],borderRadius:3,padding:"1px 6px",fontSize:10,fontWeight:700}}>{NM[cid]||cid}</div>
+                        <div style={{flex:1,minWidth:0,padding:"10px 12px",background:nm?"#06112a":"#040e1e"}}>
+                          <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4}}>
+                            <span style={{background:cat.color+"22",color:cat.color,borderRadius:4,padding:"2px 7px",fontSize:10,fontWeight:700}}>{cat.icon} {cat.label}</span>
+                            {liked[s.id]&&<span style={{color:"#f43f5e",fontSize:12}}>♥</span>}
+                            {s.done&&<span style={{color:"#22c55e",fontSize:12}}>✓</span>}
+                          </div>
+                          <div style={{fontSize:13,fontWeight:nm?800:700,color:nm?"#e4f0fc":"#b8d0e8",marginBottom:3}}>{s.name}</div>
+                          <div style={{fontSize:11,color:"#2a5070",lineHeight:1.4,marginBottom:3}}>{s.desc}</div>
                           {s.season&&<div style={{fontSize:10,color:"#1a3a56"}}>📅 {s.season}</div>}
                         </div>
                       </div>
-                      <div style={{flexShrink:0,fontSize:10,color:"#0ea5e9",fontWeight:600,alignSelf:"center"}}>→</div>
-                    </div>
-                  );
-                });
-              })()}
+                    );
+                  });
+                })()}
             </div>
           </div>
         </div>
