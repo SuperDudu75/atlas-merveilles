@@ -680,7 +680,7 @@ function AtlasMerveilles() {
             <button className="btn" onClick={()=>setShowCountryList(true)} style={{background:"#06122a",border:"1px solid #0d2038",borderRadius:8,padding:"8px 12px",color:"#a78bfa",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}>🌍 Pays</button>
             <button className="btn" onClick={()=>setShowGlobalMonth(true)} style={{background:"#06122a",border:"1px solid #0d2038",borderRadius:8,padding:"8px 12px",color:"#0ea5e9",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}>🗓 Meilleur mois</button>
             <div style={{display:"flex",gap:3}}>{CN.map((n,i)=>(<div key={n} title={n} style={{width:12,height:12,borderRadius:"50%",background:CC[i],opacity:0.75}}/>))}</div>
-            <div style={{width:100,height:5,background:"#0b1e34",borderRadius:2,overflow:"hidden"}}><div style={{width:(allSpots.length?(totalDone/allSpots.length*100):0)+"%",height:"100%",background:"linear-gradient(90deg,#0ea5e9,#22c55e)",transition:"width .6s"}}/></div>
+            <div style={{width:100,height:5,background:"#0b1e34",borderRadius:2,overflow:"hidden"}}><div style={{width:String(allSpots.length?Math.round(totalDone*100/allSpots.length):0)+"%",height:"100%",background:"linear-gradient(90deg,#0ea5e9,#22c55e)",transition:"width .6s"}}/></div>
             <span style={{fontSize:14,color:"#4a90b0",fontWeight:700}}>{totalDone}/{allSpots.length}</span>
           </div>
         </div>
@@ -730,7 +730,7 @@ function AtlasMerveilles() {
                 </div>
                 <button onClick={()=>setSelectedCountry(null)} style={{background:"#0b1e34",border:"1px solid #142840",borderRadius:6,width:28,height:28,color:"#3a6080",cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontWeight:300}}>×</button>
               </div>
-              {sideSpots.length>0&&(<div style={{marginBottom:11}}><div style={{height:3,background:"#0b1e34",borderRadius:2,overflow:"hidden"}}><div style={{width:""+(sideSpots.filter(s=>s.done).length/sideSpots.length*100)+"%",height:"100%",background:"linear-gradient(90deg,#0ea5e9,#22c55e)",transition:"width .5s",borderRadius:2}}/></div></div>)}
+              {sideSpots.length>0&&(<div style={{marginBottom:11}}><div style={{height:3,background:"#0b1e34",borderRadius:2,overflow:"hidden"}}><div style={{width:String(Math.round(sideSpots.filter(function(s){return s.done;}).length*100/(sideSpots.length||1)))+"%",height:"100%",background:"linear-gradient(90deg,#0ea5e9,#22c55e)",transition:"width .5s",borderRadius:2}}/></div></div>)}
               <div style={{display:"flex",gap:6}}>
                 <button className="btn" onClick={()=>setShowModal(true)} style={{flex:1,background:"linear-gradient(135deg,#0c4880,#072a56)",border:"1px solid #1060a840",borderRadius:8,padding:"10px",color:"#7ec8f0",fontWeight:800,fontSize:10,letterSpacing:".1em",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
                   <span style={{fontSize:13,fontWeight:300}}>+</span> AJOUTER
@@ -919,7 +919,7 @@ function AtlasMerveilles() {
                         <div style={{fontSize:28,fontWeight:900,color:stat.color}}>{stat.val}</div>
                         <div style={{fontSize:11,color:"#2a5070",marginBottom:8}}>{stat.label}</div>
                         <div style={{height:4,background:"#0b1e34",borderRadius:2,overflow:"hidden"}}>
-                          <div style={{width:stat.total>0?(stat.val/stat.total*100)+"%":"0%",height:"100%",background:stat.color,transition:"width .6s",borderRadius:2}}/>
+                          <div style={{width:(stat.total>0?String(Math.round(stat.val*100/stat.total))+"%":"0%"),height:"100%",background:stat.color,transition:"width .6s",borderRadius:2}}/>
                         </div>
                         <div style={{fontSize:10,color:"#1a3a56",marginTop:4}}>{stat.total>0?Math.round(stat.val/stat.total*100):0}%</div>
                       </div>
@@ -936,8 +936,8 @@ function AtlasMerveilles() {
                         <span style={{fontSize:11,color:"#2a5070"}}>{cs.visited} visités · {cs.done} complétés / {cs.total} pays</span>
                       </div>
                       <div style={{height:6,background:"#0b1e34",borderRadius:3,overflow:"hidden",position:"relative"}}>
-                        <div style={{position:"absolute",left:0,top:0,height:"100%",width:cs.total>0?(cs.visited/cs.total*100)+"%",background:CC[cs.ci],opacity:"0.5",transition:"width .6s"}}/>
-                        <div style={{position:"absolute",left:0,top:0,height:"100%",width:cs.total>0?(cs.done/cs.total*100)+"%",background:CC[cs.ci],transition:"width .6s"}}/>
+                        <div style={{position:"absolute",left:0,top:0,height:"100%",width:cs.total>0?(cs.visited*100/cs.total)+"%",background:CC[cs.ci],opacity:"0.5",transition:"width .6s"}}/>
+                        <div style={{position:"absolute",left:0,top:0,height:"100%",width:cs.total>0?(cs.done*100/cs.total)+"%",background:CC[cs.ci],transition:"width .6s"}}/>
                       </div>
                     </div>
                   ); })}
@@ -1019,7 +1019,7 @@ function AtlasMerveilles() {
                             {hasSpots&&(
                               <div style={{display:"flex",alignItems:"center",gap:6}}>
                                 <div style={{flex:1,height:3,background:"#0b1e34",borderRadius:2,overflow:"hidden"}}>
-                                  <div style={{width:total>0?(done/total*100)+"%":"0%",height:"100%",background:done===total&&total>0?"#22c55e":"#0ea5e9",transition:"width .4s"}}/>
+                                  <div style={{width:(function(){ return total>0?Math.round(done/total*100)+"%":"0%"; }()),height:"100%",background:done===total&&total>0?"#22c55e":"#0ea5e9",transition:"width .4s"}}/>
                                 </div>
                                 <span style={{fontSize:10,color:done>0?"#4ade80":"#1a3a56",fontWeight:600,flexShrink:0}}>{done}/{total}</span>
                               </div>
