@@ -1282,7 +1282,7 @@ function AtlasMerveilles() {
               <button onClick={()=>setShowStats(false)} style={{background:"#0b1e34",border:"1px solid #142840",borderRadius:8,width:32,height:32,color:"#3a6080",cursor:"pointer",fontSize:18}}>×</button>
             </div>
             {React.createElement(function(){
-              var totalSpots = var totalSpots = Object.values(spots).reduce(function(a,b){return a+b.length;},0);
+              var totalSpots = Object.values(spots).reduce(function(a,b){return a+b.length;},0);
               var doneSpots = Object.values(spots).reduce(function(a,b){return a+b.filter(function(s){return s.done;}).length;},0);
               var likedCount = Object.keys(liked).length;
               var visitedCount = Object.keys(visitedCountries).length;
