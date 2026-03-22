@@ -267,150 +267,168 @@ const UNSPLASH_KEY = "E8CzwpYEHukJpmdfhJLiJTzJvgW9_lr1ECoJbIeGKs8";
 // 🔑 Pexels gratuit: https://www.pexels.com/api/
 const PEXELS_KEY = "Wn3qZnweOOW9EXOGPrrWgFW7rAZwcB2YUdRiukOUiSdocCxI41U1yXGl";
 const IMG_CACHE3 = {};
+const PEXELS_KEY = "Wn3qZnweOOW9EXOGPrrWgFW7rAZwcB2YUdRiukOUiSdocCxI41U1yXGl";
+const UNSPLASH_KEY2 = "E8CzwpYEHukJpmdfhJLiJTzJvgW9_lr1ECoJbIeGKs8";
 
-function SpotImg({kw, spotName, countryName, category, style, onError}) {
+const CAT_KEYS = {
+  "wildlife":"wildlife animal nature",
+  "marine":"ocean underwater sea coral reef",
+  "geology":"volcano canyon landscape",
+  "nature":"forest waterfall nature landscape",
+  "heritage":"ancient monument temple architecture",
+  "famous":"landmark tourist famous",
+  "unique":"travel culture"
+};
+
+// French → English translation for common landmark words
+function toEnglish(name) {
+  var fr2en = {
+    "Cité Interdite":"Forbidden City","Armée de Terre Cuite":"Terracotta Army",
+    "Tour Eiffel":"Eiffel Tower","Arc de Triomphe":"Arc de Triomphe Paris",
+    "Sacré-Cœur":"Sacre Coeur Basilica Paris","Notre-Dame":"Notre Dame Cathedral Paris",
+    "Grande Muraille":"Great Wall China","Taj Mahal":"Taj Mahal Agra",
+    "Colisée":"Colosseum Rome","Machu Picchu":"Machu Picchu Peru",
+    "Chutes du Niagara":"Niagara Falls","Chutes Victoria":"Victoria Falls",
+    "Mont Fuji":"Mount Fuji Japan","Mont Everest":"Mount Everest",
+    "Grand Canyon":"Grand Canyon Arizona","Sahara":"Sahara Desert",
+    "Amazonie":"Amazon Rainforest","Forêt Amazonienne":"Amazon Rainforest",
+    "Pyramides":"Pyramids Giza Egypt","Sphinx":"Great Sphinx Giza",
+    "Angkor Wat":"Angkor Wat Cambodia","Borobudur":"Borobudur Temple",
+    "Chapelle Sixtine":"Sistine Chapel Vatican","Vatican":"Vatican City",
+    "Acropole":"Acropolis Athens","Parthénon":"Parthenon Athens",
+    "Alhambra":"Alhambra Granada Spain","Sagrada Família":"Sagrada Familia Barcelona",
+    "Serengeti":"Serengeti Tanzania","Okavango":"Okavango Delta Botswana",
+    "Galapagos":"Galapagos Islands Ecuador","Patagonie":"Patagonia",
+    "Fiords":"Fjords Norway","Aurores Boréales":"Northern Lights Aurora",
+    "Mer Morte":"Dead Sea","Petra":"Petra Jordan",
+    "Stonehenge":"Stonehenge England","Big Ben":"Big Ben London",
+    "Tower Bridge":"Tower Bridge London"
+  };
+  var result = name;
+  Object.keys(fr2en).forEach(function(fr){
+    if(name.toLowerCase().includes(fr.toLowerCase())) result = fr2en[fr];
+  });
+  return result;
+}
+
+function SpotImg({spotName, countryName, category, style}) {
   var _s = React.useState(null); var src = _s[0]; var setSrc = _s[1];
-  var _f = React.useState(false); var failed = _f[0]; var setFailed = _f[1];
-  var cacheKey = spotName||kw||"nature";
+  var _l = React.useState(true); var loading = _l[0]; var setLoading = _l[1];
+  var cacheKey = (spotName||"")+"_"+(countryName||"");
 
   React.useEffect(function(){
-    if(!cacheKey) return;
-    if(IMG_CACHE3[cacheKey]){ setSrc(IMG_CACHE3[cacheKey]); return; }
+    if(!spotName){ setLoading(false); return; }
+    if(IMG_CACHE3[cacheKey]){ setSrc(IMG_CACHE3[cacheKey]); setLoading(false); return; }
+    setLoading(true);
 
-    var name = (spotName||"").split("—")[0].split("–")[0].trim();
-    var tried = 0;
+    var rawName = spotName.split("—")[0].split("–")[0].trim();
+    var engName = toEnglish(rawName);
+    var extra = CAT_KEYS[category]||"travel";
 
-    // Step 1: Wikimedia Commons — try spot name + country + photo keywords
-    function tryWikimedia() {
-      // Try multiple queries: English spot name, then with photo keywords
-      var queries = [
-        name + " " + (countryName||""),
-        (kw||"").replace(/,/g," "),
-        name
-      ].filter(function(q,i,a){ return q && a.indexOf(q)===i; });
-      var qi = 0;
-      function tryQuery() {
-        if(qi >= queries.length){ tryWikipedia(); return; }
-        var q = encodeURIComponent(queries[qi++]);
-        var url = "https://commons.wikimedia.org/w/api.php?action=query&generator=search"
-          +"&gsrnamespace=6&gsrsearch="+q
-          +"&gsrlimit=8&prop=imageinfo&iiprop=url|size"
-          +"&iiurlwidth=900&format=json&origin=*";
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", url); xhr.timeout = 5000;
-        xhr.onload = function(){
-          try {
-            var d = JSON.parse(xhr.responseText);
-            var pages = d && d.query && d.query.pages;
-            if(pages) {
-              var imgs = Object.values(pages)
-                .filter(function(p){
-                  var ii = p.imageinfo && p.imageinfo[0];
-                  if(!ii) return false;
-                  var u = ii.url||"";
-                  var n = (p.title||"").toLowerCase();
-                  return !u.match(/svg$/i)
-                    && !n.match(/flag|logo|icon|map|coat|arms|blank|locator|location|seal|emblem/i)
-                    && ii.width > 600 && ii.height > 400;
-                })
-                .sort(function(a,b){
-                  return (b.imageinfo[0].width||0) - (a.imageinfo[0].width||0);
-                });
-              if(imgs.length > 0){
-                var best = imgs[0].imageinfo[0];
-                var imgUrl = best.thumburl || best.url;
-                if(imgUrl){ IMG_CACHE3[cacheKey]=imgUrl; setSrc(imgUrl); return; }
-              }
-            }
-          } catch(e) {}
-          tryQuery();
-        };
-        xhr.onerror = function(){ tryQuery(); };
-        xhr.ontimeout = function(){ tryQuery(); };
-        xhr.send();
-      }
-      tryQuery();
+    function done(url){
+      if(url){ IMG_CACHE3[cacheKey]=url; setSrc(url); }
+      setLoading(false);
     }
 
-    // Step 2: Wikipedia article image
-    function tryWikipedia() {
-      var wikiTerm = encodeURIComponent(name);
-      var url = "https://en.wikipedia.org/api/rest_v1/page/summary/" + wikiTerm;
+    // 1. Pexels — best quality, searches with English name
+    function tryPexels(){
+      var q = encodeURIComponent(engName+" "+(countryName||""));
       var xhr = new XMLHttpRequest();
-      xhr.open("GET", url); xhr.timeout = 5000;
-      xhr.onload = function(){
-        try {
-          var d = JSON.parse(xhr.responseText);
-          var img = d && d.originalimage && d.originalimage.source;
-          if(!img) img = d && d.thumbnail && d.thumbnail.source;
-          if(img && !img.match(/\.svg$/i)){ IMG_CACHE3[cacheKey]=img; setSrc(img); return; }
-        } catch(e) {}
-        tryUnsplash();
+      xhr.open("GET","https://api.pexels.com/v1/search?query="+q+"&per_page=3&orientation=landscape");
+      xhr.setRequestHeader("Authorization",PEXELS_KEY);
+      xhr.timeout=6000;
+      xhr.onload=function(){
+        try{
+          var d=JSON.parse(xhr.responseText);
+          var p=d.photos&&d.photos[0]&&d.photos[0].src;
+          if(p&&p.large2x){ done(p.large2x); return; }
+        }catch(e){}
+        tryWikipedia();
       };
-      xhr.onerror = function(){ tryUnsplash(); };
-      xhr.ontimeout = function(){ tryUnsplash(); };
+      xhr.onerror=xhr.ontimeout=function(){ tryWikipedia(); };
       xhr.send();
     }
 
-    // Step 3: Pexels — professional stock photos
-    function tryPexels() {
-      if(!PEXELS_KEY){ tryWikimedia(); return; }
-      var q = encodeURIComponent((name+" "+(countryName||"")).trim());
-      var url = "https://api.pexels.com/v1/search?query="+q+"&per_page=1&orientation=landscape";
+    // 2. Wikipedia — article image (very accurate for known landmarks)
+    function tryWikipedia(){
+      var term = encodeURIComponent(engName);
       var xhr = new XMLHttpRequest();
-      xhr.open("GET", url);
-      xhr.setRequestHeader("Authorization", PEXELS_KEY);
-      xhr.timeout = 6000;
-      xhr.onload = function(){
-        try {
-          var d = JSON.parse(xhr.responseText);
-          var img = d && d.photos && d.photos[0] && d.photos[0].src && d.photos[0].src.large2x;
-          if(img){ IMG_CACHE3[cacheKey]=img; setSrc(img); return; }
-        } catch(e) {}
+      xhr.open("GET","https://en.wikipedia.org/api/rest_v1/page/summary/"+term);
+      xhr.timeout=5000;
+      xhr.onload=function(){
+        try{
+          var d=JSON.parse(xhr.responseText);
+          // Must be a real article with image, not disambiguation
+          var img=(d.originalimage||{}).source||(d.thumbnail||{}).source;
+          if(img && !img.match(/\.svg$/i) && d.type!=="disambiguation"){ done(img); return; }
+        }catch(e){}
         tryWikimedia();
       };
-      xhr.onerror = function(){ tryWikimedia(); };
-      xhr.ontimeout = function(){ tryWikimedia(); };
+      xhr.onerror=xhr.ontimeout=function(){ tryWikimedia(); };
       xhr.send();
     }
 
-    // Step 4: Unsplash with category hint
-    function tryUnsplash() {
-      var catWords = {
-        "wildlife":"wildlife animal nature",
-        "marine":"ocean underwater sea coral",
-        "geology":"volcano canyon landscape geology",
-        "nature":"forest jungle nature landscape",
-        "heritage":"ancient monument temple historic",
-        "famous":"landmark famous tourist",
-        "unique":"travel adventure culture"
+    // 3. Wikimedia Commons — with strict filtering
+    function tryWikimedia(){
+      var q=encodeURIComponent(engName);
+      var xhr=new XMLHttpRequest();
+      xhr.open("GET","https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrsearch="+q+"&gsrlimit=10&prop=imageinfo&iiprop=url|size|mime&iiurlwidth=900&format=json&origin=*");
+      xhr.timeout=5000;
+      xhr.onload=function(){
+        try{
+          var pages=JSON.parse(xhr.responseText).query&&JSON.parse(xhr.responseText).query.pages;
+          if(pages){
+            var imgs=Object.values(pages).filter(function(p){
+              var ii=p.imageinfo&&p.imageinfo[0]; if(!ii) return false;
+              var u=ii.url||""; var mime=ii.mime||""; var t=(p.title||"").toLowerCase();
+              // Only JPEG/PNG photos, minimum size, no flags/logos/maps/text
+              return (mime==="image/jpeg"||mime==="image/png")
+                && ii.width>800 && ii.height>500
+                && !t.match(/flag|logo|icon|map|coat|arms|blank|locator|seal|emblem|sign|text|symbol/i)
+                && !u.match(/\.svg$/i);
+            }).sort(function(a,b){ return (b.imageinfo[0].width||0)-(a.imageinfo[0].width||0); });
+            if(imgs.length){ done(imgs[0].imageinfo[0].thumburl||imgs[0].imageinfo[0].url); return; }
+          }
+        }catch(e){}
+        tryUnsplash();
       };
-      var extra = catWords[category] || "travel landscape";
-      var q = encodeURIComponent((name+" "+(countryName||"")+" "+extra).trim());
-      var url = "https://api.unsplash.com/photos/random?query="+q+"&orientation=landscape&client_id="+UNSPLASH_KEY;
-      var xhr = new XMLHttpRequest();
-      xhr.open("GET", url); xhr.timeout = 8000;
-      xhr.onload = function(){
-        try {
-          var d = JSON.parse(xhr.responseText);
-          var img = d && d.urls && (d.urls.regular||d.urls.small);
-          if(img){ IMG_CACHE3[cacheKey]=img; setSrc(img); return; }
-        } catch(e) {}
-        setFailed(true);
+      xhr.onerror=xhr.ontimeout=function(){ tryUnsplash(); };
+      xhr.send();
+    }
+
+    // 4. Unsplash — last resort
+    function tryUnsplash(){
+      var q=encodeURIComponent(engName+" "+(countryName||"")+" "+extra);
+      var xhr=new XMLHttpRequest();
+      xhr.open("GET","https://api.unsplash.com/photos/random?query="+q+"&orientation=landscape&client_id="+UNSPLASH_KEY2);
+      xhr.timeout=8000;
+      xhr.onload=function(){
+        try{
+          var d=JSON.parse(xhr.responseText);
+          var img=d.urls&&(d.urls.regular||d.urls.small);
+          if(img){ done(img); return; }
+        }catch(e){}
+        done(null);
       };
-      xhr.onerror = function(){ setFailed(true); };
-      xhr.ontimeout = function(){ setFailed(true); };
+      xhr.onerror=xhr.ontimeout=function(){ done(null); };
       xhr.send();
     }
 
     tryPexels();
-  }, [cacheKey]);
+  },[cacheKey]);
 
-  var fallbackSeed = Math.abs((cacheKey||"").split("").reduce(function(a,c){return a+c.charCodeAt(0);},0)%900)+100;
-  if(failed || !src){
-    return React.createElement("img",{src:"https://picsum.photos/seed/"+fallbackSeed+"/900/500",style:style,onError:onError});
+  if(loading) return React.createElement("div",{style:Object.assign({},style,{
+    background:"linear-gradient(135deg,#040e1e,#0a1e34,#040e1e)",
+    display:"flex",alignItems:"center",justifyContent:"center",fontSize:48
+  })},"🌍");
+
+  if(!src){
+    var seed=Math.abs((cacheKey||"").split("").reduce(function(a,c){return a+c.charCodeAt(0);},0)%900)+100;
+    return React.createElement("img",{src:"https://picsum.photos/seed/"+seed+"/900/500",style:style});
   }
-  return React.createElement("img",{src:src,style:style,onError:onError});
+  return React.createElement("img",{src:src,style:style,
+    onError:function(e){ var s=Math.random()*999|0; e.target.src="https://picsum.photos/seed/"+s+"/900/500"; e.target.onerror=null; }
+  });
 }
 
 const IMG = function(kw){
@@ -1031,12 +1049,11 @@ function AtlasMerveilles() {
             onClick={e=>e.stopPropagation()}>
             <div style={{position:"relative",height:260,background:"#071424",overflow:"hidden",borderRadius:"16px 16px 0 0",flexShrink:0}}>
               {!imgErr
-                ? <SpotImg kw={detailSpot.photo||detailSpot.name||"nature"}
+                ? <SpotImg
                   spotName={detailSpot.name}
                   countryName={selectedName}
                   category={detailSpot.category}
-                  style={{width:"100%",height:"100%",objectFit:"cover",opacity:0.88}}
-                  onError={function(){ try{ setImgErr(true); }catch(e){} }}/>
+                  style={{width:"100%",height:"100%",objectFit:"cover",opacity:0.9}}/>
                 : <div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",background:"radial-gradient(circle at 40% 40%,#0c2a44,#020c1a)"}}><span style={{fontSize:64}}>{Cat(detailSpot.category).icon}</span></div>
               }
               <div style={{position:"absolute",inset:0,background:"linear-gradient(to top,#030e1c 0%,rgba(3,14,28,.2) 55%,transparent 100%)"}}/>
