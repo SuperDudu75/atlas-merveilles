@@ -877,6 +877,36 @@ function AtlasMerveilles() {
   const allSpots=Object.values(spots).flat();
   const totalDone=allSpots.filter(s=>s.done).length;
   const nCountries=Object.keys(spots).length;
+  const sortedResults = React.useMemo(function(){
+    if(!globalQuery||globalQuery.length<2) return [];
+    var q=norm(globalQuery);
+    var res=[];
+    Object.keys(spots).forEach(function(cid){
+      (spots[cid]||[]).forEach(function(s){
+        if(norm(s.name+" "+s.desc+" "+(s.why||"")+" "+(s.category||"")).includes(q)) res.push({s:s,cid:cid});
+      });
+    });
+    res.sort(function(a,b){
+      var na=NM[a.cid]||a.cid; var nb=NM[b.cid]||b.cid;
+      if(na!==nb) return na<nb?-1:na>nb?1:0;
+      var x=norm(a.s.name),y=norm(b.s.name); return x<y?-1:x>y?1:0;
+    });
+    return res.slice(0,120);
+  },[globalQuery,spots]);
+  function goToCountry(cid){
+    setShowGlobalSearch(false);
+    setSelectedCountry(cid); setSelectedName(NM[cid]||"");
+    setAnimKey(function(k){return k+1;});
+    var coord=COORDS[cid];
+    if(coord&&projRef.current){
+      var pts=coord.split(",");
+      rotateRef.current=[-parseFloat(pts[1]),-parseFloat(pts[0])];
+      projRef.current.rotate(rotateRef.current);
+      autoSpinRef.current=false;
+      clearTimeout(resumeRef.current);
+      resumeRef.current=setTimeout(function(){autoSpinRef.current=true;},5000);
+    }
+  }
   const allLikedSpots = filter==="liked" ? Object.entries(spots).reduce(function(acc,entry){
     var cid=entry[0], cspots=entry[1];
     cspots.forEach(function(s){ if(liked[s.id]) acc.push(Object.assign({},s,{_cid:cid})); });
@@ -1190,11 +1220,7 @@ function AtlasMerveilles() {
                 placeholder="Ex: gorille, volcan, plongée, jaguar, bioluminescence..."
                 style={{width:"100%",background:"#06122a",border:"2px solid #e879f9",borderRadius:10,padding:"12px 16px",color:"#e4f0fc",fontSize:15,outline:"none"}}
               />
-              {globalQuery.length>1&&(function(){
-                var q=norm(globalQuery);
-                var total=Object.values(spots).reduce(function(acc,arr){return acc+arr.filter(function(s){return norm(s.name+s.desc+(s.why||"")+(s.category||"")).includes(q);}).length;},0);
-                return <div style={{fontSize:12,color:"#4a90b0",marginTop:8}}>{total} spot{total>1?"s":""} trouvé{total>1?"s":""} dans tous les pays</div>;
-              })()}
+              {globalQuery.length>1&&<div style={{fontSize:12,color:"#4a90b0",marginTop:8}}>{sortedResults.length} spot{sortedResults.length>1?"s":""} trouvé{sortedResults.length>1?"s":""} dans tous les pays</div>}
             </div>
 
             {/* Results */}
@@ -1214,53 +1240,19 @@ function AtlasMerveilles() {
                 </div>
               )}
               {globalQuery.length>=2&&(function(){
-                var q=norm(globalQuery);
-                var results=[];
-                Object.keys(spots).forEach(function(cid){
-                  (spots[cid]||[]).forEach(function(s){
-                    var txt=norm(s.name+" "+s.desc+" "+(s.why||"")+" "+(s.category||""));
-                    if(txt.includes(q)) results.push({s:s,cid:cid});
-                  });
-                });
-                results.sort(function(a,b){
-                  var an=norm(a.s.name).includes(q)?1:0;
-                  var bn=norm(b.s.name).includes(q)?1:0;
-                  return bn-an;
-                });
-                if(results.length===0) return(
+                if(sortedResults.length===0) return(
                   <div style={{textAlign:"center",padding:"40px",color:"#1a3a56"}}>
                     <div style={{fontSize:32,marginBottom:8}}>😕</div>
                     <div>Aucun résultat pour "{globalQuery}"</div>
                     <div style={{fontSize:12,marginTop:8}}>Essaie en anglais ou avec un terme plus général</div>
                   </div>
                 );
-                (function(){
-                  // Sort alphabetically by country name
-                  var sorted = results.slice(0,120).sort(function(a,b){
-                    var na=NM[a.cid]||a.cid; var nb=NM[b.cid]||b.cid;
-                    if(na!==nb) return na < nb ? -1 : na > nb ? 1 : 0;
-                    var x=norm(a.s.name), y=norm(b.s.name); return x<y?-1:x>y?1:0;
-                  });
-                  function goTo(cid){
-                    setShowGlobalSearch(false);
-                    setSelectedCountry(cid); setSelectedName(NM[cid]||"");
-                    setAnimKey(function(k){return k+1;});
-                    var coord=COORDS[cid];
-                    if(coord&&projRef.current){
-                      var pts=coord.split(",");
-                      rotateRef.current=[-parseFloat(pts[1]),-parseFloat(pts[0])];
-                      projRef.current.rotate(rotateRef.current);
-                      autoSpinRef.current=false;
-                      clearTimeout(resumeRef.current);
-                      resumeRef.current=setTimeout(function(){autoSpinRef.current=true;},5000);
-                    }
-                  }
-                  return sorted.map(function(item){
+                sortedResults.map(function(item){
                     var s=item.s; var cid=item.cid; var ci=gc(cid);
                     var cat=Cat(s.category);
                     var nm=norm(s.name).includes(norm(globalQuery));
                     return(
-                      <div key={(s.id||s.name)+cid} onClick={function(){goTo(cid);}}
+                      <div key={(s.id||s.name)+cid} onClick={function(){goToCountry(cid);}}
                         className="btn"
                         style={{display:"flex",alignItems:"stretch",marginBottom:5,borderRadius:10,overflow:"hidden",border:"1px solid "+(nm?cat.color+"55":"#0c1e34"),cursor:"pointer"}}>
                         <div style={{width:120,minWidth:120,background:CC[ci]+"1a",borderRight:"2px solid "+CC[ci]+"44",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"8px 6px",gap:3}}>
@@ -1280,12 +1272,11 @@ function AtlasMerveilles() {
                         </div>
                       </div>
                     );
-                  });
-                })()}
+                  })
             </div>
           </div>
         </div>
-      )}
+      })()}
 
       {/* ── STATS MODAL ── */}
       {showStats&&(
