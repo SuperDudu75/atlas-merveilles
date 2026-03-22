@@ -853,7 +853,7 @@ function AtlasMerveilles() {
         const _ex=_se.changedTouches&&_se.changedTouches[0]?_se.changedTouches[0].clientX:e.x;
         const _ey=_se.changedTouches&&_se.changedTouches[0]?_se.changedTouches[0].clientY:e.y;
         const dx=Math.abs(_ex-dragStartRef.current[0]),dy=Math.abs(_ey-dragStartRef.current[1]);
-        if(dx<(isMobile?20:6)&&dy<(isMobile?20:6)){ const rect=canvas.getBoundingClientRect(); const _s2=e.sourceEvent;const _cx=_s2.clientX||(_s2.changedTouches&&_s2.changedTouches[0]?_s2.changedTouches[0].clientX:0)||0;const _cy=_s2.clientY||(_s2.changedTouches&&_s2.changedTouches[0]?_s2.changedTouches[0].clientY:0)||0;const px=_cx-rect.left, py=_cy-rect.top; const coords=projRef.current?.invert([px,py]); if(coords&&!isNaN(coords[0])){ const c=countriesRef.current.find(f=>d3.geoContains(f,coords)); if(c){ const id=String(parseInt(c.id,10)); setSelectedCountry(id); setSelectedName(NM[id]||`#${id}`); setAnimKey(k=>k+1); }}}
+        if(dx<(isMobile?20:6)&&dy<(isMobile?20:6)){ const rect=canvas.getBoundingClientRect(); const _s2=e.sourceEvent;const _cx=_s2.clientX||(_s2.changedTouches&&_s2.changedTouches[0]?_s2.changedTouches[0].clientX:0)||0;const _cy=_s2.clientY||(_s2.changedTouches&&_s2.changedTouches[0]?_s2.changedTouches[0].clientY:0)||0;const px=_cx-rect.left, py=_cy-rect.top; const coords=projRef.current?.invert([px,py]); if(coords&&!isNaN(coords[0])){ const c=countriesRef.current.find(f=>d3.geoContains(f,coords)); if(c){ const id=String(parseInt(c.id,10)); setSelectedCountry(id); setSelectedName(NM[id]||("#"+id)); setAnimKey(k=>k+1); }}}
         resumeRef.current=setTimeout(()=>{ autoSpinRef.current=true; },3000);
       });
     d3.select(canvas).call(drag);
@@ -1028,7 +1028,7 @@ function AtlasMerveilles() {
           <div style={{width:isMobile?"100%":420,height:"100%",display:"flex",flexDirection:"column"}}>
 
             {/* Country header */}
-            <div key={`h${animKey}`} className="slid" style={{padding:"16px 16px 14px",borderBottom:"1px solid #0b1e34",background:"linear-gradient(160deg,#030e1c,#05182e)",flexShrink:0}}>
+            <div key={"h"+animKey} className="slid" style={{padding:"16px 16px 14px",borderBottom:"1px solid #0b1e34",background:"linear-gradient(160deg,#030e1c,#05182e)",flexShrink:0}}>
               <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8,marginBottom:11}}>
                 <div>
                   <div style={{fontWeight:900,fontSize:24,color:"#e4f0fc",letterSpacing:"-.02em",lineHeight:1.05}}>{filter==="liked"?"♥ Mes coups de coeur":selectedName}</div>
@@ -1473,7 +1473,7 @@ var live=weatherCache[selectedCountry];
                         {row.values.map(function(v,i){ var sc=(weatherCache[selectedCountry]?weatherCache[selectedCountry].scores:getWeather(selectedCountry))[i]; return <td key={i} style={{textAlign:"center",paddingBottom:4}}><div style={{background:"#06122a",borderRadius:5,padding:"5px 2px",fontSize:11,fontWeight:700,color:row.color,border:"1px solid "+WC[sc]+"44"}}>{v}</div></td>; })}
                       </tr>
                     ); });
-                  })
+                  })}
                 </tbody>
               </table>
             </div>
