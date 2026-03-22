@@ -341,11 +341,9 @@ function SpotImg({spotName, photoKey, countryName, category, style}) {
     var rawName = spotName.split("—")[0].split("–")[0].trim();
     // Use photo field as primary search (it's already in English with keywords)
     // Clean filename format: "band_e_amir_lake.jpg" → "band e amir lake"
-    var photoSearch = (photoKey||"")
-      .replace(/\.jpg$|\.jpeg$|\.png$/i, "")  // remove extension
-      .replace(/_/g, " ")                         // underscores → spaces
-      .replace(/,/g, " ")                         // commas → spaces
-      .trim();
+    var _pk = (photoKey||"");
+    if(_pk.length>4 && (_pk.slice(-4)===".jpg"||_pk.slice(-5)===".jpeg"||_pk.slice(-4)===".png")) _pk = _pk.substring(0, _pk.lastIndexOf("."));
+    var photoSearch = _pk.split("_").join(" ").split(",").join(" ").trim();
     // If photo field is very short or empty, fall back to translated name
     var engName = (photoSearch && photoSearch.length > 5) ? photoSearch : toEnglish(rawName);
     var extra = CAT_KEYS[category]||"travel";
@@ -390,7 +388,7 @@ function SpotImg({spotName, photoKey, countryName, category, style}) {
           var d=JSON.parse(xhr.responseText);
           // Must be a real article with image, not disambiguation
           var img=(d.originalimage||{}).source||(d.thumbnail||{}).source;
-          if(img && !img.match(/\.svg$/i) && d.type!=="disambiguation"){ done(img); return; }
+          if(img && img.slice(-4)!==".svg" && d.type!=="disambiguation"){ done(img); return; }
         }catch(e){}
         tryWikimedia();
       };
@@ -415,7 +413,7 @@ function SpotImg({spotName, photoKey, countryName, category, style}) {
               return (mime==="image/jpeg"||mime==="image/png")
                 && ii.width>800 && ii.height>500
                 && !t.match(/flag|logo|icon|map|coat|arms|blank|locator|seal|emblem|sign|text|symbol/i)
-                && !u.match(/\.svg$/i);
+                && u.slice(-4)!==".svg";
             }).sort(function(a,b){ return (b.imageinfo[0].width||0)-(a.imageinfo[0].width||0); });
             if(imgs.length){ done(imgs[0].imageinfo[0].thumburl||imgs[0].imageinfo[0].url); return; }
           }
