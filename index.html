@@ -279,41 +279,59 @@ const CAT_KEYS = {
   "unique":"travel culture"
 };
 
-// French → English translation for common landmark words
+// French → English translation
 function toEnglish(name) {
+  // Full name translations first
   var fr2en = {
-    "Cité Interdite":"Forbidden City","Armée de Terre Cuite":"Terracotta Army",
-    "Tour Eiffel":"Eiffel Tower","Arc de Triomphe":"Arc de Triomphe Paris",
-    "Sacré-Cœur":"Sacre Coeur Basilica Paris","Notre-Dame":"Notre Dame Cathedral Paris",
-    "Grande Muraille":"Great Wall China","Taj Mahal":"Taj Mahal Agra",
-    "Colisée":"Colosseum Rome","Machu Picchu":"Machu Picchu Peru",
-    "Chutes du Niagara":"Niagara Falls","Chutes Victoria":"Victoria Falls",
-    "Mont Fuji":"Mount Fuji Japan","Mont Everest":"Mount Everest",
-    "Grand Canyon":"Grand Canyon Arizona","Sahara":"Sahara Desert",
-    "Amazonie":"Amazon Rainforest","Forêt Amazonienne":"Amazon Rainforest",
-    "Pyramides":"Pyramids Giza Egypt","Sphinx":"Great Sphinx Giza",
-    "Angkor Wat":"Angkor Wat Cambodia","Borobudur":"Borobudur Temple",
-    "Chapelle Sixtine":"Sistine Chapel Vatican","Vatican":"Vatican City",
-    "Acropole":"Acropolis Athens","Parthénon":"Parthenon Athens",
-    "Alhambra":"Alhambra Granada Spain","Sagrada Família":"Sagrada Familia Barcelona",
-    "Serengeti":"Serengeti Tanzania","Okavango":"Okavango Delta Botswana",
-    "Galapagos":"Galapagos Islands Ecuador","Patagonie":"Patagonia",
-    "Fiords":"Fjords Norway","Aurores Boréales":"Northern Lights Aurora",
-    "Mer Morte":"Dead Sea","Petra":"Petra Jordan",
-    "Stonehenge":"Stonehenge England","Big Ben":"Big Ben London",
-    "Tower Bridge":"Tower Bridge London"
+    "Cité Interdite":"Forbidden City Beijing","Armée de Terre Cuite":"Terracotta Army Xian",
+    "Tour Eiffel":"Eiffel Tower Paris","Arc de Triomphe":"Arc de Triomphe Paris",
+    "Sacré-Cœur":"Sacre Coeur Basilica Montmartre","Notre-Dame":"Notre Dame Cathedral Paris",
+    "Grande Muraille":"Great Wall of China","Taj Mahal":"Taj Mahal Agra India",
+    "Colisée":"Colosseum Rome Italy","Machu Picchu":"Machu Picchu Peru",
+    "Chutes du Niagara":"Niagara Falls","Chutes Victoria":"Victoria Falls Zimbabwe",
+    "Mont Fuji":"Mount Fuji Japan","Mont Everest":"Mount Everest Nepal",
+    "Grand Canyon":"Grand Canyon Arizona","Sahara":"Sahara Desert sand dunes",
+    "Amazonie":"Amazon Rainforest Brazil","Pyramides":"Pyramids Giza Egypt",
+    "Angkor Wat":"Angkor Wat Cambodia","Borobudur":"Borobudur Temple Indonesia",
+    "Chapelle Sixtine":"Sistine Chapel Vatican","Acropole":"Acropolis Athens Greece",
+    "Parthénon":"Parthenon Athens Greece","Alhambra":"Alhambra Granada Spain",
+    "Sagrada Família":"Sagrada Familia Barcelona","Serengeti":"Serengeti National Park",
+    "Okavango":"Okavango Delta Botswana","Patagonie":"Patagonia landscape",
+    "Aurores Boréales":"Northern Lights Aurora Borealis","Mer Morte":"Dead Sea Israel",
+    "Petra":"Petra ancient city Jordan","Big Ben":"Big Ben London","Tower Bridge":"Tower Bridge London"
+  };
+  var n = name.toLowerCase();
+  var keys = Object.keys(fr2en);
+  for(var i=0;i<keys.length;i++){
+    if(n.includes(keys[i].toLowerCase())) return fr2en[keys[i]];
+  }
+  // Generic word-by-word translation for unknown spots
+  var words = {
+    "chutes":"waterfall falls","chute":"waterfall","cascade":"waterfall",
+    "lac":"lake","mont":"mountain","montagne":"mountain","volcan":"volcano",
+    "île":"island","plage":"beach","forêt":"forest","désert":"desert",
+    "parc":"national park","réserve":"wildlife reserve","baie":"bay",
+    "gorge":"gorge canyon","vallée":"valley","falaise":"cliff",
+    "temple":"temple","palais":"palace","château":"castle",
+    "cathédrale":"cathedral","église":"church","mosquée":"mosque",
+    "marché":"market","port":"harbor port","vieille ville":"old city",
+    "péninsule":"peninsula","delta":"delta","savane":"savanna",
+    "récif":"reef coral","grotte":"cave","glacier":"glacier"
   };
   var result = name;
-  Object.keys(fr2en).forEach(function(fr){
-    if(name.toLowerCase().includes(fr.toLowerCase())) result = fr2en[fr];
+  Object.keys(words).forEach(function(fr){
+    var re = new RegExp(fr,"gi");
+    result = result.replace(re, words[fr]);
   });
-  return result;
+  // Remove French articles
+  result = result.replace(/^(le |la |les |l\'|du |de la |des |d\')/i,"");
+  return result.trim();
 }
 
-function SpotImg({spotName, countryName, category, style}) {
+function SpotImg({spotName, photoKey, countryName, category, style}) {
   var _s = React.useState(null); var src = _s[0]; var setSrc = _s[1];
   var _l = React.useState(true); var loading = _l[0]; var setLoading = _l[1];
-  var cacheKey = (spotName||"")+"_"+(countryName||"");
+  var cacheKey = (photoKey||spotName||"")+"_"+(countryName||"");
 
   React.useEffect(function(){
     if(!spotName){ setLoading(false); return; }
@@ -321,7 +339,15 @@ function SpotImg({spotName, countryName, category, style}) {
     setLoading(true);
 
     var rawName = spotName.split("—")[0].split("–")[0].trim();
-    var engName = toEnglish(rawName);
+    // Use photo field as primary search (it's already in English with keywords)
+    // Clean filename format: "band_e_amir_lake.jpg" → "band e amir lake"
+    var photoSearch = (photoKey||"")
+      .replace(/\.jpg$|\.jpeg$|\.png$/i, "")  // remove extension
+      .replace(/_/g, " ")                         // underscores → spaces
+      .replace(/,/g, " ")                         // commas → spaces
+      .trim();
+    // If photo field is very short or empty, fall back to translated name
+    var engName = (photoSearch && photoSearch.length > 5) ? photoSearch : toEnglish(rawName);
     var extra = CAT_KEYS[category]||"travel";
 
     function done(url){
@@ -333,14 +359,19 @@ function SpotImg({spotName, countryName, category, style}) {
     function tryPexels(){
       var q = encodeURIComponent(engName+" "+(countryName||""));
       var xhr = new XMLHttpRequest();
-      xhr.open("GET","https://api.pexels.com/v1/search?query="+q+"&per_page=3&orientation=landscape");
+      xhr.open("GET","https://api.pexels.com/v1/search?query="+q+"&per_page=5&orientation=landscape");
       xhr.setRequestHeader("Authorization",PEXELS_KEY);
       xhr.timeout=6000;
       xhr.onload=function(){
         try{
           var d=JSON.parse(xhr.responseText);
-          var p=d.photos&&d.photos[0]&&d.photos[0].src;
-          if(p&&p.large2x){ done(p.large2x); return; }
+          var photos=d.photos||[];
+          // Filter: landscape ratio (width > height*1.2), min size 800px wide
+          var good=photos.filter(function(p){
+            return p.width>800 && p.width>p.height*1.2;
+          });
+          var pick=good[0]||photos[0];
+          if(pick&&pick.src&&pick.src.large2x){ done(pick.src.large2x); return; }
         }catch(e){}
         tryWikipedia();
       };
@@ -1050,6 +1081,7 @@ function AtlasMerveilles() {
               {!imgErr
                 ? <SpotImg
                   spotName={detailSpot.name}
+                  photoKey={detailSpot.photo}
                   countryName={selectedName}
                   category={detailSpot.category}
                   style={{width:"100%",height:"100%",objectFit:"cover",opacity:0.9}}/>
