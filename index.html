@@ -214,9 +214,14 @@ const CATS = [
   { id:"heritage", label:"Patrimoine",         icon:"🏛️",color:"#c084fc" },
   { id:"unique",   label:"Expérience Unique",  icon:"⭐",color:"#fbbf24" },
   { id:"famous",   label:"Incontournables",    icon:"🏆",color:"#f0c040" },
+  { id:"liked",    label:"Mes coups de ♥",     icon:"♥", color:"#f43f5e" },
 ];
 const safeStr = function(v){ return v ? String(v) : ""; };
-const IMG = function(kw){ var seed=Math.abs((kw||"").split("").reduce(function(a,c){return a+c.charCodeAt(0);},0)%9999); var q=encodeURIComponent((kw||"nature").replace(/[^\w ]/g," ").trim().split(/\s+/).slice(0,4).join(",")); return "https://source.unsplash.com/900x500/?"+q+"&sig="+seed; };
+const IMG = function(kw){
+  var seed=Math.abs((kw||"").split("").reduce(function(a,c){return a+c.charCodeAt(0);},0)%9999);
+  var q=encodeURIComponent((kw||"nature travel").trim().split(/\s+/).slice(0,4).join(" "));
+  return "https://source.unsplash.com/900x500/?"+q+"&sig="+seed;
+};
 const Cat = id => CATS.find(c=>c.id===id)||{ id:"unique", label:"Experience", icon:"⭐", color:"#fbbf24" };
 
 // ── 195 PAYS DU MONDE ─────────────────────────────────────────────────────────
@@ -469,6 +474,9 @@ function AtlasMerveilles() {
   const [showGlobalMonth,setShowGlobalMonth] = useState(false);
   const [showCountryList,setShowCountryList] = useState(false);
   const [countrySearch,setCountrySearch]     = useState('');
+  const [liked,setLiked]                     = useState({});
+  const [visitedCountries,setVisitedCountries] = useState({});
+  const [showStats,setShowStats]             = useState(false);
   const [globalMonth,setGlobalMonth]         = useState(0);
   const [weatherCache,setWeatherCache]       = useState({});
   const [weatherLoading,setWeatherLoading]   = useState(false);
@@ -501,6 +509,8 @@ function AtlasMerveilles() {
     try{ const r=await fetch("world_spots.json"); const d=await r.json(); setSpots(d); }catch(e){}
   })(); },[]);
   useEffect(()=>{ (async()=>{ try{ await window.storage.set("atlas-v12",JSON.stringify(spots)); }catch(e){} })(); },[spots]);
+  useEffect(()=>{ (async()=>{ try{ await window.storage.set("atlas-liked",JSON.stringify(liked)); }catch(e){} })(); },[liked]);
+  useEffect(()=>{ (async()=>{ try{ await window.storage.set("atlas-visited",JSON.stringify(visitedCountries)); }catch(e){} })(); },[visitedCountries]);
 
   useEffect(()=>{
     (async()=>{
@@ -582,6 +592,8 @@ function AtlasMerveilles() {
     return()=>{ cancelAnimationFrame(animRef.current); canvas.removeEventListener("wheel",onWheel); canvas.removeEventListener("mousemove",onMove); clearTimeout(resumeRef.current); };
   },[worldData,draw]);
 
+  const toggleLike=(sid)=>setLiked(function(p){ var n=Object.assign({},p); if(n[sid]) delete n[sid]; else n[sid]=true; return n; });
+  const toggleVisited=(cid)=>setVisitedCountries(function(p){ var n=Object.assign({},p); if(n[cid]) delete n[cid]; else n[cid]=true; return n; });
   const toggleDone=(cid,sid)=>setSpots(p=>({...p,[cid]:p[cid].map(s=>s.id===sid?{...s,done:!s.done}:s)}));
   const deleteSpot=(cid,sid)=>setSpots(p=>{const n=p[cid].filter(s=>s.id!==sid);if(!n.length){const{[cid]:_,...r}=p;return r;}return{...p,[cid]:n};});
   const addSpot=()=>{ if(!form.name.trim()||!selectedCountry) return; const id="u"+Date.now(); setSpots(p=>({...p,[selectedCountry]:[...(p[selectedCountry]||[]),{id,...form,done:false}].sort((a,b)=>a.name.localeCompare(b.name,undefined,{sensitivity:'base'}))})); setForm({name:"",category:"marine",desc:"",why:"",season:"",tip:"",photo:""}); setShowModal(false); };
@@ -593,7 +605,7 @@ function AtlasMerveilles() {
   const totalDone=allSpots.filter(s=>s.done).length;
   const nCountries=Object.keys(spots).length;
   const sideSpots=selectedCountry?(spots[selectedCountry]||[]):[];
-  const filtered=(filter==="all"?sideSpots:sideSpots.filter(s=>s.category===filter))
+  const filtered=(filter==="all"?sideSpots:filter==="liked"?sideSpots.filter(s=>liked[s.id]):sideSpots.filter(s=>s.category===filter))
     .filter(s=>!search||((s.name||"")+(s.desc||"")).toLowerCase().includes(search.toLowerCase()))
     .filter(s=>{
       if(!monthFilter) return true;
@@ -664,6 +676,7 @@ function AtlasMerveilles() {
             );})}
           </div>
           <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+            <button className="btn" onClick={()=>setShowStats(true)} style={{background:"#06122a",border:"1px solid #0d2038",borderRadius:8,padding:"8px 12px",color:"#f59e0b",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}>📊 Stats</button>
             <button className="btn" onClick={()=>setShowCountryList(true)} style={{background:"#06122a",border:"1px solid #0d2038",borderRadius:8,padding:"8px 12px",color:"#a78bfa",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}>🌍 Pays</button>
             <button className="btn" onClick={()=>setShowGlobalMonth(true)} style={{background:"#06122a",border:"1px solid #0d2038",borderRadius:8,padding:"8px 12px",color:"#0ea5e9",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}>🗓 Meilleur mois</button>
             <div style={{display:"flex",gap:3}}>{CN.map((n,i)=>(<div key={n} title={n} style={{width:12,height:12,borderRadius:"50%",background:CC[i],opacity:0.75}}/>))}</div>
@@ -729,7 +742,14 @@ function AtlasMerveilles() {
 
             {/* Spots */}
             <div style={{padding:"8px 12px 0",borderBottom:"1px solid #0b1e34",flexShrink:0}}>
-              <button onClick={()=>setShowWeather(true)} title="Météo détaillée" style={{float:"right",background:"#06122a",border:"1px solid #0d2038",borderRadius:7,padding:"4px 9px",color:"#38bdf8",fontWeight:700,fontSize:13,cursor:"pointer",marginTop:2}}>🌤</button>
+              <div style={{display:"flex",gap:6,float:"right",marginTop:2}}>
+              <button onClick={()=>toggleVisited(selectedCountry)}
+                title={visitedCountries[selectedCountry]?"Pays visité — cliquer pour retirer":"Marquer ce pays comme visité"}
+                style={{background:visitedCountries[selectedCountry]?"#0a2c18":"#06122a",border:"1px solid "+(visitedCountries[selectedCountry]?"#22c55e":"#0d2038"),borderRadius:7,padding:"4px 9px",color:visitedCountries[selectedCountry]?"#22c55e":"#2a6080",fontWeight:700,fontSize:13,cursor:"pointer"}}>
+                {visitedCountries[selectedCountry]?"✓ Visité":"Visité?"}
+              </button>
+              <button onClick={()=>setShowWeather(true)} title="Météo détaillée" style={{background:"#06122a",border:"1px solid #0d2038",borderRadius:7,padding:"4px 9px",color:"#38bdf8",fontWeight:700,fontSize:13,cursor:"pointer"}}>🌤</button>
+            </div>
               <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Rechercher un spot..." style={{width:"100%",background:"#06122a",border:"1px solid #0d2038",borderRadius:8,padding:"8px 12px",color:"#c0d8f0",fontSize:13,marginBottom:8,outline:"none"}}/>
               <div style={{display:"flex",gap:3,flexWrap:"wrap",marginBottom:6}}>
                 {[0,1,2,3,4,5,6,7,8,9,10,11,12].map(function(m){
@@ -791,7 +811,9 @@ function AtlasMerveilles() {
             onClick={e=>e.stopPropagation()}>
             <div style={{position:"relative",height:260,background:"#071424",overflow:"hidden",borderRadius:"16px 16px 0 0",flexShrink:0}}>
               {!imgErr
-                ? <img src={IMG((detailSpot.photo||detailSpot.name||"nature"))} alt="" style={{width:"100%",height:"100%",objectFit:"cover",opacity:0.72}} onError={()=>setImgErr(true)}/>
+                ? <img src={IMG((detailSpot.photo||detailSpot.name||"nature"))} alt=""
+                  style={{width:"100%",height:"100%",objectFit:"cover",opacity:0.72}}
+                  onError={function(){ try{ setImgErr(true); }catch(e){} }}/>
                 : <div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",background:"radial-gradient(circle at 40% 40%,#0c2a44,#020c1a)"}}><span style={{fontSize:64}}>{Cat(detailSpot.category).icon}</span></div>
               }
               <div style={{position:"absolute",inset:0,background:"linear-gradient(to top,#030e1c 0%,rgba(3,14,28,.2) 55%,transparent 100%)"}}/>
@@ -857,6 +879,75 @@ function AtlasMerveilles() {
 
       
       
+      
+      {/* ── STATS MODAL ── */}
+      {showStats&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,backdropFilter:"blur(12px)",padding:"16px"}}
+          onClick={()=>setShowStats(false)}>
+          <div style={{background:"#030e1c",border:"1px solid #0d2540",borderRadius:16,width:"min(700px,96vw)",maxHeight:"90vh",overflow:"auto",padding:"24px"}}
+            onClick={function(e){e.stopPropagation();}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
+              <div style={{fontWeight:900,fontSize:22,color:"#e4f0fc"}}>📊 Mes statistiques</div>
+              <button onClick={()=>setShowStats(false)} style={{background:"#0b1e34",border:"1px solid #142840",borderRadius:8,width:32,height:32,color:"#3a6080",cursor:"pointer",fontSize:18}}>×</button>
+            </div>
+            {(function(){
+              var totalSpots = Object.values(spots).reduce(function(a,b){return a+b.length;},0);
+              var doneSpots = Object.values(spots).reduce(function(a,b){return a+b.filter(function(s){return s.done;}).length;},0);
+              var likedCount = Object.keys(liked).length;
+              var visitedCount = Object.keys(visitedCountries).length;
+              var totalCountries = Object.keys(spots).length;
+              var doneCountries = Object.keys(spots).filter(function(cid){ return spots[cid].every(function(s){return s.done;}); }).length;
+              var continentStats = CN.map(function(name,ci){
+                var cids = Object.keys(spots).filter(function(cid){ return gc(cid)===ci; });
+                var visited = cids.filter(function(cid){ return visitedCountries[cid]; }).length;
+                var done = cids.filter(function(cid){ return spots[cid] && spots[cid].every(function(s){return s.done;}); }).length;
+                return {name:name, ci:ci, total:cids.length, visited:visited, done:done};
+              });
+              return (
+                <div>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:12,marginBottom:24}}>
+                    {[
+                      {icon:"🌍",label:"Pays avec spots",val:totalCountries,total:195,color:"#a78bfa"},
+                      {icon:"✅",label:"Pays complétés",val:doneCountries,total:totalCountries,color:"#22c55e"},
+                      {icon:"✈️",label:"Pays visités",val:visitedCount,total:195,color:"#38bdf8"},
+                      {icon:"♥",label:"Spots likés",val:likedCount,total:totalSpots,color:"#f43f5e"},
+                      {icon:"⭐",label:"Spots accomplis",val:doneSpots,total:totalSpots,color:"#0ea5e9"},
+                      {icon:"🗺️",label:"Total spots",val:totalSpots,total:totalSpots,color:"#f59e0b"},
+                    ].map(function(stat,i){ return (
+                      <div key={i} style={{background:"#040e1e",border:"1px solid #0c1e34",borderRadius:12,padding:"16px"}}>
+                        <div style={{fontSize:22,marginBottom:6}}>{stat.icon}</div>
+                        <div style={{fontSize:28,fontWeight:900,color:stat.color}}>{stat.val}</div>
+                        <div style={{fontSize:11,color:"#2a5070",marginBottom:8}}>{stat.label}</div>
+                        <div style={{height:4,background:"#0b1e34",borderRadius:2,overflow:"hidden"}}>
+                          <div style={{width:stat.total>0?(stat.val/stat.total*100)+"%":"0%",height:"100%",background:stat.color,transition:"width .6s",borderRadius:2}}/>
+                        </div>
+                        <div style={{fontSize:10,color:"#1a3a56",marginTop:4}}>{stat.total>0?Math.round(stat.val/stat.total*100):0}%</div>
+                      </div>
+                    ); })}
+                  </div>
+                  <div style={{fontSize:13,fontWeight:800,color:"#4a90b0",letterSpacing:".08em",marginBottom:12}}>PAR CONTINENT</div>
+                  {continentStats.map(function(cs){ return (
+                    <div key={cs.ci} style={{marginBottom:10}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+                        <div style={{display:"flex",alignItems:"center",gap:8}}>
+                          <div style={{width:10,height:10,borderRadius:"50%",background:CC[cs.ci]}}/>
+                          <span style={{fontSize:13,fontWeight:700,color:"#d8eef8"}}>{cs.name}</span>
+                        </div>
+                        <span style={{fontSize:11,color:"#2a5070"}}>{cs.visited} visités · {cs.done} complétés / {cs.total} pays</span>
+                      </div>
+                      <div style={{height:6,background:"#0b1e34",borderRadius:3,overflow:"hidden",position:"relative"}}>
+                        <div style={{position:"absolute",left:0,top:0,height:"100%",width:cs.total>0?(cs.visited/cs.total*100)+"%",background:CC[cs.ci],opacity:0.5,transition:"width .6s"}}/>
+                        <div style={{position:"absolute",left:0,top:0,height:"100%",width:cs.total>0?(cs.done/cs.total*100)+"%",background:CC[cs.ci],transition:"width .6s"}}/>
+                      </div>
+                    </div>
+                  ); })}
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+
       {/* ── COUNTRY LIST MODAL ── */}
       {showCountryList&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,backdropFilter:"blur(12px)",padding:"16px"}}
@@ -919,8 +1010,8 @@ function AtlasMerveilles() {
                             }}
                             className="btn"
                             style={{
-                              background:isSelected?"#0c2848":(hasSpots?"#040e1e":"#020810"),
-                              border:"1px solid "+(isSelected?"#0ea5e9":(hasSpots?CC[ci]+"44":"#0a1828")),
+                              background:isSelected?"#0c2848":(visitedCountries[cid]?"#062318":(hasSpots?"#040e1e":"#020810")),
+                              border:"1px solid "+(isSelected?"#0ea5e9":(visitedCountries[cid]?"#22c55e55":(hasSpots?CC[ci]+"44":"#0a1828"))),
                               borderRadius:8,padding:"10px 12px",cursor:"pointer",
                               transition:"all .15s"
                             }}>
