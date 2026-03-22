@@ -686,6 +686,76 @@ const DEFAULT_SPOTS = {
 // IMG defined above
 
 // ── COMPONENT ─────────────────────────────────────────────────────────────────
+const BADGES_DEF = [
+  // Exploration
+  {id:"first",icon:"🌱",name:"Premier pas",desc:"Accomplir ton 1er spot",cat:"Exploration",check:function(s,l,v){ return Object.values(s).reduce(function(a,b){return a+b.filter(function(x){return x.done;}).length;},0)>=1; }},
+  {id:"explorer10",icon:"🗺️",name:"Explorateur",desc:"10 spots accomplis",cat:"Exploration",check:function(s){ return Object.values(s).reduce(function(a,b){return a+b.filter(function(x){return x.done;}).length;},0)>=10; }},
+  {id:"explorer50",icon:"🧭",name:"Grand Voyageur",desc:"50 spots accomplis",cat:"Exploration",check:function(s){ return Object.values(s).reduce(function(a,b){return a+b.filter(function(x){return x.done;}).length;},0)>=50; }},
+  {id:"explorer100",icon:"🌟",name:"Légende",desc:"100 spots accomplis",cat:"Exploration",check:function(s){ return Object.values(s).reduce(function(a,b){return a+b.filter(function(x){return x.done;}).length;},0)>=100; }},
+  // Continents
+  {id:"africa",icon:"🦁",name:"Africain",desc:"5 spots en Afrique",cat:"Continents",check:function(s){ return Object.keys(s).filter(function(cid){return s[cid].some(function(x){return x.done;})&&[0].indexOf(gc(cid))>-1;}).length; },threshold:5},
+  {id:"europe5",icon:"🏰",name:"Européen",desc:"5 pays européens visités",cat:"Continents",check:function(s,l,v){ return Object.keys(v).filter(function(cid){return gc(cid)===2;}).length>=5; }},
+  {id:"asia5",icon:"🏯",name:"Asiatique",desc:"5 pays asiatiques visités",cat:"Continents",check:function(s,l,v){ return Object.keys(v).filter(function(cid){return gc(cid)===1;}).length>=5; }},
+  {id:"7cont",icon:"🌍",name:"7 Continents",desc:"Visiter tous les continents",cat:"Continents",check:function(s,l,v){ var conts=new Set(Object.keys(v).map(function(cid){return gc(cid);})); return conts.size>=6; }},
+  // Catégories
+  {id:"diver",icon:"🤿",name:"Plongeur",desc:"5 spots marins accomplis",cat:"Spécialiste",check:function(s){ return Object.values(s).reduce(function(a,b){return a+b.filter(function(x){return x.done&&x.category==="marine";}).length;},0)>=5; }},
+  {id:"wildlife",icon:"🦁",name:"Chasseur Faune",desc:"10 spots faune sauvage",cat:"Spécialiste",check:function(s){ return Object.values(s).reduce(function(a,b){return a+b.filter(function(x){return x.done&&x.category==="wildlife";}).length;},0)>=10; }},
+  {id:"volcano",icon:"🌋",name:"Volcanologue",desc:"5 spots volcans/géo accomplis",cat:"Spécialiste",check:function(s){ return Object.values(s).reduce(function(a,b){return a+b.filter(function(x){return x.done&&x.category==="geology";}).length;},0)>=5; }},
+  {id:"heritage5",icon:"🏛️",name:"Historien",desc:"10 spots patrimoine",cat:"Spécialiste",check:function(s){ return Object.values(s).reduce(function(a,b){return a+b.filter(function(x){return x.done&&x.category==="heritage";}).length;},0)>=10; }},
+  {id:"nature10",icon:"🌿",name:"Naturaliste",desc:"10 spots nature",cat:"Spécialiste",check:function(s){ return Object.values(s).reduce(function(a,b){return a+b.filter(function(x){return x.done&&x.category==="nature";}).length;},0)>=10; }},
+  // Pays visités
+  {id:"visited5",icon:"✈️",name:"Voyageur",desc:"5 pays visités",cat:"Voyages",check:function(s,l,v){ return Object.keys(v).length>=5; }},
+  {id:"visited10",icon:"🛫",name:"Globe-trotter",desc:"10 pays visités",cat:"Voyages",check:function(s,l,v){ return Object.keys(v).length>=10; }},
+  {id:"visited25",icon:"🌐",name:"Citoyen du Monde",desc:"25 pays visités",cat:"Voyages",check:function(s,l,v){ return Object.keys(v).length>=25; }},
+  // Favoris
+  {id:"liked5",icon:"♥",name:"Rêveur",desc:"5 spots en favoris",cat:"Favoris",check:function(s,l){ return Object.keys(l).length>=5; }},
+  {id:"liked20",icon:"💝",name:"Passionné",desc:"20 spots en favoris",cat:"Favoris",check:function(s,l){ return Object.keys(l).length>=20; }},
+  // Spéciaux
+  {id:"incontournable",icon:"🏆",name:"Chasseur d'Incontournables",desc:"10 incontournables accomplis",cat:"Spécial",check:function(s){ return Object.values(s).reduce(function(a,b){return a+b.filter(function(x){return x.done&&x.category==="famous";}).length;},0)>=10; }},
+  {id:"complete_country",icon:"🎯",name:"Perfectionniste",desc:"Compléter tous les spots d'un pays",cat:"Spécial",check:function(s){ return Object.keys(s).some(function(cid){return s[cid].length>0&&s[cid].every(function(x){return x.done;}); }); }},
+];
+
+function BadgesContent(props) {
+  var s=props.spots, l=props.liked, v=props.visitedCountries;
+  var cats = ["Exploration","Continents","Spécialiste","Voyages","Favoris","Spécial"];
+  var totalUnlocked = BADGES_DEF.filter(function(b){ return b.check(s,l,v); }).length;
+  return React.createElement("div", null,
+    React.createElement("div", {style:{display:"flex",alignItems:"center",gap:12,marginBottom:20,padding:"12px 16px",background:"#06122a",borderRadius:10,border:"1px solid #0d2038"}},
+      React.createElement("div", {style:{fontSize:32}}, totalUnlocked===0?"😴":totalUnlocked<5?"🌱":totalUnlocked<10?"🚀":"🏆"),
+      React.createElement("div", null,
+        React.createElement("div", {style:{fontWeight:900,fontSize:18,color:"#34d399"}}, totalUnlocked + "/" + BADGES_DEF.length + " badges débloqués"),
+        React.createElement("div", {style:{height:6,background:"#0b1e34",borderRadius:3,marginTop:6,overflow:"hidden",width:200}},
+          React.createElement("div", {style:{width:pct(totalUnlocked,BADGES_DEF.length),height:"100%",background:"linear-gradient(90deg,#34d399,#0ea5e9)",borderRadius:3}})
+        )
+      )
+    ),
+    cats.map(function(cat){
+      var catBadges = BADGES_DEF.filter(function(b){return b.cat===cat;});
+      return React.createElement("div", {key:cat, style:{marginBottom:16}},
+        React.createElement("div", {style:{fontSize:11,fontWeight:800,color:"#2a5070",letterSpacing:".1em",marginBottom:8,paddingBottom:4,borderBottom:"1px solid #0a1828"}}, cat.toUpperCase()),
+        React.createElement("div", {style:{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:8}},
+          catBadges.map(function(badge){
+            var unlocked = badge.check(s,l,v);
+            return React.createElement("div", {key:badge.id, style:{
+              background:unlocked?"#061a12":"#040e1e",
+              border:"1px solid "+(unlocked?"#34d399":"#0c1e34"),
+              borderRadius:10, padding:"12px",
+              opacity:unlocked?1:"0.5",
+              transition:"all .2s"
+            }},
+              React.createElement("div", {style:{fontSize:28,marginBottom:6}}, badge.icon),
+              React.createElement("div", {style:{fontSize:13,fontWeight:800,color:unlocked?"#34d399":"#4a7898",marginBottom:3}}, badge.name),
+              React.createElement("div", {style:{fontSize:10,color:"#2a5070",lineHeight:1.4}}, badge.desc),
+              unlocked&&React.createElement("div", {style:{fontSize:9,color:"#34d399",marginTop:4,fontWeight:700}}, "✓ DÉBLOQUÉ")
+            );
+          })
+        )
+      );
+    })
+  );
+}
+
+
 function AtlasMerveilles() {
   const canvasRef    = useRef(null);
   const projRef      = useRef(null);
@@ -721,6 +791,7 @@ function AtlasMerveilles() {
   const [showGlobalMonth,setShowGlobalMonth] = useState(false);
   const [showCountryList,setShowCountryList] = useState(false);
   const [showGlobalSearch,setShowGlobalSearch] = useState(false);
+  const [showBadges,setShowBadges]             = useState(false);
   const [globalQuery,setGlobalQuery]         = useState('');
   const [countrySearch,setCountrySearch]     = useState('');
   const [liked,setLiked]                     = useState({});
@@ -760,8 +831,27 @@ function AtlasMerveilles() {
   useEffect(()=>{ setModalErr(false); setImgErr(false); },[detailSpot]);
 
   useEffect(()=>{ (async()=>{
+    // 1. Try Supabase FIRST (cross-device sync)
+    try{
+      const sb = await sbLoad();
+      if(sb){
+        if(sb.spots) setSpots(JSON.parse(sb.spots));
+        if(sb.liked) setLiked(JSON.parse(sb.liked));
+        if(sb.visited) setVisitedCountries(JSON.parse(sb.visited));
+        // Mirror to localStorage
+        try{ if(sb.spots) localStorage.setItem("atlas-v14", sb.spots); }catch(e){}
+        try{ if(sb.liked) localStorage.setItem("atlas-liked", sb.liked); }catch(e){}
+        try{ if(sb.visited) localStorage.setItem("atlas-visited", sb.visited); }catch(e){}
+        return;
+      }
+    }catch(e){}
+    // 2. Fallback: localStorage
     try{ const s=await window.storage.get("atlas-v14"); if(s&&s.value){ setSpots(JSON.parse(s.value)); return; } }catch(e){}
+    // 3. Load default spots from JSON
     try{ const r=await fetch("world_spots.json"); const d=await r.json(); setSpots(d); }catch(e){}
+    // 4. Load liked/visited from localStorage
+    try{ const lk=await window.storage.get("atlas-liked"); if(lk&&lk.value) setLiked(JSON.parse(lk.value)); }catch(e){}
+    try{ const vc=await window.storage.get("atlas-visited"); if(vc&&vc.value) setVisitedCountries(JSON.parse(vc.value)); }catch(e){}
   })(); },[]);
   useEffect(()=>{
     (async()=>{ try{ await window.storage.set("atlas-v14",JSON.stringify(spots)); }catch(e){} })();
@@ -949,12 +1039,23 @@ function AtlasMerveilles() {
       {/* ── TOPBAR ── */}
       {isMobile ? (
         <div style={{background:"#020e1c",borderBottom:"1px solid #0b1e34",flexShrink:0}}>
-          <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px 6px"}}>
-            <span style={{fontSize:24,flexShrink:0}}>🌍</span>
-            <div><div style={{fontWeight:900,fontSize:17,color:"#8ecce8"}}>Mes Pokémons Rares</div>
-            <div style={{fontSize:11,color:"#4a80a8",fontWeight:500,marginTop:1}}>
-              <span style={{color:"#38bdf8",fontWeight:800}}>{nCountries}</span> pays · <span style={{color:"#38bdf8",fontWeight:800}}>{allSpots.length}</span> exp.
-            </div></div>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 12px 4px"}}>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <span style={{fontSize:22,flexShrink:0}}>🌍</span>
+              <div>
+                <div style={{fontWeight:900,fontSize:15,color:"#8ecce8"}}>Mes Pokémons Rares</div>
+                <div style={{fontSize:10,color:"#4a80a8",fontWeight:500}}>
+                  <span style={{color:"#38bdf8",fontWeight:800}}>{nCountries}</span> pays · <span style={{color:"#38bdf8",fontWeight:800}}>{allSpots.length}</span> exp · <span style={{color:"#f43f5e",fontWeight:800}}>{Object.keys(liked).length}</span>♥
+                </div>
+              </div>
+            </div>
+            <div style={{display:"flex",gap:5}}>
+              <button onClick={()=>setShowBadges(true)} style={{background:"#06122a",border:"1px solid #0d2038",borderRadius:7,padding:"5px 8px",color:"#34d399",fontWeight:700,fontSize:11,cursor:"pointer"}}>🏅</button>
+              <button onClick={()=>setShowGlobalSearch(true)} style={{background:"#06122a",border:"1px solid #0d2038",borderRadius:7,padding:"5px 8px",color:"#e879f9",fontWeight:700,fontSize:11,cursor:"pointer"}}>🔍</button>
+              <button onClick={()=>setShowStats(true)} style={{background:"#06122a",border:"1px solid #0d2038",borderRadius:7,padding:"5px 8px",color:"#f59e0b",fontWeight:700,fontSize:11,cursor:"pointer"}}>📊</button>
+              <button onClick={()=>setShowCountryList(true)} style={{background:"#06122a",border:"1px solid #0d2038",borderRadius:7,padding:"5px 8px",color:"#a78bfa",fontWeight:700,fontSize:11,cursor:"pointer"}}>🌍</button>
+              <button onClick={()=>setShowGlobalMonth(true)} style={{background:"#06122a",border:"1px solid #0d2038",borderRadius:7,padding:"5px 8px",color:"#0ea5e9",fontWeight:700,fontSize:11,cursor:"pointer"}}>🗓</button>
+            </div>
           </div>
           <div style={{display:"flex",gap:6,padding:"4px 12px 10px",overflowX:"auto",WebkitOverflowScrolling:"touch",flexWrap:"nowrap",scrollbarWidth:"none",msOverflowStyle:"none"}}>
             {CATS.map(c=>{ const a=filter===c.id; return(
@@ -985,6 +1086,7 @@ function AtlasMerveilles() {
             );})}
           </div>
           <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+            <button className="btn" onClick={()=>setShowBadges(true)} style={{background:"#06122a",border:"1px solid #0d2038",borderRadius:8,padding:"8px 12px",color:"#34d399",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}>🏅 Badges</button>
             <button className="btn" onClick={()=>setShowGlobalSearch(true)} style={{background:"#06122a",border:"1px solid #0d2038",borderRadius:8,padding:"8px 12px",color:"#e879f9",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}>🔍 Recherche</button>
             <button className="btn" onClick={()=>setShowStats(true)} style={{background:"#06122a",border:"1px solid #0d2038",borderRadius:8,padding:"8px 12px",color:"#f59e0b",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}>📊 Stats</button>
             <button className="btn" onClick={()=>setShowCountryList(true)} style={{background:"#06122a",border:"1px solid #0d2038",borderRadius:8,padding:"8px 12px",color:"#a78bfa",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}>🌍 Pays</button>
@@ -1201,7 +1303,26 @@ function AtlasMerveilles() {
       
       
       
-            {/* ── GLOBAL SEARCH MODAL ── */}
+            
+      {/* ── BADGES MODAL ── */}
+      {showBadges&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,backdropFilter:"blur(12px)",padding:"16px"}}
+          onClick={()=>setShowBadges(false)}>
+          <div style={{background:"#030e1c",border:"1px solid #0d2540",borderRadius:16,width:"min(700px,96vw)",maxHeight:"90vh",overflow:"auto",padding:"24px"}}
+            onClick={function(e){e.stopPropagation();}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+              <div>
+                <div style={{fontWeight:900,fontSize:22,color:"#e4f0fc"}}>🏅 Badges & Défis</div>
+                <div style={{fontSize:12,color:"#2a5070",marginTop:2}}>Accomplis des spots pour débloquer des badges</div>
+              </div>
+              <button onClick={()=>setShowBadges(false)} style={{background:"#0b1e34",border:"1px solid #142840",borderRadius:8,width:32,height:32,color:"#3a6080",cursor:"pointer",fontSize:18}}>×</button>
+            </div>
+            {BadgesContent({spots:spots,liked:liked,visitedCountries:visitedCountries})}
+          </div>
+        </div>
+      )}
+
+      {/* ── GLOBAL SEARCH MODAL ── */}
       {showGlobalSearch&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,backdropFilter:"blur(12px)",padding:"16px"}}
           onClick={()=>setShowGlobalSearch(false)}>
