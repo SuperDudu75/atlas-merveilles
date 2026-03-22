@@ -721,6 +721,12 @@ function AtlasMerveilles() {
   const [globalMonth,setGlobalMonth]         = useState(0);
   const [weatherCache,setWeatherCache]       = useState({});
   const [weatherLoading,setWeatherLoading]   = useState(false);
+  const spotsRef = useRef(spots);
+  const likedRef = useRef(liked);
+  const visitedRef = useRef(visitedCountries);
+  useEffect(()=>{ spotsRef.current=spots; },[spots]);
+  useEffect(()=>{ likedRef.current=liked; },[liked]);
+  useEffect(()=>{ visitedRef.current=visitedCountries; },[visitedCountries]);
   const [isMobile, setIsMobile]              = useState(typeof window!=='undefined'&&window.innerWidth<=768);
   useEffect(()=>{ const fn=()=>setIsMobile(window.innerWidth<=768); window.addEventListener('resize',fn); return()=>window.removeEventListener('resize',fn); },[]);
   const [importRef]                          = useState(()=>({ current:null }));
@@ -746,14 +752,14 @@ function AtlasMerveilles() {
   useEffect(()=>{ setModalErr(false); setImgErr(false); },[detailSpot]);
 
   useEffect(()=>{ (async()=>{
-    try{ const s=await window.storage.get("atlas-v12"); if(s&&s.value){ setSpots(JSON.parse(s.value)); return; } }catch(e){}
+    try{ const s=await window.storage.get("atlas-v14"); if(s&&s.value){ setSpots(JSON.parse(s.value)); return; } }catch(e){}
     try{ const r=await fetch("world_spots.json"); const d=await r.json(); setSpots(d); }catch(e){}
   })(); },[]);
   useEffect(()=>{
-    (async()=>{ try{ await window.storage.set("atlas-v12",JSON.stringify(spots)); }catch(e){} })();
+    (async()=>{ try{ await window.storage.set("atlas-v14",JSON.stringify(spots)); }catch(e){} })();
     clearTimeout(window._sbTimer);
     window._sbTimer = setTimeout(()=>{
-      try{ sbSave(spots, liked, visitedCountries); }catch(e){}
+      try{ sbSave(spotsRef.current, likedRef.current, visitedRef.current); }catch(e){}
     }, 1500);
   },[spots]);
   useEffect(()=>{
@@ -761,14 +767,14 @@ function AtlasMerveilles() {
     // Sync to Supabase
     clearTimeout(window._sbTimer);
     window._sbTimer = setTimeout(()=>{
-      try{ sbSave(spots, liked, visitedCountries); }catch(e){}
+      try{ sbSave(spotsRef.current, likedRef.current, visitedRef.current); }catch(e){}
     }, 1500);
   },[liked]);
   useEffect(()=>{
     (async()=>{ try{ await window.storage.set("atlas-visited",JSON.stringify(visitedCountries)); }catch(e){} })();
     clearTimeout(window._sbTimer);
     window._sbTimer = setTimeout(()=>{
-      try{ sbSave(spots, liked, visitedCountries); }catch(e){}
+      try{ sbSave(spotsRef.current, likedRef.current, visitedRef.current); }catch(e){}
     }, 1500);
   },[visitedCountries]);
 
