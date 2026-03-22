@@ -62,7 +62,7 @@ async function sbLoad() {
 
 const{useState,useEffect,useRef,useCallback}=React;
 </script>
-<script type="text/babel">
+<script type="text/babel"><script type="text/babel">
 
 const WC = ["","#ef4444","#f97316","#eab308","#22c55e","#06b6d4"];
 const WL = ["","Éviter","Correct","Bon","Très bon","Parfait"];
@@ -1200,35 +1200,28 @@ function AtlasMerveilles() {
       
       
       
-      {/* ── GLOBAL SEARCH MODAL ── */}
+            {/* ── GLOBAL SEARCH MODAL ── */}
       {showGlobalSearch&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,backdropFilter:"blur(12px)",padding:"16px"}}
           onClick={()=>setShowGlobalSearch(false)}>
           <div style={{background:"#030e1c",border:"1px solid #0d2540",borderRadius:16,width:"min(800px,96vw)",maxHeight:"90vh",display:"flex",flexDirection:"column",overflow:"hidden"}}
             onClick={function(e){e.stopPropagation();}}>
-
-            {/* Header */}
             <div style={{padding:"20px 24px 16px",borderBottom:"1px solid #0b1e34",flexShrink:0}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
                 <div style={{fontWeight:900,fontSize:22,color:"#e4f0fc"}}>🔍 Recherche globale</div>
                 <button onClick={()=>setShowGlobalSearch(false)} style={{background:"#0b1e34",border:"1px solid #142840",borderRadius:8,width:32,height:32,color:"#3a6080",cursor:"pointer",fontSize:18}}>×</button>
               </div>
-              <input
-                autoFocus
-                value={globalQuery}
-                onChange={e=>setGlobalQuery(e.target.value)}
-                placeholder="Ex: gorille, volcan, plongée, jaguar, bioluminescence..."
+              <input autoFocus value={globalQuery} onChange={e=>setGlobalQuery(e.target.value)}
+                placeholder="Ex: gorille, volcan, plongée, aurora..."
                 style={{width:"100%",background:"#06122a",border:"2px solid #e879f9",borderRadius:10,padding:"12px 16px",color:"#e4f0fc",fontSize:15,outline:"none"}}
               />
               {globalQuery.length>1&&<div style={{fontSize:12,color:"#4a90b0",marginTop:8}}>{sortedResults.length} spot{sortedResults.length>1?"s":""} trouvé{sortedResults.length>1?"s":""} dans tous les pays</div>}
             </div>
-
-            {/* Results */}
             <div style={{overflowY:"auto",padding:"12px 16px 20px"}}>
               {globalQuery.length<2&&(
                 <div style={{textAlign:"center",padding:"40px 20px",color:"#1a3a56"}}>
                   <div style={{fontSize:48,marginBottom:12}}>🌍</div>
-                  <div style={{fontSize:14}}>Tape au moins 2 caractères pour chercher dans les 9600+ spots du monde</div>
+                  <div style={{fontSize:14}}>Tape au moins 2 caractères pour chercher dans les 9600+ spots</div>
                   <div style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"center",marginTop:16}}>
                     {["gorille","volcan","requin","aurora","desert","jungle","glacier","corail","temple","waterfall"].map(function(tag){return(
                       <button key={tag} onClick={()=>setGlobalQuery(tag)}
@@ -1239,44 +1232,43 @@ function AtlasMerveilles() {
                   </div>
                 </div>
               )}
-              {globalQuery.length>=2&&(function(){
-                if(sortedResults.length===0) return(
-                  <div style={{textAlign:"center",padding:"40px",color:"#1a3a56"}}>
-                    <div style={{fontSize:32,marginBottom:8}}>😕</div>
-                    <div>Aucun résultat pour "{globalQuery}"</div>
-                    <div style={{fontSize:12,marginTop:8}}>Essaie en anglais ou avec un terme plus général</div>
+              {globalQuery.length>=2&&sortedResults.length===0&&(
+                <div style={{textAlign:"center",padding:"40px",color:"#1a3a56"}}>
+                  <div style={{fontSize:32,marginBottom:8}}>😕</div>
+                  <div>Aucun résultat pour "{globalQuery}"</div>
+                  <div style={{fontSize:12,marginTop:8}}>Essaie en anglais ou avec un terme plus général</div>
+                </div>
+              )}
+              {globalQuery.length>=2&&sortedResults.length>0&&sortedResults.map(function(item){
+                var s=item.s; var cid=item.cid; var ci=gc(cid);
+                var cat=Cat(s.category);
+                var nm=norm(s.name).includes(norm(globalQuery));
+                return(
+                  <div key={(s.id||s.name)+cid} onClick={function(){goToCountry(cid);}}
+                    className="btn"
+                    style={{display:"flex",alignItems:"stretch",marginBottom:5,borderRadius:10,overflow:"hidden",border:"1px solid "+(nm?cat.color+"55":"#0c1e34"),cursor:"pointer"}}>
+                    <div style={{width:120,minWidth:120,background:CC[ci]+"1a",borderRight:"2px solid "+CC[ci]+"44",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"8px 6px",gap:3}}>
+                      <div style={{width:8,height:8,borderRadius:"50%",background:CC[ci]}}/>
+                      <div style={{fontSize:11,fontWeight:800,color:CC[ci],textAlign:"center",lineHeight:1.2}}>{NM[cid]||cid}</div>
+                      <div style={{fontSize:9,color:"#2a5070",textAlign:"center"}}>{CN[ci]}</div>
+                    </div>
+                    <div style={{flex:1,minWidth:0,padding:"10px 12px",background:nm?"#06112a":"#040e1e"}}>
+                      <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4}}>
+                        <span style={{background:cat.color+"22",color:cat.color,borderRadius:4,padding:"2px 7px",fontSize:10,fontWeight:700}}>{cat.icon} {cat.label}</span>
+                        {liked[s.id]&&<span style={{color:"#f43f5e",fontSize:12}}>♥</span>}
+                        {s.done&&<span style={{color:"#22c55e",fontSize:12}}>✓</span>}
+                      </div>
+                      <div style={{fontSize:13,fontWeight:nm?800:700,color:nm?"#e4f0fc":"#b8d0e8",marginBottom:3}}>{s.name}</div>
+                      <div style={{fontSize:11,color:"#2a5070",lineHeight:1.4,marginBottom:3}}>{s.desc}</div>
+                      {s.season&&<div style={{fontSize:10,color:"#1a3a56"}}>📅 {s.season}</div>}
+                    </div>
                   </div>
                 );
-                sortedResults.map(function(item){
-                    var s=item.s; var cid=item.cid; var ci=gc(cid);
-                    var cat=Cat(s.category);
-                    var nm=norm(s.name).includes(norm(globalQuery));
-                    return(
-                      <div key={(s.id||s.name)+cid} onClick={function(){goToCountry(cid);}}
-                        className="btn"
-                        style={{display:"flex",alignItems:"stretch",marginBottom:5,borderRadius:10,overflow:"hidden",border:"1px solid "+(nm?cat.color+"55":"#0c1e34"),cursor:"pointer"}}>
-                        <div style={{width:120,minWidth:120,background:CC[ci]+"1a",borderRight:"2px solid "+CC[ci]+"44",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"8px 6px",gap:3}}>
-                          <div style={{width:8,height:8,borderRadius:"50%",background:CC[ci]}}/>
-                          <div style={{fontSize:11,fontWeight:800,color:CC[ci],textAlign:"center",lineHeight:1.2}}>{NM[cid]||cid}</div>
-                          <div style={{fontSize:9,color:"#2a5070",textAlign:"center"}}>{CN[ci]}</div>
-                        </div>
-                        <div style={{flex:1,minWidth:0,padding:"10px 12px",background:nm?"#06112a":"#040e1e"}}>
-                          <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4}}>
-                            <span style={{background:cat.color+"22",color:cat.color,borderRadius:4,padding:"2px 7px",fontSize:10,fontWeight:700}}>{cat.icon} {cat.label}</span>
-                            {liked[s.id]&&<span style={{color:"#f43f5e",fontSize:12}}>♥</span>}
-                            {s.done&&<span style={{color:"#22c55e",fontSize:12}}>✓</span>}
-                          </div>
-                          <div style={{fontSize:13,fontWeight:nm?800:700,color:nm?"#e4f0fc":"#b8d0e8",marginBottom:3}}>{s.name}</div>
-                          <div style={{fontSize:11,color:"#2a5070",lineHeight:1.4,marginBottom:3}}>{s.desc}</div>
-                          {s.season&&<div style={{fontSize:10,color:"#1a3a56"}}>📅 {s.season}</div>}
-                        </div>
-                      </div>
-                    );
-                  })
+              })}
             </div>
           </div>
         </div>
-      })()}
+      )}
 
       {/* ── STATS MODAL ── */}
       {showStats&&(
@@ -1288,8 +1280,8 @@ function AtlasMerveilles() {
               <div style={{fontWeight:900,fontSize:22,color:"#e4f0fc"}}>📊 Mes statistiques</div>
               <button onClick={()=>setShowStats(false)} style={{background:"#0b1e34",border:"1px solid #142840",borderRadius:8,width:32,height:32,color:"#3a6080",cursor:"pointer",fontSize:18}}>×</button>
             </div>
-            {(function(){
-              var totalSpots = Object.values(spots).reduce(function(a,b){return a+b.length;},0);
+            {React.createElement(function(){
+              var totalSpots = var totalSpots = Object.values(spots).reduce(function(a,b){return a+b.length;},0);
               var doneSpots = Object.values(spots).reduce(function(a,b){return a+b.filter(function(s){return s.done;}).length;},0);
               var likedCount = Object.keys(liked).length;
               var visitedCount = Object.keys(visitedCountries).length;
@@ -1341,7 +1333,7 @@ function AtlasMerveilles() {
                   ); })}
                 </div>
               );
-            })()}
+            })}
           </div>
         </div>
       )}
@@ -1467,8 +1459,8 @@ function AtlasMerveilles() {
                     <td style={{color:"#2a5070",fontSize:11,paddingBottom:6}}>Météo globale</td>
                     {(weatherCache[selectedCountry]?weatherCache[selectedCountry].scores:getWeather(selectedCountry)).map(function(sc,i){ return <td key={i} style={{textAlign:"center",paddingBottom:6}}><div style={{background:WC[sc],borderRadius:6,padding:"5px 2px",fontSize:10,fontWeight:800,color:"#020c1a"}}>{WL[sc].slice(0,4)}</div></td>; })}
                   </tr>
-                  {(function(){
-                    var live=weatherCache[selectedCountry];
+                  {React.createElement(function(){
+var live=weatherCache[selectedCountry];
                     var rows=live?[
                       {label:"🌡 Max (°C)",values:live.tmax.map(function(v){return v!=null?v+"°":"?"}),color:"#f97316"},
                       {label:"❄ Min (°C)",values:live.tmin.map(function(v){return v!=null?v+"°":"?"}),color:"#38bdf8"},
@@ -1481,7 +1473,7 @@ function AtlasMerveilles() {
                         {row.values.map(function(v,i){ var sc=(weatherCache[selectedCountry]?weatherCache[selectedCountry].scores:getWeather(selectedCountry))[i]; return <td key={i} style={{textAlign:"center",paddingBottom:4}}><div style={{background:"#06122a",borderRadius:5,padding:"5px 2px",fontSize:11,fontWeight:700,color:row.color,border:"1px solid "+WC[sc]+"44"}}>{v}</div></td>; })}
                       </tr>
                     ); });
-                  })()}
+                  })
                 </tbody>
               </table>
             </div>
