@@ -1,1 +1,1736 @@
+<!DOCTYPE html>
+<!-- v20260323-fix02 -->
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Mes Pokémons Rares 🌍</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+<style>*{margin:0;padding:0;box-sizing:border-box}html,body,#root{height:100%;background:#020c1a;overflow:hidden}</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
 
+// ── localStorage (toujours disponible) ────────────────────────────────────
+window.storage={
+  get:async(k)=>{try{const v=localStorage.getItem(k);return v?{key:k,value:v}:null;}catch{return null;}},
+  set:async(k,v)=>{try{localStorage.setItem(k,v);return{key:k,value:v};}catch{return null;}},
+  delete:async(k)=>{try{localStorage.removeItem(k);return{key:k,deleted:true};}catch{return null;}},
+  list:async(p)=>{try{const ks=Object.keys(localStorage).filter(k=>!p||k.startsWith(p));return{keys:ks};}catch{return{keys:[]};}}
+};
+
+// ── Supabase sync ──────────────────────────────────────────────────────────
+const SB_URL = "https://ssvzbebxxpxbiukygakt.supabase.co";
+const SB_KEY = "sb_publishable__nbX40W9sepCY21NiAG--w_6HRqqjBz";
+const SB_HEADERS = {
+  "Content-Type": "application/json",
+  "apikey": SB_KEY,
+  "Authorization": "Bearer " + SB_KEY,
+  "Prefer": "resolution=merge-duplicates"
+};
+
+async function sbSave(spots, liked, visited) {
+  try {
+    // Only save user progress (done status), not the full catalog
+    var doneMap = {};
+    Object.values(spots).forEach(function(arr){
+      arr.forEach(function(s){ if(s.done) doneMap[s.id]=true; });
+    });
+    await fetch(SB_URL + "/rest/v1/atlas_data", {
+      method: "POST",
+      headers: SB_HEADERS,
+      body: JSON.stringify({
+        user_id: "default_user",
+        spots: JSON.stringify(doneMap),
+        liked: JSON.stringify(liked),
+        visited: JSON.stringify(visited),
+        updated_at: new Date().toISOString()
+      })
+    });
+  } catch(e) {}
+}
+
+async function sbLoad() {
+  try {
+    const r = await fetch(SB_URL + "/rest/v1/atlas_data?user_id=eq.default_user&select=*", {
+      headers: SB_HEADERS
+    });
+    const d = await r.json();
+    if(d && d[0]) return d[0];
+  } catch(e) {}
+  return null;
+}
+
+const{useState,useEffect,useRef,useCallback}=React;
+</script>
+<script type="text/babel">
+
+const WC = ["","#ef4444","#f97316","#eab308","#22c55e","#06b6d4"];
+const WL = ["","Éviter","Correct","Bon","Très bon","Parfait"];
+const MN = ["Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc"];
+
+const COORDS = {
+  "4":"33.9,67.7","8":"41.1,20.2","12":"28.0,1.7","20":"42.5,1.5","24":"-11.2,17.9",
+  "32":"-38.4,-63.6","36":"-25.3,133.8","40":"47.5,14.6","50":"23.7,90.4",
+  "56":"50.5,4.5","64":"27.5,90.4","68":"-16.3,-63.6","72":"-22.3,24.7",
+  "76":"-14.2,-51.9","84":"17.2,-88.5","100":"42.7,25.5","104":"19.2,96.7",
+  "116":"12.6,104.9","120":"7.4,12.4","124":"56.1,-106.3","144":"7.9,80.8",
+  "152":"-35.7,-71.5","156":"35.9,104.2","170":"4.1,-72.3","188":"9.7,-83.8",
+  "191":"45.1,15.2","192":"21.5,-79.5","208":"56.3,9.5","218":"-1.8,-78.2",
+  "231":"9.1,40.5","246":"64.0,25.7","250":"46.2,2.2","276":"51.2,10.5",
+  "288":"7.9,-1.0","300":"39.1,21.8","320":"15.8,-90.2","340":"15.2,-86.2",
+  "348":"47.2,19.5","356":"20.6,79.1","360":"-0.8,113.9","364":"32.4,53.7",
+  "372":"53.4,-8.2","376":"31.0,34.9","380":"41.9,12.6","388":"18.1,-77.3",
+  "392":"36.2,138.3","398":"48.0,66.9","400":"30.6,36.2","404":"-0.0,37.9",
+  "410":"35.9,127.8","418":"19.9,102.5","450":"-18.8,46.9","458":"4.2,101.9",
+  "480":"-20.3,57.6","484":"23.6,-102.6","496":"46.9,103.8","504":"31.8,-7.1",
+  "508":"-18.7,35.5","512":"21.5,55.9","516":"-22.0,17.1","524":"28.4,84.1",
+  "528":"52.1,5.3","554":"-40.9,174.9","566":"9.1,8.7","578":"60.5,8.5",
+  "586":"30.4,69.3","591":"8.5,-80.8","600":"-23.4,-58.4","604":"-9.2,-75.0",
+  "608":"12.9,121.8","616":"51.9,19.1","620":"39.4,-8.2","634":"25.4,51.2",
+  "642":"45.9,24.9","643":"61.5,105.3","646":"-1.9,29.9","682":"23.9,45.1",
+  "686":"14.5,-14.5","702":"1.4,103.8","704":"14.1,108.3","710":"-28.5,24.7",
+  "716":"-19.0,29.2","724":"40.5,-3.7","752":"63.1,18.6","756":"46.8,8.2",
+  "764":"15.9,100.9","788":"33.9,9.5","792":"38.9,35.2","800":"1.4,32.3",
+  "818":"26.8,30.8","826":"55.4,-3.4","834":"-6.4,34.9","840":"39.5,-98.4",
+  "858":"-32.5,-55.8","862":"6.4,-66.6","887":"15.6,48.5","894":"-13.1,27.8"
+};
+
+function getScores(cid) {
+  var known = {
+    "124":[1,1,2,3,4,5,5,5,4,3,2,1],"840":[2,2,3,4,5,5,5,5,4,3,2,2],
+    "484":[4,4,4,3,3,2,3,3,3,3,4,4],"76":[3,3,3,3,2,1,1,1,2,3,3,3],
+    "250":[2,2,3,4,5,5,5,5,4,3,2,2],"826":[2,2,3,4,4,5,5,4,4,3,2,2],
+    "276":[1,2,3,4,5,5,5,5,4,3,2,1],"380":[2,3,4,5,5,5,5,5,5,4,3,2],
+    "724":[3,3,4,5,5,5,5,5,5,4,3,3],"300":[3,3,4,5,5,5,5,5,5,4,3,3],
+    "792":[3,3,4,5,5,5,5,5,5,4,3,3],"818":[4,5,5,5,4,3,3,3,4,5,5,4],
+    "504":[4,4,5,5,4,3,3,3,4,5,5,4],"788":[4,4,5,5,4,3,3,3,4,5,5,4],
+    "404":[3,3,3,3,2,1,2,2,3,4,4,3],"834":[3,3,3,3,2,1,2,2,3,4,4,3],
+    "516":[4,4,4,3,3,4,4,4,4,4,4,4],"710":[4,4,4,3,3,4,4,4,4,4,4,4],
+    "356":[4,4,5,5,3,1,1,1,2,4,4,4],"764":[4,4,5,4,2,1,1,1,2,4,4,4],
+    "392":[2,3,4,4,4,3,3,4,4,4,3,2],"360":[3,3,3,3,2,1,1,1,2,3,3,3],
+    "36":[5,5,4,4,3,3,3,3,4,4,5,5],"554":[5,5,4,4,3,3,3,3,4,4,5,5],
+    "643":[1,1,2,3,4,5,5,5,4,3,2,1],"156":[1,2,3,4,5,5,4,4,4,3,2,1],
+    "152":[5,5,4,3,2,1,1,1,2,3,4,5],"604":[4,4,3,3,2,1,1,1,2,3,4,4],
+    "578":[2,2,3,4,5,5,5,4,4,3,2,1],"352":[2,2,3,4,4,5,5,4,4,3,2,1],
+    "800":[4,4,4,4,3,2,2,2,3,4,5,4],"646":[4,4,4,4,3,2,2,2,3,4,5,4],
+    "682":[4,5,5,5,4,3,3,3,4,5,5,4],"702":[3,3,3,3,3,2,2,2,3,3,3,3],
+    "408":[1,1,2,3,4,5,5,5,4,3,2,1],"410":[1,2,3,4,5,5,5,5,4,3,2,1],
+    "704":[3,3,4,4,3,1,1,1,2,3,3,3],"586":[4,4,5,4,2,1,1,1,2,4,4,4],
+    "246":[1,1,2,3,4,5,5,5,4,3,1,1],"578":[1,1,2,3,5,5,5,5,4,3,1,1],
+    "752":[1,1,2,3,4,5,5,5,4,3,1,1],"208":[2,2,3,4,5,5,5,5,4,3,2,2],
+    "616":[1,1,2,3,4,5,5,5,4,3,2,1],"642":[1,1,3,4,5,5,5,5,4,3,2,1],
+    "380":[2,3,4,5,5,5,5,5,5,4,3,2],"191":[2,3,4,5,5,5,5,5,5,4,3,2],
+    "620":[3,3,4,5,5,5,5,5,5,4,3,3],"756":[2,2,3,4,5,5,5,5,4,3,2,2],
+    "40":[1,1,3,4,5,5,5,5,4,3,2,1],"203":[1,2,3,4,5,5,5,5,4,3,2,1],
+    "348":[1,1,3,4,5,5,5,5,4,3,2,1],"804":[1,1,3,4,5,5,5,5,4,3,2,1],
+    "528":[2,2,3,4,5,5,5,5,4,3,2,2],"56":[2,2,3,4,5,5,5,5,4,3,2,2],
+    "76":[3,3,3,3,2,1,1,1,2,3,3,3],"218":[3,3,4,4,2,1,1,1,2,3,3,3],
+    "170":[3,3,4,4,3,2,2,2,3,3,3,3],"591":[4,4,4,3,2,2,2,2,3,4,4,4],
+    "604":[4,4,3,3,2,1,1,1,2,3,4,4],"858":[4,4,4,3,2,1,1,1,2,3,4,4],
+    "32":[4,4,4,3,2,1,1,2,3,4,4,4],"862":[3,3,4,4,3,2,2,2,3,3,3,3],
+    "450":[3,3,3,3,3,3,3,3,3,3,3,3],"450":[3,4,4,3,2,1,1,1,2,3,3,3],
+    "716":[4,4,4,3,2,2,2,2,3,4,4,4],"894":[4,4,4,3,2,2,2,2,3,4,4,4],
+    "454":[4,4,4,3,2,2,2,2,3,4,4,4],"508":[3,3,3,3,2,2,2,2,3,3,3,3],
+    "180":[3,3,3,3,2,1,1,1,2,3,3,3],"120":[3,3,3,3,3,2,2,2,3,3,3,3],
+    "266":[3,3,3,3,3,2,2,2,3,3,3,3],"288":[3,3,3,3,3,3,3,3,3,3,3,3],
+    "566":[3,3,3,3,3,2,2,2,3,3,3,3],"404":[3,3,3,3,2,1,2,2,3,4,4,3],
+    "800":[4,4,4,4,3,2,2,2,3,4,5,4],"12":[4,4,5,5,4,3,3,3,4,5,5,4],
+    "496":[1,1,2,3,5,5,5,5,4,2,1,1],"398":[1,1,2,3,5,5,5,5,4,2,1,1],
+    "860":[1,1,2,3,5,5,5,5,4,2,1,1],"762":[1,1,2,3,5,5,5,5,4,2,1,1],
+    "116":[3,3,4,4,3,1,1,1,3,4,4,3],"418":[3,3,4,4,3,1,1,1,3,4,4,3],
+    "104":[3,3,4,4,3,1,1,1,3,4,4,3],"764":[4,4,5,4,2,1,1,1,2,4,4,4]
+  };
+  if(known[String(cid)]) return known[String(cid)];
+  var coord = COORDS[String(cid)];
+  if(!coord) return [3,3,3,4,4,4,4,4,4,3,3,3];
+  var lat = parseFloat(coord.split(",")[0]);
+  var a = Math.abs(lat);
+  if(a<10)      return [3,3,3,3,3,3,3,3,3,3,3,3];
+  if(a<23)      return lat>0?[4,5,5,4,3,2,2,2,3,4,4,4]:[2,2,2,3,4,5,5,5,4,3,2,2];
+  if(a<35)      return lat>0?[3,3,4,5,5,5,5,5,4,4,3,3]:[5,5,4,4,3,3,3,3,4,4,5,5];
+  if(a<50)      return lat>0?[1,2,3,4,5,5,5,5,4,3,2,1]:[5,5,4,3,2,1,1,2,3,4,5,5];
+  if(a<60)      return lat>0?[1,1,2,3,4,5,5,5,4,3,1,1]:[5,4,3,2,1,1,1,1,2,3,4,5];
+  return lat>0?[1,1,1,2,4,5,5,4,3,1,1,1]:[4,3,2,1,1,1,1,1,1,2,3,4];
+}
+const WEATHER_KEYS = Object.keys(COORDS);
+const getWeather = getScores;
+const pct = function(a,b){ return b>0?String(Math.round(a*100/b))+"%":"0%"; };
+function norm(s){
+  return (s||"").toLowerCase()
+    .normalize("NFD").replace(/[̀-ͯ]/g,"")
+    .replace(/[œ]/g,"oe").replace(/[æ]/g,"ae");
+}
+
+function fetchWeather(cid, cb) {
+  var coord = COORDS[cid];
+  if(!coord){ cb(null); return; }
+  var parts = coord.split(",");
+  var lat=parts[0], lon=parts[1];
+  var url = "https://archive-api.open-meteo.com/v1/archive?latitude="+lat+"&longitude="+lon
+    +"&start_date=2020-01-01&end_date=2022-12-31"
+    +"&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=UTC";
+  var xhr = new XMLHttpRequest();
+  xhr.open("GET", url); xhr.timeout=15000;
+  xhr.onload = function(){
+    try {
+      var d=JSON.parse(xhr.responseText);
+      if(!d.daily||!d.daily.time){cb(null);return;}
+      var times=d.daily.time, tmD=d.daily.temperature_2m_max||[], tnD=d.daily.temperature_2m_min||[], rD=d.daily.precipitation_sum||[];
+      var bk={tm:[[],[],[],[],[],[],[],[],[],[],[],[]],tn:[[],[],[],[],[],[],[],[],[],[],[],[]],r:[[],[],[],[],[],[],[],[],[],[],[],[]]};
+      times.forEach(function(t,i){ var mo=parseInt(t.slice(5,7),10)-1; if(tmD[i]!=null)bk.tm[mo].push(tmD[i]); if(tnD[i]!=null)bk.tn[mo].push(tnD[i]); if(rD[i]!=null)bk.r[mo].push(rD[i]); });
+      function avg(arr){ return arr.length?Math.round(arr.reduce(function(a,b){return a+b;},0)/arr.length*10)/10:null; }
+      var tmax=bk.tm.map(avg), tmin=bk.tn.map(avg), rain=bk.r.map(avg);
+      var la=parseFloat(lat);
+      var sun=rain.map(function(r,mo){
+        var sf=[0.4,0.5,0.7,0.8,0.9,1.0,1.0,0.95,0.8,0.65,0.45,0.35][mo];
+        if(la<0) sf=[1.0,0.95,0.8,0.65,0.45,0.35,0.4,0.5,0.7,0.8,0.9,1.0][mo];
+        var base=Math.abs(la)>60?6:Math.abs(la)>40?7:9;
+        var h=base*sf; if(r!=null&&r>4)h*=0.7; if(r!=null&&r<1)h*=1.15;
+        return Math.round(h*10)/10;
+      });
+      function sc(t,r){ var v=3; if(t!=null){if(t>10&&t<33)v+=0.5;if(t>=20&&t<=29)v+=0.5;} if(r!=null){if(r<1.5)v+=0.5;else if(r>5)v-=1;else if(r>3)v-=0.5;} return Math.max(1,Math.min(5,Math.round(v))); }
+      var scores=tmax.map(function(_,i){return sc(tmax[i],rain[i]);});
+      cb({scores:scores,tmax:tmax,tmin:tmin,rain:rain.map(function(v){return v!=null?Math.round(v*30):null;}),sun:sun});
+    } catch(e){cb(null);}
+  };
+  xhr.onerror=function(){cb(null);}; xhr.ontimeout=function(){cb(null);}; xhr.send();
+}
+
+const WEATHER_DETAIL = {
+  "default":[
+    {label:"🌡 Max (°C)",values:[18,19,21,23,26,28,30,30,28,25,22,19],color:"#f97316",unit:"°"},
+    {label:"❄ Min (°C)",values:[8,9,11,13,16,19,21,21,19,16,12,9],color:"#38bdf8",unit:"°"},
+    {label:"🌧 Pluie (mm)",values:[80,70,70,60,60,40,30,30,50,70,80,80],color:"#60a5fa",unit:""},
+    {label:"☀ Soleil (h)",values:[4,5,6,7,8,9,10,9,7,5,4,3],color:"#fbbf24",unit:"h"},
+  ],
+  "250":[
+    {label:"🌡 Max (°C)",values:[8,9,13,16,20,24,26,26,22,17,11,8],color:"#f97316",unit:"°"},
+    {label:"❄ Min (°C)",values:[2,3,5,8,11,14,16,16,13,10,5,3],color:"#38bdf8",unit:"°"},
+    {label:"🌧 Pluie (mm)",values:[90,70,80,75,80,65,60,60,65,85,90,100],color:"#60a5fa",unit:""},
+    {label:"☀ Soleil (h)",values:[2,3,5,6,7,8,8,8,6,4,2,2],color:"#fbbf24",unit:"h"},
+  ],
+  "840":[
+    {label:"🌡 Max (°C)",values:[8,10,14,19,24,28,31,30,26,20,13,8],color:"#f97316",unit:"°"},
+    {label:"❄ Min (°C)",values:[-2,0,4,9,14,19,22,21,17,10,4,-1],color:"#38bdf8",unit:"°"},
+    {label:"🌧 Pluie (mm)",values:[80,70,80,80,85,75,65,65,70,75,85,85],color:"#60a5fa",unit:""},
+    {label:"☀ Soleil (h)",values:[4,5,6,7,8,9,10,9,7,6,4,4],color:"#fbbf24",unit:"h"},
+  ],
+};
+
+// ── CONTINENT MAP ─────────────────────────────────────────────────────────────
+const CM = {
+  "12":0,"24":0,"72":0,"108":0,"120":0,"132":0,"140":0,"148":0,"174":0,"178":0,
+  "180":0,"204":0,"226":0,"231":0,"232":0,"262":0,"266":0,"270":0,"288":0,
+  "324":0,"384":0,"404":0,"426":0,"430":0,"434":0,"450":0,"454":0,"466":0,
+  "478":0,"480":0,"504":0,"508":0,"516":0,"562":0,"566":0,"624":0,"646":0,
+  "678":0,"686":0,"694":0,"706":0,"710":0,"716":0,"728":0,"729":0,"748":0,
+  "768":0,"788":0,"800":0,"818":0,"834":0,"854":0,"894":0,
+  "4":1,"31":1,"50":1,"51":1,"64":1,"96":1,"104":1,"116":1,"144":1,"156":1,
+  "158":1,"196":1,"268":1,"356":1,"360":1,"364":1,"368":1,"376":1,"392":1,
+  "398":1,"400":1,"408":1,"410":1,"414":1,"417":1,"418":1,"422":1,"458":1,
+  "462":1,"496":1,"512":1,"524":1,"586":1,"608":1,"626":1,"634":1,"682":1,
+  "702":1,"704":1,"760":1,"762":1,"764":1,"784":1,"792":1,"795":1,"860":1,"887":1,
+  "8":2,"20":2,"40":2,"56":2,"70":2,"100":2,"112":2,"191":2,"203":2,"208":2,
+  "233":2,"246":2,"250":2,"276":2,"300":2,"348":2,"352":2,"372":2,"380":2,
+  "383":2,"428":2,"438":2,"440":2,"442":2,"470":2,"492":2,"498":2,"499":2,
+  "528":2,"578":2,"616":2,"620":2,"642":2,"643":2,"674":2,"688":2,"703":2,
+  "705":2,"724":2,"752":2,"756":2,"804":2,"807":2,"826":2,
+  "28":3,"44":3,"52":3,"84":3,"124":3,"188":3,"192":3,"212":3,"214":3,
+  "222":3,"308":3,"320":3,"332":3,"340":3,"388":3,"484":3,"558":3,"591":3,
+  "659":3,"662":3,"670":3,"780":3,"840":3,
+  "32":4,"68":4,"76":4,"152":4,"170":4,"218":4,"328":4,"600":4,"604":4,
+  "740":4,"858":4,"862":4,
+  "36":5,"90":5,"242":5,"296":5,"520":5,"548":5,"554":5,"583":5,"584":5,
+  "585":5,"598":5,"776":5,"798":5,"882":5,
+};
+const gc = id => CM[id] ?? 2;
+const CONT = [
+  { base:"#1a1005",active:"#2c1e0e",stroke:"#c8780a",hover:"#382614" },
+  { base:"#051508",active:"#0c2618",stroke:"#16b878",hover:"#112c1c" },
+  { base:"#090e26",active:"#141e40",stroke:"#4870e8",hover:"#162240" },
+  { base:"#060e04",active:"#102608",stroke:"#3ab828",hover:"#142410" },
+  { base:"#140608",active:"#241014",stroke:"#d84860",hover:"#200e10" },
+  { base:"#04081c",active:"#0c1430",stroke:"#5888e8",hover:"#0e1634" },
+];
+const CC = ["#d48a18","#22c49a","#6888e8","#52c440","#e06878","#70a0f8"];
+const CN = ["Afrique","Asie","Europe","Amér. Nord","Amér. Sud","Océanie"];
+
+// ── CATEGORIES ────────────────────────────────────────────────────────────────
+const CATS = [
+  { id:"all",      label:"Tout",              icon:"✦", color:"#94a3b8" },
+  { id:"marine",   label:"Vie Marine",         icon:"🌊",color:"#22d3ee" },
+  { id:"wildlife", label:"Faune Sauvage",      icon:"🦁",color:"#fb923c" },
+  { id:"geology",  label:"Volcans & Géo",      icon:"🌋",color:"#f87171" },
+  { id:"nature",   label:"Nature & Forêts",    icon:"🌿",color:"#4ade80" },
+  { id:"heritage", label:"Patrimoine",         icon:"🏛️",color:"#c084fc" },
+  { id:"unique",   label:"Expérience Unique",  icon:"⭐",color:"#fbbf24" },
+  { id:"famous",   label:"Incontournables",    icon:"🏆",color:"#f0c040" },
+  { id:"liked",    label:"Mes coups de ♥",     icon:"♥", color:"#f43f5e" },
+];
+const safeStr = function(v){ return v ? String(v) : ""; };
+const UNSPLASH_KEY = "E8CzwpYEHukJpmdfhJLiJTzJvgW9_lr1ECoJbIeGKs8";
+// 🔑 Pexels gratuit: https://www.pexels.com/api/
+const IMG_CACHE3 = {};
+const PEXELS_KEY = "Wn3qZnweOOW9EXOGPrrWgFW7rAZwcB2YUdRiukOUiSdocCxI41U1yXGl";
+const UNSPLASH_KEY2 = "E8CzwpYEHukJpmdfhJLiJTzJvgW9_lr1ECoJbIeGKs8";
+
+const CAT_KEYS = {
+  "wildlife":"wildlife animal nature",
+  "marine":"ocean underwater sea coral reef",
+  "geology":"volcano canyon landscape",
+  "nature":"forest waterfall nature landscape",
+  "heritage":"ancient monument temple architecture",
+  "famous":"landmark tourist famous",
+  "unique":"travel culture"
+};
+
+// French → English translation
+function toEnglish(name) {
+  // Full name translations first
+  var fr2en = {
+    "Cité Interdite":"Forbidden City Beijing","Armée de Terre Cuite":"Terracotta Army Xian",
+    "Tour Eiffel":"Eiffel Tower Paris","Arc de Triomphe":"Arc de Triomphe Paris",
+    "Sacré-Cœur":"Sacre Coeur Basilica Montmartre","Notre-Dame":"Notre Dame Cathedral Paris",
+    "Grande Muraille":"Great Wall of China","Taj Mahal":"Taj Mahal Agra India",
+    "Colisée":"Colosseum Rome Italy","Machu Picchu":"Machu Picchu Peru",
+    "Chutes du Niagara":"Niagara Falls","Chutes Victoria":"Victoria Falls Zimbabwe",
+    "Mont Fuji":"Mount Fuji Japan","Mont Everest":"Mount Everest Nepal",
+    "Grand Canyon":"Grand Canyon Arizona","Sahara":"Sahara Desert sand dunes",
+    "Amazonie":"Amazon Rainforest Brazil","Pyramides":"Pyramids Giza Egypt",
+    "Angkor Wat":"Angkor Wat Cambodia","Borobudur":"Borobudur Temple Indonesia",
+    "Chapelle Sixtine":"Sistine Chapel Vatican","Acropole":"Acropolis Athens Greece",
+    "Parthénon":"Parthenon Athens Greece","Alhambra":"Alhambra Granada Spain",
+    "Sagrada Família":"Sagrada Familia Barcelona","Serengeti":"Serengeti National Park",
+    "Okavango":"Okavango Delta Botswana","Patagonie":"Patagonia landscape",
+    "Aurores Boréales":"Northern Lights Aurora Borealis","Mer Morte":"Dead Sea Israel",
+    "Petra":"Petra ancient city Jordan","Big Ben":"Big Ben London","Tower Bridge":"Tower Bridge London"
+  };
+  var n = name.toLowerCase();
+  var keys = Object.keys(fr2en);
+  for(var i=0;i<keys.length;i++){
+    if(n.includes(keys[i].toLowerCase())) return fr2en[keys[i]];
+  }
+  // Generic word-by-word translation for unknown spots
+  var words = {
+    "chutes":"waterfall falls","chute":"waterfall","cascade":"waterfall",
+    "lac":"lake","mont":"mountain","montagne":"mountain","volcan":"volcano",
+    "île":"island","plage":"beach","forêt":"forest","désert":"desert",
+    "parc":"national park","réserve":"wildlife reserve","baie":"bay",
+    "gorge":"gorge canyon","vallée":"valley","falaise":"cliff",
+    "temple":"temple","palais":"palace","château":"castle",
+    "cathédrale":"cathedral","église":"church","mosquée":"mosque",
+    "marché":"market","port":"harbor port","vieille ville":"old city",
+    "péninsule":"peninsula","delta":"delta","savane":"savanna",
+    "récif":"reef coral","grotte":"cave","glacier":"glacier"
+  };
+  var result = name;
+  Object.keys(words).forEach(function(fr){
+    var re = new RegExp(fr,"gi");
+    result = result.replace(re, words[fr]);
+  });
+  // Remove French articles
+  result = result.replace(/^(le |la |les |l\'|du |de la |des |d\')/i,"");
+  return result.trim();
+}
+
+function SpotImg({spotName, photoKey, countryName, category, style}) {
+  var _s = React.useState(null); var src = _s[0]; var setSrc = _s[1];
+  var _l = React.useState(true); var loading = _l[0]; var setLoading = _l[1];
+  var cacheKey = (photoKey||spotName||"")+"_"+(countryName||"");
+
+  React.useEffect(function(){
+    if(!spotName){ setLoading(false); return; }
+    if(IMG_CACHE3[cacheKey]){ setSrc(IMG_CACHE3[cacheKey]); setLoading(false); return; }
+    setLoading(true);
+
+    var rawName = spotName.split("—")[0].split("–")[0].trim();
+    // Use photo field as primary search (it's already in English with keywords)
+    // Clean filename format: "band_e_amir_lake.jpg" → "band e amir lake"
+    var _pk = (photoKey||"");
+    if(_pk.length>4 && (_pk.slice(-4)===".jpg"||_pk.slice(-5)===".jpeg"||_pk.slice(-4)===".png")) _pk = _pk.substring(0, _pk.lastIndexOf("."));
+    var photoSearch = _pk.split("_").join(" ").split(",").join(" ").trim();
+    // If photo field is very short or empty, fall back to translated name
+    var engName = (photoSearch && photoSearch.length > 5) ? photoSearch : toEnglish(rawName);
+    var extra = CAT_KEYS[category]||"travel";
+
+    function done(url){
+      if(url){ IMG_CACHE3[cacheKey]=url; setSrc(url); }
+      setLoading(false);
+    }
+
+    // 1. Pexels — best quality, searches with English name
+    function tryPexels(){
+      var q = encodeURIComponent(engName+" "+(countryName||""));
+      var xhr = new XMLHttpRequest();
+      xhr.open("GET","https://api.pexels.com/v1/search?query="+q+"&per_page=5&orientation=landscape");
+      xhr.setRequestHeader("Authorization",PEXELS_KEY);
+      xhr.timeout=6000;
+      xhr.onload=function(){
+        try{
+          var d=JSON.parse(xhr.responseText);
+          var photos=d.photos||[];
+          // Filter: landscape ratio (width > height*1.2), min size 800px wide
+          var good=photos.filter(function(p){
+            return p.width>800 && p.width>p.height*1.2;
+          });
+          var pick=good[0]||photos[0];
+          if(pick&&pick.src&&pick.src.large2x){ done(pick.src.large2x); return; }
+        }catch(e){}
+        tryWikipedia();
+      };
+      xhr.onerror=xhr.ontimeout=function(){ tryWikipedia(); };
+      xhr.send();
+    }
+
+    // 2. Wikipedia — article image (very accurate for known landmarks)
+    function tryWikipedia(){
+      var term = encodeURIComponent(engName);
+      var xhr = new XMLHttpRequest();
+      xhr.open("GET","https://en.wikipedia.org/api/rest_v1/page/summary/"+term);
+      xhr.timeout=5000;
+      xhr.onload=function(){
+        try{
+          var d=JSON.parse(xhr.responseText);
+          // Must be a real article with image, not disambiguation
+          var img=(d.originalimage||{}).source||(d.thumbnail||{}).source;
+          if(img && img.slice(-4)!==".svg" && d.type!=="disambiguation"){ done(img); return; }
+        }catch(e){}
+        tryWikimedia();
+      };
+      xhr.onerror=xhr.ontimeout=function(){ tryWikimedia(); };
+      xhr.send();
+    }
+
+    // 3. Wikimedia Commons — with strict filtering
+    function tryWikimedia(){
+      var q=encodeURIComponent(engName);
+      var xhr=new XMLHttpRequest();
+      xhr.open("GET","https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrsearch="+q+"&gsrlimit=10&prop=imageinfo&iiprop=url|size|mime&iiurlwidth=900&format=json&origin=*");
+      xhr.timeout=5000;
+      xhr.onload=function(){
+        try{
+          var pages=JSON.parse(xhr.responseText).query&&JSON.parse(xhr.responseText).query.pages;
+          if(pages){
+            var imgs=Object.values(pages).filter(function(p){
+              var ii=p.imageinfo&&p.imageinfo[0]; if(!ii) return false;
+              var u=ii.url||""; var mime=ii.mime||""; var t=(p.title||"").toLowerCase();
+              // Only JPEG/PNG photos, minimum size, no flags/logos/maps/text
+              return (mime==="image/jpeg"||mime==="image/png")
+                && ii.width>800 && ii.height>500
+                && !t.match(/flag|logo|icon|map|coat|arms|blank|locator|seal|emblem|sign|text|symbol/i)
+                && u.slice(-4)!==".svg";
+            }).sort(function(a,b){ return (b.imageinfo[0].width||0)-(a.imageinfo[0].width||0); });
+            if(imgs.length){ done(imgs[0].imageinfo[0].thumburl||imgs[0].imageinfo[0].url); return; }
+          }
+        }catch(e){}
+        tryUnsplash();
+      };
+      xhr.onerror=xhr.ontimeout=function(){ tryUnsplash(); };
+      xhr.send();
+    }
+
+    // 4. Unsplash — last resort
+    function tryUnsplash(){
+      var q=encodeURIComponent(engName+" "+(countryName||"")+" "+extra);
+      var xhr=new XMLHttpRequest();
+      xhr.open("GET","https://api.unsplash.com/photos/random?query="+q+"&orientation=landscape&client_id="+UNSPLASH_KEY2);
+      xhr.timeout=8000;
+      xhr.onload=function(){
+        try{
+          var d=JSON.parse(xhr.responseText);
+          var img=d.urls&&(d.urls.regular||d.urls.small);
+          if(img){ done(img); return; }
+        }catch(e){}
+        done(null);
+      };
+      xhr.onerror=xhr.ontimeout=function(){ done(null); };
+      xhr.send();
+    }
+
+    tryPexels();
+  },[cacheKey]);
+
+  if(loading) return React.createElement("div",{style:Object.assign({},style,{
+    background:"linear-gradient(135deg,#040e1e,#0a1e34,#040e1e)",
+    display:"flex",alignItems:"center",justifyContent:"center",fontSize:48
+  })},"🌍");
+
+  if(!src){
+    var seed=Math.abs((cacheKey||"").split("").reduce(function(a,c){return a+c.charCodeAt(0);},0)%900)+100;
+    return React.createElement("img",{src:"https://picsum.photos/seed/"+seed+"/900/500",style:style});
+  }
+  return React.createElement("img",{src:src,style:style,
+    onError:function(e){ var s=Math.random()*999|0; e.target.src="https://picsum.photos/seed/"+s+"/900/500"; e.target.onerror=null; }
+  });
+}
+
+const IMG = function(kw){
+  var seed=Math.abs((kw||"").split("").reduce(function(a,c){return a+c.charCodeAt(0);},0)%900)+100;
+  return "https://picsum.photos/seed/"+seed+"/900/500";
+};
+const Cat = id => CATS.find(c=>c.id===id)||{ id:"unique", label:"Experience", icon:"⭐", color:"#fbbf24" };
+
+// ── 195 PAYS DU MONDE ─────────────────────────────────────────────────────────
+const NM = {
+  "4":"Afghanistan","8":"Albanie","12":"Algérie","20":"Andorre","24":"Angola",
+  "28":"Antigua-et-Barbuda","31":"Azerbaïdjan","32":"Argentine","36":"Australie",
+  "40":"Autriche","44":"Bahamas","48":"Bahreïn","50":"Bangladesh","51":"Arménie",
+  "52":"Barbade","56":"Belgique","64":"Bhoutan","68":"Bolivie",
+  "70":"Bosnie-Herzégovine","72":"Botswana","76":"Brésil","84":"Belize",
+  "90":"Îles Salomon","96":"Brunéi","100":"Bulgarie","104":"Birmanie",
+  "108":"Burundi","112":"Biélorussie","116":"Cambodge","120":"Cameroun",
+  "124":"Canada","132":"Cap-Vert","140":"Rép. Centrafricaine","144":"Sri Lanka",
+  "148":"Tchad","152":"Chili","156":"Chine","158":"Taïwan","170":"Colombie",
+  "174":"Comores","178":"Congo","180":"RD Congo","188":"Costa Rica",
+  "191":"Croatie","192":"Cuba","196":"Chypre","203":"Tchéquie","204":"Bénin",
+  "208":"Danemark","212":"Dominique","214":"Rép. Dominicaine","218":"Équateur",
+  "222":"El Salvador","226":"Guinée Équatoriale","231":"Éthiopie","232":"Érythrée",
+  "233":"Estonie","242":"Fidji","246":"Finlande","250":"France","262":"Djibouti",
+  "266":"Gabon","268":"Géorgie","270":"Gambie","276":"Allemagne","288":"Ghana",
+  "296":"Kiribati","300":"Grèce","308":"Grenade","320":"Guatemala","324":"Guinée",
+  "328":"Guyana","332":"Haïti","340":"Honduras","348":"Hongrie","352":"Islande",
+  "356":"Inde","360":"Indonésie","364":"Iran","368":"Irak","372":"Irlande",
+  "376":"Israël","380":"Italie","383":"Kosovo","384":"Côte d'Ivoire",
+  "388":"Jamaïque","392":"Japon","398":"Kazakhstan","400":"Jordanie","404":"Kenya",
+  "408":"Corée du Nord","410":"Corée du Sud","414":"Koweït","417":"Kirghizistan",
+  "418":"Laos","422":"Liban","426":"Lesotho","428":"Lettonie","430":"Liberia",
+  "434":"Libye","438":"Liechtenstein","440":"Lituanie","442":"Luxembourg",
+  "450":"Madagascar","454":"Malawi","458":"Malaisie","462":"Maldives","466":"Mali",
+  "470":"Malte","478":"Mauritanie","480":"Maurice","484":"Mexique",
+  "492":"Monaco","496":"Mongolie","498":"Moldavie","499":"Monténégro",
+  "504":"Maroc","508":"Mozambique","512":"Oman","516":"Namibie","520":"Nauru",
+  "524":"Népal","528":"Pays-Bas","548":"Vanuatu","554":"Nouvelle-Zélande",
+  "558":"Nicaragua","562":"Niger","566":"Nigeria","578":"Norvège",
+  "583":"Micronésie","584":"Îles Marshall","585":"Palaos","586":"Pakistan",
+  "591":"Panama","598":"Papouasie-Nv-Guinée","600":"Paraguay","604":"Pérou",
+  "608":"Philippines","616":"Pologne","620":"Portugal","624":"Guinée-Bissau",
+  "626":"Timor-Leste","634":"Qatar","642":"Roumanie","643":"Russie","646":"Rwanda",
+  "659":"Saint-Kitts","662":"Sainte-Lucie","670":"Saint-Vincent","674":"Saint-Marin",
+  "678":"São Tomé-et-Príncipe","682":"Arabie Saoudite","686":"Sénégal",
+  "688":"Serbie","694":"Sierra Leone","702":"Singapour","703":"Slovaquie",
+  "704":"Viêt Nam","705":"Slovénie","706":"Somalie","710":"Afrique du Sud",
+  "716":"Zimbabwe","724":"Espagne","728":"Soudan du Sud","729":"Soudan",
+  "740":"Suriname","748":"Eswatini","752":"Suède","756":"Suisse","760":"Syrie",
+  "762":"Tadjikistan","764":"Thaïlande","768":"Togo","776":"Tonga",
+  "780":"Trinité-et-Tobago","784":"Émirats Arabes Unis","788":"Tunisie",
+  "792":"Turquie","795":"Turkménistan","798":"Tuvalu","800":"Ouganda",
+  "804":"Ukraine","807":"Macédoine du Nord","818":"Égypte","826":"Royaume-Uni",
+  "834":"Tanzanie","840":"États-Unis","854":"Burkina Faso","858":"Uruguay",
+  "860":"Ouzbékistan","862":"Venezuela","882":"Samoa","887":"Yémen","894":"Zambie",
+};
+
+// ── SPOTS (triés alphabétiquement par nom dans chaque pays) ────────────────────
+const DEFAULT_SPOTS = {
+  "887":[
+    {id:"ye1",name:"Arbres à Sang de Dragon — Socotra",category:"nature",desc:"L'île la plus étrange du monde. 37% des plantes n'existent nulle part ailleurs.",why:"Socotra, 'Galápagos de l'Océan Indien', abrite 307 espèces végétales endémiques. L'arbre Dracaena cinnabari à résine rouge sang est classé UNESCO. Certaines plantes inchangées depuis 20 millions d'années.",season:"Octobre–Avril.",tip:"Guide local + bivouac sur le plateau Dixsam.",photo:"dragon blood trees socotra Yemen landscape",done:false},
+    {id:"ye2",name:"Lagon de Qalansiyah",category:"nature",desc:"Lagune turquoise entourée de dunes blanches. Zéro touriste.",why:"Préservé par l'isolement total de l'île. Moins de 1 000 visiteurs par an sur toute l'île. Eaux cristallines, mangroves et silence absolu.",season:"Novembre–Mars.",tip:"4x4 avec chauffeur depuis Hadibu.",photo:"Qalansiyah lagoon socotra turquoise water",done:false},
+  ],
+  "646":[
+    {id:"rw1",name:"Trek Gorilles des Montagnes",category:"wildlife",desc:"Une heure face aux gorilles des montagnes. Regard dans les yeux, à vie.",why:"Moins de 1 100 gorilles des montagnes sur Terre. Le regard d'un silverback à 1 mètre redéfinit le rapport à l'animal.",season:"Juin–Sept / Déc–Fév.",tip:"Permis 1 500$ via RDB Rwanda. Réserver 6 mois à l'avance.",photo:"mountain gorilla Rwanda silverback forest",done:false},
+  ],
+  "800":[
+    {id:"ug1",name:"Chimpanzés de Kibale",category:"wildlife",desc:"1 500 chimpanzés. La plus haute densité d'Afrique.",why:"Suivre un groupe de chimpanzés toute une matinée. Ils chassent des colobes, se battent, jouent. Le bruit des knuckle-walks dans la forêt est inoubliable.",season:"Toute l'année. Mieux juin–oct.",tip:"Combiner gorilles Bwindi + chimpanzés Kibale.",photo:"chimpanzee Uganda Kibale forest wild",done:false},
+    {id:"ug2",name:"Gorilles à Bwindi",category:"wildlife",desc:"Forêt impénétrable. Gorilles dos argentés et atmosphère brute.",why:"Bwindi est plus sauvage et moins touristique que le Rwanda. 120 espèces de mammifères.",season:"Juin–Août / Déc–Fév.",tip:"Permis 800$ — moins cher qu'au Rwanda.",photo:"gorilla Uganda Bwindi forest dense",done:false},
+  ],
+  "404":[
+    {id:"ke2",name:"Flamants Roses — Lac Nakuru",category:"wildlife",desc:"Un million de flamants. Le lac devient rose.",why:"Lac Nakuru accueille des centaines de milliers de flamants. Rhinocéros blancs et noirs aussi présents. Vue depuis la falaise : hallucinante.",season:"Juillet–Mars.",tip:"Arriver à l'aube — lumière rasante + couleur rose maximale.",photo:"flamingos Lake Nakuru Kenya pink million",done:false},
+    {id:"ke1",name:"Grande Migration — Masaï Mara",category:"wildlife",desc:"La traversée des gnous. Le plus grand spectacle terrestre.",why:"1,5M de gnous, 200 000 zèbres. La traversée de la Mara River avec crocodiles en embuscade est parmi les moments les plus dramatiques de la nature.",season:"Juillet–Octobre.",tip:"Camp hors du parc = sorties libres dès l'aube.",photo:"wildebeest migration Masai Mara Kenya river",done:false},
+    {id:"ke3",name:"Requins-Baleines — Watamu",category:"marine",desc:"Snorkeling avec les requins-baleines dans un parc marin protégé.",why:"Watamu Marine Park est l'un des récifs les mieux protégés d'Afrique de l'Est.",season:"Octobre–Mars.",tip:"Sortie bateau depuis Watamu village.",photo:"whale shark snorkeling Kenya Watamu",done:false},
+  ],
+  "834":[
+    {id:"tz3",name:"Ascension du Kilimandjaro",category:"geology",desc:"5 zones climatiques. Le toit de l'Afrique (5 895 m).",why:"Jungle tropicale, bruyère géante, moorlands, désert alpin, calotte glaciaire. 7 jours sans technique d'escalade.",season:"Jan–Mars / Juin–Oct.",tip:"Voie Lemosho (8 jours) = meilleur taux d'acclimatation.",photo:"Kilimanjaro summit snow Africa sunrise",done:false},
+    {id:"tz2",name:"Plongée à Mafia Island",category:"marine",desc:"Requins-baleines et récifs vierges hors des circuits.",why:"Mafia Island : aucun tourisme de masse. Récifs les plus intacts de la côte tanzanienne.",season:"Oct–Mars.",tip:"Vol depuis Dar es Salaam (40 min). 4 lodges seulement.",photo:"whale shark Mafia Island Tanzania ocean",done:false},
+    {id:"tz1",name:"Serengeti en Montgolfière",category:"unique",desc:"Vol à l'aube. Gnous à perte de vue. Champagne dans la savane.",why:"Flotter à 200 m au-dessus de la Serengeti au lever du soleil, troupeaux silencieux sous les pieds.",season:"Juin–Octobre.",tip:"Serengeti Balloon Safaris ~600$/pers.",photo:"hot air balloon Serengeti Tanzania sunrise savanna",done:false},
+  ],
+  "231":[
+    {id:"et1",name:"Dépression Danakil",category:"geology",desc:"Le lieu habité le plus chaud de la Terre. Sources fluo, lac de lave.",why:"-120 m sous le niveau de la mer, +50°C. Dallol : jaune soufre et rouge sang. L'un des 4 lacs de lave permanents du monde.",season:"Nov–Fév.",tip:"Guide obligatoire + escorte. Tour depuis Mekele (3-4 jours).",photo:"Danakil depression Ethiopia sulfur lava lake",done:false},
+    {id:"et2",name:"Géladas des Monts Simien",category:"wildlife",desc:"Le seul primate qui mange de l'herbe. Des milliers sur les falaises.",why:"Endémique des hauts plateaux éthiopiens. Troupeaux de plusieurs centaines. Poitrine rouge vif.",season:"Oct–Juin.",tip:"Simien Lodge (3 260 m) pour rencontres à l'aube.",photo:"gelada baboon Ethiopia Simien mountains",done:false},
+  ],
+  "450":[
+    {id:"mg2",name:"Avenue des Baobabs au Crépuscule",category:"nature",desc:"Silhouettes de 800 ans contre un ciel orange.",why:"Baobabs de Morondava : jusqu'à 800 ans, 30 mètres. Vestiges d'une forêt ancienne. Coucher de soleil cinématique.",season:"Avril–Novembre.",tip:"Arriver 1h avant le coucher. Rester pour l'heure bleue.",photo:"Avenue Baobabs Madagascar sunset orange",done:false},
+    {id:"mg3",name:"Dugongs & Baleines — Nosy Bé",category:"marine",desc:"Dugongs rares et baleines à bosse saisonnières.",why:"Canal de Mozambique : l'une des dernières zones pour les dugongs. Sept–Nov : baleines à bosse accouchent.",season:"Sept–Nov.",tip:"Opérateur respectueux — approche douce.",photo:"dugong Madagascar snorkeling ocean",done:false},
+    {id:"mg1",name:"Lémuriens à Andasibe",category:"wildlife",desc:"L'indri-indri pousse un chant qui traverse la forêt.",why:"105 espèces de lémuriens endémiques. L'indri est le plus grand lémurien vivant.",season:"Avril–Novembre.",tip:"Trek de nuit : lémuriens nocturnes + caméléons géants.",photo:"indri lemur Madagascar forest",done:false},
+  ],
+  "516":[
+    {id:"na3",name:"Cape Cross — 100 000 Otaries",category:"wildlife",desc:"La plus grande colonie d'otaries du Cap au monde.",why:"Plus de 100 000 otaries. Naissances sous les yeux en nov-déc. L'odeur est épique.",season:"Nov–Déc.",tip:"Arriver tôt le matin.",photo:"Cape Cross seal colony Namibia",done:false},
+    {id:"na1",name:"Éléphants du Désert — Damaraland",category:"wildlife",desc:"Génétiquement distincts. Survivent sans eau pendant des jours.",why:"Les éléphants du désert namibien mémorisent des sources souterraines, marchent 70 km/nuit.",season:"Mai–Octobre.",tip:"Desert Rhino Camp — guides Damara.",photo:"desert elephants Namibia Damaraland dry",done:false},
+    {id:"na2",name:"Sossusvlei & Deadvlei",category:"geology",desc:"Dunes jusqu'à 325 m. Arbres morts depuis 900 ans.",why:"Deadvlei : argile blanche, acacias debout depuis 900 ans. Contraste ocre/blanc/bleu parfait.",season:"Avril–Octobre.",tip:"Entrée à 5h45. Monter Dune 45 avant le soleil.",photo:"Deadvlei Sossusvlei Namibia dunes dead trees",done:false},
+  ],
+  "72":[
+    {id:"bw1",name:"Okavango en Mokoro",category:"nature",desc:"En pirogue dans le plus grand delta intérieur du monde.",why:"11 millions d'hectares UNESCO. En mokoro poussé à la perche, lions qui nagent entre les îles.",season:"Juin–Octobre.",tip:"Camp sur île flottante. Accès uniquement par avion léger.",photo:"Okavango Delta Botswana mokoro canoe",done:false},
+    {id:"bw2",name:"Suricates du Kalahari",category:"wildlife",desc:"Les suricates grimpent sur vous pour faire le guet.",why:"Certains groupes habitués vous traitent comme un élément du paysage. Ils chassent les scorpions à vos pieds.",season:"Toute l'année. Mieux juin–août.",tip:"Kalahari Meerkat Project.",photo:"meerkat Kalahari Botswana sunrise",done:false},
+  ],
+  "710":[
+    {id:"za1",name:"Cage Diving Grand Requin Blanc",category:"marine",desc:"Face à face avec le plus grand prédateur marin.",why:"Gansbaai : capitale mondiale du grand requin blanc. La cage descend à 3 m — le requin arrive à pleine vitesse.",season:"Juin–Octobre.",tip:"Marine Dynamics — certifié sans appâts vivants.",photo:"great white shark cage diving South Africa",done:false},
+    {id:"za2",name:"Manchots de Boulders Beach",category:"wildlife",desc:"Nager parmi les manchots africains. La seule plage du genre.",why:"3 000 manchots africains. Totalement indifférents aux humains.",season:"Toute l'année.",tip:"Arriver avant 9h. Côté gauche de la plage.",photo:"African penguins Boulders Beach Cape Town",done:false},
+    {id:"za3",name:"Sardine Run — KwaZulu-Natal",category:"marine",desc:"La plus grande migration marine. Dauphins, orques, requins.",why:"Milliards de sardines. Milliers de dauphins, requins-bouledogues, orques et fous de Bassan simultanément.",season:"Mai–Juillet.",tip:"Port Shepstone ou Margate.",photo:"sardine run South Africa dolphins sharks",done:false},
+  ],
+  "818":[
+    {id:"eg2",name:"Abu Simbel — Alignement Solaire",category:"heritage",desc:"2 fois par an, les rayons illuminent exactement Ramsès II.",why:"Calcul astronomique de 3 200 ans. Le 22 février et 22 octobre, les premiers rayons pénètrent exactement dans le temple.",season:"22 Fév et 22 Oct.",tip:"Dormir à Abu Simbel la veille. Arriver à l'aube.",photo:"Abu Simbel temple sunrise Egypt Ramses",done:false},
+    {id:"eg3",name:"Désert Blanc — Bivouac Étoilé",category:"geology",desc:"Formations de craie sculptées. Paysage lunaire.",why:"Sahara el Abyad : formations calcaires de millions d'années. Nuit sans pollution, Voie Lactée à l'œil nu.",season:"Octobre–Mars.",tip:"4x4 depuis Bahariya Oasis. Bivouac 1 nuit minimum.",photo:"White Desert Egypt chalk formations night",done:false},
+    {id:"eg1",name:"Plongée Mer Rouge — Mantas Géantes",category:"marine",desc:"The Brothers, Daedalus. Mantas 3m et requins gris en eau bleue.",why:"Parmi les 5 meilleurs sites au monde. Visibilité permanente de 40 m. Requins océaniques en masse.",season:"Juin–Août.",tip:"Liveaboard depuis Hurghada. Advanced OW minimum.",photo:"manta ray Red Sea Egypt diving Brothers",done:false},
+  ],
+  "124":[
+    {id:"ca3",name:"Aurores Boréales — Yukon",category:"unique",desc:"Lac Laberge. Danses vertes et violettes qui remplissent le ciel.",why:"65° N, ciel sec, zéro pollution. Lac Laberge glacé, forêts de bouleaux, aurores pendant des heures.",season:"Décembre–Mars.",tip:"Whitehorse → Lac Laberge en 30 min.",photo:"northern lights aurora Yukon Canada winter",done:false},
+    {id:"ca1",name:"Bélugas à Tadoussac",category:"marine",desc:"Nager avec les baleines blanches du Saint-Laurent.",why:"Fjord du Saguenay : zone la plus riche en mammifères marins de l'Atlantique Nord.",season:"Mai–Octobre.",tip:"Kayak de mer depuis Tadoussac.",photo:"beluga whale St Lawrence River Canada",done:false},
+    {id:"ca2",name:"Ours Polaires — Churchill",category:"wildlife",desc:"La capitale mondiale de l'ours polaire.",why:"900 ours attendent que la baie d'Hudson gèle chaque novembre. Tundra Buggy à 2 mètres.",season:"Octobre–Novembre.",tip:"Tundra Buggy Lodge — réserver 6 mois à l'avance.",photo:"polar bear Churchill Manitoba Arctic",done:false},
+  ],
+  "840":[
+    {id:"us2",name:"Bioluminescence — Mosquito Bay",category:"unique",desc:"Record Guinness de la baie la plus bioluminescente. Kayak de nuit.",why:"Vieques, Porto Rico. Millions de dinoflagellés émettent une lumière bleue à chaque mouvement.",season:"Toute l'année. Mieux nouvelle lune.",tip:"Island Adventures — tour 2h, paddle électrique silencieux.",photo:"bioluminescence bay kayak Puerto Rico blue",done:false},
+    {id:"us3",name:"Grand Canyon en Raft — Colorado",category:"geology",desc:"12 jours au fond. 2 milliards d'années de géologie.",why:"350 km de rapides entre des parois de 2 milliards d'années. Isolation totale du monde.",season:"Mai–Septembre.",tip:"Liste d'attente 12 ans pour permis privés.",photo:"Grand Canyon rafting Colorado River camps",done:false},
+    {id:"us1",name:"Loups de Yellowstone — Lamar Valley",category:"wildlife",desc:"Le meilleur spot mondial pour observer les loups sauvages.",why:"Réintroduits en 1995, les loups ont transformé l'écosystème. Meutes observables à l'aube quotidiennement.",season:"Nov–Avril.",tip:"Jumelles 20x60 en location. Arriver avant 6h.",photo:"wolf pack Yellowstone Lamar Valley snow",done:false},
+  ],
+  "484":[
+    {id:"mx3",name:"Cenotes du Yucatán",category:"unique",desc:"Grottes sous-marines mayas. Haloclines, stalactites, silence.",why:"Plus grand système de cavernes sous-marines (350+ km). Haloclines : miroir liquide entre eau douce et salée.",season:"Toute l'année.",tip:"Cenote Dos Ojos ou The Pit pour plongeurs.",photo:"cenote underwater cave Yucatan Mexico blue",done:false},
+    {id:"mx1",name:"Migration Papillons Monarques",category:"wildlife",desc:"300 millions de papillons couvrent les sapins du Michoacán.",why:"Densité si grande que les arbres disparaissent. Bruissement de millions d'ailes audible à 100 m.",season:"Novembre–Mars.",tip:"Sanctuaire El Rosario. Arriver à 8h.",photo:"monarch butterfly migration Michoacan Mexico",done:false},
+    {id:"mx2",name:"Requins-Baleines à Isla Holbox",category:"marine",desc:"Nager avec le plus grand poisson au coucher du soleil.",why:"Jusqu'à 400 requins-baleines en juin-septembre. Snorkeling à côté d'un poisson de 12 m.",season:"Juin–Septembre.",tip:"Partir à l'aube (6h) — 2 nageurs max par requin.",photo:"whale shark snorkeling Mexico Holbox",done:false},
+  ],
+  "320":[
+    {id:"gt1",name:"Bivouac Acatenango face au Fuego",category:"geology",desc:"Nuit à 3 976 m. Éruption toutes les 30 min sous vos yeux.",why:"Le Fuego est l'un des plus actifs du monde. Lueur rouge des explosions dans le noir total.",season:"Nov–Avril.",tip:"Partir d'Antigua. Nuit à -5°C — équipement chaud.",photo:"Acatenango volcano Guatemala night Fuego lava",done:false},
+    {id:"gt2",name:"Tikal au Lever du Soleil",category:"heritage",desc:"Pyramides mayas dans la brume. Singes hurleurs à l'aube.",why:"570 km² de jungle. Rester dormir dans le parc = entrée à 4h. Temple IV au lever.",season:"Nov–Avril.",tip:"Hôtel Tikal Inn dans le parc. Réserver 3 mois avant.",photo:"Tikal Maya temple sunrise jungle mist",done:false},
+  ],
+  "76":[
+    {id:"br3",name:"Dauphin Rose — Amazonie",category:"wildlife",desc:"Le boto rose d'Amazonie. Mystique et joueur.",why:"Le plus grand dauphin d'eau douce. Rose, curieux. Selon la mythologie amazonienne, il se transforme en homme la nuit.",season:"Juin–Nov.",tip:"Lago do Janauarí près de Manaus.",photo:"pink river dolphin boto Amazon Brazil",done:false},
+    {id:"br1",name:"Jaguar du Pantanal",category:"wildlife",desc:"La meilleure destination mondiale pour le jaguar sauvage.",why:"Porto Jofre : jaguars qui chassent caïmans et capybaras à l'aube. Densité 1 jaguar/10 km².",season:"Juillet–Octobre.",tip:"Houseboat 3-5 jours depuis Porto Jofre.",photo:"jaguar Brazil Pantanal river hunting",done:false},
+    {id:"br2",name:"Lençóis Maranhenses",category:"geology",desc:"Dunes blanches + lagunes bleues. Paradoxe géologique unique.",why:"1 500 km² de quartz blanc avec lagunes d'eau douce. Dunes dans une zone pluvieuse.",season:"Avril–Juillet.",tip:"Base à Barreirinhas. Trek 3 jours avec guide.",photo:"Lencois Maranhenses Brazil white dunes lagoons",done:false},
+  ],
+  "218":[
+    {id:"ec2",name:"Fous à Pieds Bleus",category:"wildlife",desc:"Danse nuptiale à vos pieds. Les animaux ignorent les humains.",why:"60% de la population mondiale aux Galápagos. La danse nuptiale se déroule à 30 cm de vous.",season:"Toute l'année.",tip:"Isla Española ou Seymour Norte.",photo:"blue footed booby Galapagos dance mating",done:false},
+    {id:"ec3",name:"Iguanes Marins — Fernandina",category:"wildlife",desc:"Le seul lézard marin du monde. Plonge, revient sur la lave.",why:"Nage jusqu'à 10 m pour brouter des algues, revient se réchauffer sur le basalte noir.",season:"Déc–Mai.",tip:"Accessible uniquement en croisière liveaboard.",photo:"marine iguana Galapagos volcanic rock",done:false},
+    {id:"ec1",name:"Tortues Géantes — Galápagos",category:"wildlife",desc:"Les mêmes que Darwin. 150 ans, sans peur, sans fuite.",why:"400 kg, 150 ans. Évolutivament seules depuis des millions d'années.",season:"Juin–Décembre.",tip:"Centre Darwin + Highlands sauvages de Santa Cruz.",photo:"giant tortoise Galapagos Islands close",done:false},
+  ],
+  "68":[
+    {id:"bo2",name:"Flamants des Andes — Laguna Colorada",category:"wildlife",desc:"Lac rouge sang à 4 500 m. Flamants James endémiques.",why:"Algues et minéraux rendent le lac rouge. Des milliers de flamants James nichent ici et nulle part ailleurs.",season:"Novembre–Février.",tip:"Route des Joyaux depuis Uyuni (4x4).",photo:"Laguna Colorada Bolivia flamingos red lake",done:false},
+    {id:"bo1",name:"Salar d'Uyuni — Miroir Infini",category:"geology",desc:"10 582 km² de sel. Le plus grand miroir naturel de la Terre.",why:"Après les pluies, surface miroir parfaite — horizon disparu, on flotte entre deux ciels.",season:"Nov–Avr (miroir) / Mai–Oct (sec).",tip:"Hôtel de Sel sur le salar. Tour 3J/2N.",photo:"Uyuni salt flats Bolivia mirror sky reflection",done:false},
+  ],
+  "604":[
+    {id:"pe1",name:"Condors — Canyon del Colca",category:"wildlife",desc:"Envergure 3,3 m. Ils montent en thermique à hauteur de visage.",why:"Canyon del Colca (3 400 m de profondeur). À Cruz del Condor, les condors passent à hauteur de votre visage.",season:"Avr–Nov.",tip:"Séjourner à Chivay. Arriver avant 8h.",photo:"Andean condor Canyon Colca Peru soaring",done:false},
+    {id:"pe2",name:"Machu Picchu — Porte du Soleil",category:"heritage",desc:"4 jours sur le chemin Inca. La cité dans les nuages.",why:"Arriver par la Porte du Soleil après 4 jours de marche et voir Machu Picchu émerger des nuages.",season:"Mai–Octobre.",tip:"Chemin Inca : réservation 6 mois à l'avance.",photo:"Machu Picchu sunrise clouds mist Peru",done:false},
+  ],
+  "152":[
+    {id:"cl2",name:"Île de Pâques — Ahu Tongariki",category:"heritage",desc:"15 moaïs face à la mer. L'endroit le plus isolé habité.",why:"3 500 km de la côte chilienne. 15 moaïs de 80 tonnes contre l'Océan Pacifique.",season:"Octobre–Avril.",tip:"Équinoxe 21 mars : soleil dans l'axe exact des moaïs.",photo:"Easter Island Moai statues Ahu Tongariki",done:false},
+    {id:"cl1",name:"Pumas de Torres del Paine",category:"wildlife",desc:"Le seul endroit pour approcher le puma librement.",why:"Les guides connaissent les territoires de chaque individu. Les pumas chassent en plein jour.",season:"Août–Octobre.",tip:"Eco Camp Patagonia : sorties puma à l'aube.",photo:"puma cougar Torres del Paine Patagonia",done:false},
+  ],
+  "578":[
+    {id:"no1",name:"Nager avec les Baleines — Andøya",category:"marine",desc:"Plonger avec les baleines à bosse + aurores boréales au retour.",why:"Harengs et baleines à bosse convergent dans les fjords de Tromsø. Nage libre à 4°C à côté d'une baleine de 15 m.",season:"Octobre–Janvier.",tip:"Fjord Dreams Expeditions. Combinaison étanche obligatoire.",photo:"humpback whale Norway fjord winter snorkeling",done:false},
+    {id:"no2",name:"Kayak dans les Fjords — Lofoten",category:"nature",desc:"Falaises à pic, villages rouges dans l'eau. Silence de cathédrale.",why:"L'archipel des Lofoten est la plus belle côte d'Europe. Aigles à queue blanche, soleil de minuit.",season:"Mai–Août.",tip:"Paddling Norway : circuits kayak 5 jours.",photo:"Lofoten Islands Norway kayak fjord",done:false},
+  ],
+  "352":[
+    {id:"is2",name:"Macareux — Vestmannaeyjar",category:"wildlife",desc:"4 millions de couples. On peut tenir un macareux dans les mains.",why:"En août, les poussins tombent en ville. Les habitants les recueillent — tradition unique au monde.",season:"Mai–Août.",tip:"Ferry depuis Þorlákshöfn. 2 nuits sur l'île.",photo:"puffin Iceland Westman Islands colony cliffs",done:false},
+    {id:"is1",name:"Plongée Silfra — 2 Continents",category:"geology",desc:"La seule faille où nager entre l'Eurasie et l'Amérique. Visibilité 100 m.",why:"Eau du glacier Langjökull filtrée 50 ans par la lave. 2°C, visibilité 100 m. Toucher deux continents.",season:"Toute l'année.",tip:"Certification Drysuit PADI en 1 jour sur place.",photo:"Silfra fissure Iceland diving tectonic plates",done:false},
+  ],
+  "246":[
+    {id:"fi1",name:"Ours Bruns — Forêts de Kuhmo",category:"wildlife",desc:"À quelques mètres des ours bruns. Mères avec oursons.",why:"2 000 ours bruns de Scandinavie. Affûts en forêt boréale en plein soleil estival.",season:"Mai–Août.",tip:"Wild Brown Bear Centre à Martinselkonen.",photo:"brown bear Finland forest cubs Kuhmo",done:false},
+  ],
+  "826":[
+    {id:"gb1",name:"Bramissement des Cerfs — Richmond Park",category:"wildlife",desc:"Octobre : cerfs royaux qui rugissent dans un parc londonien.",why:"Richmond Park, 30 min du centre de Londres, 630 cerfs élaphes en liberté depuis 1637.",season:"1er–31 Octobre.",tip:"Entrée Isabella Plantation à l'aube.",photo:"red deer rut Richmond Park London autumn",done:false},
+    {id:"gb2",name:"Orques des Shetland",category:"wildlife",desc:"Orques sauvages depuis les falaises + macareux.",why:"Orcades & Shetland : orques qui suivent les saumons en mai-juillet.",season:"Mai–Juillet.",tip:"Shetland Wildlife Tours depuis Lerwick.",photo:"orca killer whale Shetland Scotland ocean",done:false},
+  ],
+  "392":[
+    {id:"jp2",name:"Calmars Bioluminescents — Toyama Bay",category:"marine",desc:"Mars–Mai : la baie entière s'illumine de bleu. Unique au monde.",why:"Millions de calmars firefly remontent pondre en surface. La baie entière scintille.",season:"Mars–Mai.",tip:"Tour bateau de nuit depuis Namerikawa Port.",photo:"firefly squid bioluminescence Japan Toyama blue",done:false},
+    {id:"jp1",name:"Macaques dans les Onsen — Jigokudani",category:"wildlife",desc:"Le seul endroit au monde. Singes des neiges dans les sources chaudes.",why:"Jigokudani : seul endroit où des primates utilisent des bains chauds naturels.",season:"Décembre–Mars.",tip:"Train Nagano → bus Yudanaka → 2 km à pied.",photo:"snow monkey Japanese macaque onsen winter",done:false},
+    {id:"jp3",name:"Mont Fuji — Ascension Nocturne",category:"geology",desc:"8h de nuit. Sommet à l'aube. Ombre triangulaire sur les nuages.",why:"Goraiko : l'ombre parfaite du Fuji projetée sur la mer de nuages à 360°.",season:"Juillet–Septembre.",tip:"Voie Yoshida. Partir à minuit pour sommet à 4h30.",photo:"Mount Fuji Japan summit sunrise shadow",done:false},
+  ],
+  "496":[
+    {id:"mn1",name:"Festival des Aigles Dorés",category:"unique",desc:"Chasseurs kazakhs et leurs aigles royaux. Culture millénaire intacte.",why:"Ölgii, octobre. Centaines de Kazakhs et leurs aigles dressés pendant 7 ans.",season:"Octobre.",tip:"1er/2e week-end d'octobre. Séjourner chez des familles nomades.",photo:"eagle hunter golden eagle festival Mongolia",done:false},
+    {id:"mn2",name:"Nuit en Yourte dans le Gobi",category:"unique",desc:"Gobi. Zéro pollution. Voie Lactée à l'œil nu à -20°C.",why:"L'un des 5 déserts les plus noirs de la planète. Densité d'étoiles qui écrase.",season:"Juin–Août / Nov–Fév.",tip:"Familles nomades = expérience directe.",photo:"Gobi desert Mongolia night stars yurt",done:false},
+  ],
+  "356":[
+    {id:"in2",name:"Léopard des Neiges — Ladakh",category:"wildlife",desc:"L'animal le plus rare à observer en liberté.",why:"Moins de 7 000 individus. La vallée de Rumbak au Ladakh est l'un des seuls endroits avec guide expert.",season:"Janvier–Mars.",tip:"Snow Leopard Conservancy India Tours depuis Leh.",photo:"snow leopard Ladakh Himalayas India winter",done:false},
+    {id:"in1",name:"Safari Tigre — Ranthambore",category:"wildlife",desc:"Le Bengale royal dans les ruines d'un fort mogol.",why:"Le parc avec la plus haute probabilité d'observation d'un tigre en Inde.",season:"Oct–Juin. Mieux mars–mai.",tip:"Zones 1-6. Gypsy à réserver 60 jours à l'avance.",photo:"Bengal tiger Ranthambore India fort ruins",done:false},
+  ],
+  "524":[
+    {id:"np2",name:"Rhinocéros — Chitwan",category:"wildlife",desc:"700 rhinos unicornes. Plus grande densité d'Asie.",why:"La population a triplé grâce à la protection. Tigres du Bengale présents (20% de chance).",season:"Oct–Juin.",tip:"Chitwan depuis Sauraha.",photo:"one horned rhinoceros Nepal Chitwan jungle",done:false},
+    {id:"np1",name:"Trek Everest Base Camp",category:"geology",desc:"17 jours. Sherpas, monastères bouddhistes, géants himalayens.",why:"9 zones climatiques. Villages sherpa, drapeaux de prières, vues sur Everest/Lhotse/Nuptse.",season:"Mars–Mai / Sept–Nov.",tip:"2 nuits à Namche Bazaar pour l'acclimatation.",photo:"Everest Base Camp trekking Nepal Himalayas",done:false},
+  ],
+  "144":[
+    {id:"lk1",name:"Baleines Bleues — Mirissa",category:"marine",desc:"Le plus grand animal de l'Histoire. 30 mètres à quelques mètres.",why:"Mirissa : l'un des rares endroits pour approcher régulièrement la baleine bleue. 150 tonnes.",season:"Nov–Avr.",tip:"Opérateur qui respecte la distance de 50 m.",photo:"blue whale Sri Lanka Mirissa ocean surface",done:false},
+    {id:"lk2",name:"Léopards de Yala",category:"wildlife",desc:"La plus haute densité de léopards au monde.",why:"Yala National Park. Léopards qui chassent au sol. Éléphants, crocodiles et paons.",season:"Fév–Juillet.",tip:"Bloc 1 du parc pour les léopards.",photo:"leopard Sri Lanka Yala National Park",done:false},
+  ],
+  "360":[
+    {id:"id1",name:"Dragons de Komodo",category:"wildlife",desc:"3 mètres, 70 kg. Le plus grand lézard du monde.",why:"Prédateur actif. Venin puissant. Île de Rinca = moins touristique que Komodo.",season:"Toute l'année.",tip:"Speed boat depuis Labuan Bajo, Flores.",photo:"Komodo dragon island Indonesia Rinca",done:false},
+    {id:"id3",name:"Orangs-Outans — Tanjung Puting",category:"wildlife",desc:"En klotok sur la rivière. Les orangs-outans descendent à portée.",why:"6 000 orangs-outans dans la réserve. Descente en klotok 3 jours sur le Rio Sekonyer.",season:"Juin–Septembre.",tip:"Les orangs-outans montent parfois sur le bateau.",photo:"orangutan Borneo Indonesia forest river",done:false},
+    {id:"id2",name:"Raja Ampat — La Plongée Ultime",category:"marine",desc:"75% des coraux mondiaux. Biodiversité marine absolue.",why:"Triangle de Corail : 1 400 espèces de poissons, 600 espèces de coraux.",season:"Oct–Avr. Mantas : Déc–Mars.",tip:"Liveaboard depuis Sorong (Papua).",photo:"Raja Ampat diving Indonesia coral reef manta",done:false},
+  ],
+  "608":[
+    {id:"ph1",name:"Mola Mola — Moalboal, Cebu",category:"marine",desc:"2 tonnes, 3 mètres. Le poisson le plus étrange des océans.",why:"Le plus lourd poisson osseux du monde. Forme aplatie et nageoires verticales : extraterrestre.",season:"Juillet–Novembre.",tip:"Ocean Safari Philippines. Combinaison recommandée.",photo:"mola mola ocean sunfish diving Philippines",done:false},
+    {id:"ph2",name:"Requins-Baleines — Oslob",category:"marine",desc:"À 2 mètres du plus grand poisson. Dès 6h du matin.",why:"Nager à 2 m d'un poisson de 10 m. Voir sa gueule en filtration ouverte.",season:"Toute l'année.",tip:"Arriver avant 6h30. Après 8h, trop de bateaux.",photo:"whale shark Oslob Philippines snorkeling",done:false},
+    {id:"ph3",name:"Tarsier — Bohol",category:"wildlife",desc:"12 cm. Les plus grands yeux du règne animal relatifs au corps.",why:"Le tarsier des Philippines : l'un des plus petits primates. Nocturne, endémique.",season:"Toute l'année.",tip:"Philippine Tarsier Sanctuary à Corella.",photo:"tarsier Philippines Bohol nocturnal primate",done:false},
+  ],
+  "36":[
+    {id:"au2",name:"Quokkas — Rottnest Island",category:"wildlife",desc:"L'animal le plus heureux du monde. Il pose pour les selfies.",why:"Marsupial endémique, museau retroussé en sourire permanent. S'approche spontanément.",season:"Toute l'année.",tip:"Ferry depuis Fremantle. Vélo sur l'île.",photo:"quokka Rottnest Island Australia marsupial",done:false},
+    {id:"au3",name:"Grande Barrière de Corail",category:"marine",desc:"2 300 km. La plus grande structure vivante. Baleines, mérous géants.",why:"Cod Hole : mérous de 150 kg apprivoisés. Juillet–novembre : baleines à bosse.",season:"Toute l'année.",tip:"Liveaboard Spirit of Freedom depuis Cairns.",photo:"Great Barrier Reef diving Australia coral",done:false},
+    {id:"au1",name:"Requins-Baleines — Ningaloo Reef",category:"marine",desc:"Nager avec 50 requins-baleines simultanément. Côte vierge.",why:"Seul grand récif accessible directement depuis la plage. Jusqu'à 500 requins-baleines.",season:"Mars–Août.",tip:"Exmouth comme base. Réserver 3 mois à l'avance.",photo:"whale shark Ningaloo Reef Australia snorkeling",done:false},
+  ],
+  "554":[
+    {id:"nz1",name:"Grottes de Waitomo — Vers Luisants",category:"unique",desc:"Un plafond de galaxie inversée. Barque dans le silence total.",why:"Arachnocampa luminosa : larves bioluminescentes endémiques de NZ. Galaxie d'étoiles bleues.",season:"Toute l'année.",tip:"Tour 'Black Abyss' : grotte + abseiling = 5h.",photo:"Waitomo glowworm caves New Zealand bioluminescence",done:false},
+    {id:"nz2",name:"Kiwi Sauvage — Île Stewart",category:"wildlife",desc:"L'oiseau-fantôme de NZ. Nuit sur une plage isolée.",why:"Rakiura : le dernier endroit pour le kiwi sauvage sans artifice.",season:"Toute l'année. Mieux mai–août.",tip:"Mason Bay. Accès par kayak 3h.",photo:"kiwi bird New Zealand night Stewart Island",done:false},
+  ],
+  "643":[
+    {id:"ru2",name:"Lac Baïkal Gelé",category:"geology",desc:"80 cm de glace sur 600 km. Transparent. Phoques endémiques.",why:"20% de l'eau douce liquide. Glace bleue transparente. Fissures de 30 km avec sons de tonnerre.",season:"Février–Mars.",tip:"Depuis Irkoutsk. Crampons obligatoires.",photo:"Lake Baikal Russia winter ice transparent",done:false},
+    {id:"ru1",name:"Ours de Kamchatka",category:"wildlife",desc:"Des ours pêchent les saumons à quelques mètres. Hélicoptère.",why:"Péninsule aussi grande que la France. Rivière Kurilskoe : dizaines d'ours de Kamchatka.",season:"Août–Octobre.",tip:"Kosatka Travel depuis Petropavlovsk.",photo:"brown bear Kamchatka Russia salmon river",done:false},
+  ],
+  "156":[
+    {id:"cn1",name:"Pandas Géants — Chengdu",category:"wildlife",desc:"200 pandas en semi-liberté. La réserve de référence mondiale.",why:"Seul endroit pour voir des bébés pandas. 600 hectares. Bénévolat possible.",season:"Toute l'année.",tip:"Arriver à 7h30 — pandas actifs le matin.",photo:"giant panda Chengdu China bamboo baby",done:false},
+    {id:"cn2",name:"Rivière Li — Karsts de Guilin",category:"geology",desc:"Pitons calcaires émergés. La Chine des peintures classiques.",why:"83 km entre Guilin et Yangshuo. Paysages les plus photographiés de Chine depuis 2 000 ans.",season:"Avr–Oct.",tip:"Petites embarcations locales depuis Yangshuo.",photo:"Guilin karst mountains Li River China bamboo",done:false},
+  ],
+  "400":[
+    {id:"jo1",name:"Wadi Rum — Nuit dans les Canyons",category:"unique",desc:"Dômes géodésiques dans les canyons rouges. Ciel étoilé absolu.",why:"Wadi Rum : canyons de grès de 600 m. Décors de films (The Martian, Star Wars). Dômes transparents.",season:"Mars–Mai / Sept–Nov.",tip:"Rum Stars Tours pour les dômes transparents.",photo:"Wadi Rum Jordan desert night stars",done:false},
+  ],
+  "512":[
+    {id:"om1",name:"Tortues Caouannes — Ras Al Jinz",category:"wildlife",desc:"La seule plage où les tortues pondent toute l'année.",why:"Site de ponte le plus important de l'Océan Indien, 12 mois/12. Des centaines de femelles en juillet–août.",season:"Toute l'année. Pic juillet–octobre.",tip:"Ras Al Jinz Turtle Reserve — visites nocturnes.",photo:"green sea turtle nesting Oman beach night",done:false},
+  ],
+};
+
+// IMG defined above
+
+// ── COMPONENT ─────────────────────────────────────────────────────────────────
+const BADGES_DEF = [
+  // Exploration
+  {id:"first",icon:"🌱",name:"Premier pas",desc:"Accomplir ton 1er spot",cat:"Exploration",check:function(s,l,v){ return Object.values(s).reduce(function(a,b){return a+b.filter(function(x){return x.done;}).length;},0)>=1; }},
+  {id:"explorer10",icon:"🗺️",name:"Explorateur",desc:"10 spots accomplis",cat:"Exploration",check:function(s){ return Object.values(s).reduce(function(a,b){return a+b.filter(function(x){return x.done;}).length;},0)>=10; }},
+  {id:"explorer50",icon:"🧭",name:"Grand Voyageur",desc:"50 spots accomplis",cat:"Exploration",check:function(s){ return Object.values(s).reduce(function(a,b){return a+b.filter(function(x){return x.done;}).length;},0)>=50; }},
+  {id:"explorer100",icon:"🌟",name:"Légende",desc:"100 spots accomplis",cat:"Exploration",check:function(s){ return Object.values(s).reduce(function(a,b){return a+b.filter(function(x){return x.done;}).length;},0)>=100; }},
+  // Continents
+  {id:"africa",icon:"🦁",name:"Africain",desc:"5 spots en Afrique",cat:"Continents",check:function(s){ return Object.keys(s).filter(function(cid){return s[cid].some(function(x){return x.done;})&&[0].indexOf(gc(cid))>-1;}).length; },threshold:5},
+  {id:"europe5",icon:"🏰",name:"Européen",desc:"5 pays européens visités",cat:"Continents",check:function(s,l,v){ return Object.keys(v).filter(function(cid){return gc(cid)===2;}).length>=5; }},
+  {id:"asia5",icon:"🏯",name:"Asiatique",desc:"5 pays asiatiques visités",cat:"Continents",check:function(s,l,v){ return Object.keys(v).filter(function(cid){return gc(cid)===1;}).length>=5; }},
+  {id:"7cont",icon:"🌍",name:"7 Continents",desc:"Visiter tous les continents",cat:"Continents",check:function(s,l,v){ var conts=new Set(Object.keys(v).map(function(cid){return gc(cid);})); return conts.size>=6; }},
+  // Catégories
+  {id:"diver",icon:"🤿",name:"Plongeur",desc:"5 spots marins accomplis",cat:"Spécialiste",check:function(s){ return Object.values(s).reduce(function(a,b){return a+b.filter(function(x){return x.done&&x.category==="marine";}).length;},0)>=5; }},
+  {id:"wildlife",icon:"🦁",name:"Chasseur Faune",desc:"10 spots faune sauvage",cat:"Spécialiste",check:function(s){ return Object.values(s).reduce(function(a,b){return a+b.filter(function(x){return x.done&&x.category==="wildlife";}).length;},0)>=10; }},
+  {id:"volcano",icon:"🌋",name:"Volcanologue",desc:"5 spots volcans/géo accomplis",cat:"Spécialiste",check:function(s){ return Object.values(s).reduce(function(a,b){return a+b.filter(function(x){return x.done&&x.category==="geology";}).length;},0)>=5; }},
+  {id:"heritage5",icon:"🏛️",name:"Historien",desc:"10 spots patrimoine",cat:"Spécialiste",check:function(s){ return Object.values(s).reduce(function(a,b){return a+b.filter(function(x){return x.done&&x.category==="heritage";}).length;},0)>=10; }},
+  {id:"nature10",icon:"🌿",name:"Naturaliste",desc:"10 spots nature",cat:"Spécialiste",check:function(s){ return Object.values(s).reduce(function(a,b){return a+b.filter(function(x){return x.done&&x.category==="nature";}).length;},0)>=10; }},
+  // Pays visités
+  {id:"visited5",icon:"✈️",name:"Voyageur",desc:"5 pays visités",cat:"Voyages",check:function(s,l,v){ return Object.keys(v).length>=5; }},
+  {id:"visited10",icon:"🛫",name:"Globe-trotter",desc:"10 pays visités",cat:"Voyages",check:function(s,l,v){ return Object.keys(v).length>=10; }},
+  {id:"visited25",icon:"🌐",name:"Citoyen du Monde",desc:"25 pays visités",cat:"Voyages",check:function(s,l,v){ return Object.keys(v).length>=25; }},
+  // Favoris
+  {id:"liked5",icon:"♥",name:"Rêveur",desc:"5 spots en favoris",cat:"Favoris",check:function(s,l){ return Object.keys(l).length>=5; }},
+  {id:"liked20",icon:"💝",name:"Passionné",desc:"20 spots en favoris",cat:"Favoris",check:function(s,l){ return Object.keys(l).length>=20; }},
+  // Spéciaux
+  {id:"incontournable",icon:"🏆",name:"Chasseur d'Incontournables",desc:"10 incontournables accomplis",cat:"Spécial",check:function(s){ return Object.values(s).reduce(function(a,b){return a+b.filter(function(x){return x.done&&x.category==="famous";}).length;},0)>=10; }},
+  {id:"complete_country",icon:"🎯",name:"Perfectionniste",desc:"Compléter tous les spots d'un pays",cat:"Spécial",check:function(s){ return Object.keys(s).some(function(cid){return s[cid].length>0&&s[cid].every(function(x){return x.done;}); }); }},
+];
+
+function BadgesContent(props) {
+  var s=props.spots, l=props.liked, v=props.visitedCountries;
+  var cats = ["Exploration","Continents","Spécialiste","Voyages","Favoris","Spécial"];
+  var totalUnlocked = BADGES_DEF.filter(function(b){ return b.check(s,l,v); }).length;
+  return React.createElement("div", null,
+    React.createElement("div", {style:{display:"flex",alignItems:"center",gap:12,marginBottom:20,padding:"12px 16px",background:"#06122a",borderRadius:10,border:"1px solid #0d2038"}},
+      React.createElement("div", {style:{fontSize:32}}, totalUnlocked===0?"😴":totalUnlocked<5?"🌱":totalUnlocked<10?"🚀":"🏆"),
+      React.createElement("div", null,
+        React.createElement("div", {style:{fontWeight:900,fontSize:18,color:"#34d399"}}, totalUnlocked + "/" + BADGES_DEF.length + " badges débloqués"),
+        React.createElement("div", {style:{height:6,background:"#0b1e34",borderRadius:3,marginTop:6,overflow:"hidden",width:200}},
+          React.createElement("div", {style:{width:pct(totalUnlocked,BADGES_DEF.length),height:"100%",background:"linear-gradient(90deg,#34d399,#0ea5e9)",borderRadius:3}})
+        )
+      )
+    ),
+    cats.map(function(cat){
+      var catBadges = BADGES_DEF.filter(function(b){return b.cat===cat;});
+      return React.createElement("div", {key:cat, style:{marginBottom:16}},
+        React.createElement("div", {style:{fontSize:11,fontWeight:800,color:"#2a5070",letterSpacing:".1em",marginBottom:8,paddingBottom:4,borderBottom:"1px solid #0a1828"}}, cat.toUpperCase()),
+        React.createElement("div", {style:{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:8}},
+          catBadges.map(function(badge){
+            var unlocked = badge.check(s,l,v);
+            return React.createElement("div", {key:badge.id, style:{
+              background:unlocked?"#061a12":"#040e1e",
+              border:"1px solid "+(unlocked?"#34d399":"#0c1e34"),
+              borderRadius:10, padding:"12px",
+              opacity:unlocked?1:"0.5",
+              transition:"all .2s"
+            }},
+              React.createElement("div", {style:{fontSize:28,marginBottom:6}}, badge.icon),
+              React.createElement("div", {style:{fontSize:13,fontWeight:800,color:unlocked?"#34d399":"#4a7898",marginBottom:3}}, badge.name),
+              React.createElement("div", {style:{fontSize:10,color:"#2a5070",lineHeight:1.4}}, badge.desc),
+              unlocked&&React.createElement("div", {style:{fontSize:9,color:"#34d399",marginTop:4,fontWeight:700}}, "✓ DÉBLOQUÉ")
+            );
+          })
+        )
+      );
+    })
+  );
+}
+
+
+function AtlasMerveilles() {
+  const canvasRef    = useRef(null);
+  const projRef      = useRef(null);
+  const animRef      = useRef(null);
+  const rotateRef    = useRef([10,-25]);
+  const draggingRef  = useRef(false);
+  const autoSpinRef  = useRef(true);
+  const resumeRef    = useRef(null);
+  const dragStartRef = useRef([0,0]);
+  const dragMoveRef  = useRef([0,0]);
+  const countriesRef = useRef([]);
+  const spotsRef     = useRef(DEFAULT_SPOTS);
+  const hoveredRef   = useRef(null);
+  const selectedRef  = useRef(null);
+
+  const [spots,setSpots]                     = useState(DEFAULT_SPOTS);
+  const [selectedCountry,setSelectedCountry] = useState(null);
+  const [selectedName,setSelectedName]       = useState("");
+  const [hoveredCountry,setHoveredCountry]   = useState(null);
+  const [filter,setFilter]                   = useState("all");
+  const [showModal,setShowModal]             = useState(false);
+  const [detailSpot,setDetailSpot]           = useState(null);
+  const [deleteConfirm,setDeleteConfirm]     = useState(null);
+  const [worldData,setWorldData]             = useState(null);
+  const [loading,setLoading]                 = useState(true);
+  const [animKey,setAnimKey]                 = useState(0);
+  const [imgErr,setImgErr]                   = useState(false);
+  const [modalErr,setModalErr]               = useState(false);
+  const [showLegend,setShowLegend]           = useState(false);
+  const [search,setSearch]                   = useState('');
+  const [monthFilter,setMonthFilter]         = useState(0);
+  const [showWeather,setShowWeather]         = useState(false);
+  const [showGlobalMonth,setShowGlobalMonth] = useState(false);
+  const [showCountryList,setShowCountryList] = useState(false);
+  const [showGlobalSearch,setShowGlobalSearch] = useState(false);
+  const [showBadges,setShowBadges]             = useState(false);
+  const [globalQuery,setGlobalQuery]         = useState('');
+  const [countrySearch,setCountrySearch]     = useState('');
+  const [liked,setLiked]                     = useState({});
+  const [visitedCountries,setVisitedCountries] = useState({});
+  const [showStats,setShowStats]             = useState(false);
+  const [globalMonth,setGlobalMonth]         = useState(0);
+  const [weatherCache,setWeatherCache]       = useState({});
+  const [weatherLoading,setWeatherLoading]   = useState(false);
+  const sbSpotsRef = useRef(spots);
+  const sbLikedRef = useRef(liked);
+  const sbVisitedRef = useRef(visitedCountries);
+  useEffect(()=>{ sbSpotsRef.current=spots; },[spots]);
+  useEffect(()=>{ sbLikedRef.current=liked; },[liked]);
+  useEffect(()=>{ sbVisitedRef.current=visitedCountries; },[visitedCountries]);
+  const [isMobile, setIsMobile]              = useState(typeof window!=='undefined'&&window.innerWidth<=768);
+  useEffect(()=>{ const fn=()=>setIsMobile(window.innerWidth<=768); window.addEventListener('resize',fn); return()=>window.removeEventListener('resize',fn); },[]);
+  const [importRef]                          = useState(()=>({ current:null }));
+  const [form,setForm] = useState({name:"",category:"marine",desc:"",why:"",season:"",tip:"",photo:""});
+
+  useEffect(()=>{ spotsRef.current=spots; },[spots]);
+  useEffect(()=>{ hoveredRef.current=hoveredCountry; },[hoveredCountry]);
+  useEffect(()=>{ selectedRef.current=selectedCountry; },[selectedCountry]);
+  useEffect(function(){
+    if(!selectedCountry||weatherCache[selectedCountry]) return;
+    fetchWeather(selectedCountry, function(data){
+      if(data){ setWeatherCache(function(prev){ var n=Object.assign({},prev); n[selectedCountry]=data; return n; }); }
+    });
+  },[selectedCountry]);
+  useEffect(function(){
+    if(!showWeather||!selectedCountry||weatherCache[selectedCountry]) return;
+    setWeatherLoading(true);
+    fetchWeather(selectedCountry, function(data){
+      setWeatherLoading(false);
+      if(data){ setWeatherCache(function(prev){ var n=Object.assign({},prev); n[selectedCountry]=data; return n; }); }
+    });
+  },[showWeather,selectedCountry]);
+  useEffect(()=>{ setModalErr(false); setImgErr(false); },[detailSpot]);
+
+  useEffect(()=>{ (async()=>{
+    // 1. Always load spots catalog from localStorage or world_spots.json
+    var baseSpots = null;
+    try{ const s=await window.storage.get("atlas-v14"); if(s&&s.value){ baseSpots=JSON.parse(s.value); } }catch(e){}
+    if(!baseSpots){
+      try{ const r=await fetch("world_spots.json"); baseSpots=await r.json(); }catch(e){}
+    }
+    if(!baseSpots) baseSpots={};
+
+    // 2. Try Supabase for user progress (done/liked/visited)
+    var doneMap={}, likedData={}, visitedData={};
+    try{
+      const sb = await sbLoad();
+      if(sb){
+        // sb.spots is now a doneMap {spotId: true}
+        try{ doneMap = typeof sb.spots==="string"?JSON.parse(sb.spots):(sb.spots||{}); }catch(e){}
+        // Detect old format (had country arrays) - ignore if so
+        var isOldFormat = Object.keys(doneMap).some(function(k){ return Array.isArray(doneMap[k]); });
+        if(isOldFormat) doneMap={};
+        try{ likedData = typeof sb.liked==="string"?JSON.parse(sb.liked):(sb.liked||{}); }catch(e){}
+        try{ visitedData = typeof sb.visited==="string"?JSON.parse(sb.visited):(sb.visited||{}); }catch(e){}
+        // BUG FIX: si Supabase retourne vide, compléter avec localStorage
+        if(Object.keys(likedData).length===0){ try{ const lk=await window.storage.get("atlas-liked"); if(lk&&lk.value) likedData=JSON.parse(lk.value); }catch(e){} }
+        if(Object.keys(visitedData).length===0){ try{ const vc=await window.storage.get("atlas-visited"); if(vc&&vc.value) visitedData=JSON.parse(vc.value); }catch(e){} }
+      }
+    }catch(e){
+      // Fallback to localStorage for liked/visited
+      try{ const lk=await window.storage.get("atlas-liked"); if(lk&&lk.value) likedData=JSON.parse(lk.value); }catch(e){}
+      try{ const vc=await window.storage.get("atlas-visited"); if(vc&&vc.value) visitedData=JSON.parse(vc.value); }catch(e){}
+    }
+
+    // 3. Apply doneMap onto baseSpots
+    if(Object.keys(doneMap).length>0){
+      Object.keys(baseSpots).forEach(function(cid){
+        baseSpots[cid] = baseSpots[cid].map(function(s){
+          return doneMap[s.id] ? Object.assign({},s,{done:true}) : s;
+        });
+      });
+    } else {
+      // Try localStorage done status
+      try{
+        const ls=await window.storage.get("atlas-v14");
+        if(ls&&ls.value){
+          var lsSpots=JSON.parse(ls.value);
+          var lsDone={};
+          Object.values(lsSpots).forEach(function(arr){
+            arr.forEach(function(s){ if(s.done) lsDone[s.id]=true; });
+          });
+          if(Object.keys(lsDone).length>0){
+            Object.keys(baseSpots).forEach(function(cid){
+              baseSpots[cid]=baseSpots[cid].map(function(s){
+                return lsDone[s.id]?Object.assign({},s,{done:true}):s;
+              });
+            });
+          }
+        }
+      }catch(e){}
+    }
+
+    setSpots(baseSpots);
+    setLiked(likedData);
+    setVisitedCountries(visitedData);
+  })(); },[]);
+  useEffect(()=>{
+    (async()=>{ try{ await window.storage.set("atlas-v14",JSON.stringify(spots)); }catch(e){} })();
+    clearTimeout(window._sbTimer);
+    window._sbTimer = setTimeout(()=>{
+      try{ sbSave(sbSpotsRef.current, sbLikedRef.current, sbVisitedRef.current); }catch(e){}
+    }, 1500);
+  },[spots]);
+  useEffect(()=>{
+    (async()=>{ try{ await window.storage.set("atlas-liked",JSON.stringify(liked)); }catch(e){} })();
+    // Sync to Supabase
+    clearTimeout(window._sbTimer);
+    window._sbTimer = setTimeout(()=>{
+      try{ sbSave(sbSpotsRef.current, sbLikedRef.current, sbVisitedRef.current); }catch(e){}
+    }, 1500);
+  },[liked]);
+  useEffect(()=>{
+    (async()=>{ try{ await window.storage.set("atlas-visited",JSON.stringify(visitedCountries)); }catch(e){} })();
+    clearTimeout(window._sbTimer);
+    window._sbTimer = setTimeout(()=>{
+      try{ sbSave(sbSpotsRef.current, sbLikedRef.current, sbVisitedRef.current); }catch(e){}
+    }, 1500);
+  },[visitedCountries]);
+
+  useEffect(()=>{
+    (async()=>{
+      try{
+        await new Promise((res,rej)=>{ if(window.topojson) return res(); const s=document.createElement("script"); s.src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"; s.onload=res; s.onerror=rej; document.head.appendChild(s); });
+        const r=await fetch("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json");
+        setWorldData(await r.json());
+      }catch(e){ console.error(e); }
+      setLoading(false);
+    })();
+  },[]);
+
+  const draw = useCallback(()=>{
+    const canvas=canvasRef.current, proj=projRef.current;
+    if(!canvas||!proj) return;
+    const dpr=canvas._dpr||1, W=canvas.width/dpr, H=canvas.height/dpr;
+    const ctx=canvas.getContext("2d");
+    ctx.save(); ctx.scale(dpr,dpr);
+    const pathGen=d3.geoPath(proj,ctx);
+    const sp=spotsRef.current, hov=hoveredRef.current, sel=selectedRef.current;
+    ctx.clearRect(0,0,W,H);
+    const R=proj.scale(), [cx,cy]=proj.translate();
+    const ag=ctx.createRadialGradient(cx,cy,R*.88,cx,cy,R*1.4);
+    ag.addColorStop(0,"rgba(6,40,90,0)"); ag.addColorStop(.5,"rgba(6,40,90,.15)"); ag.addColorStop(1,"rgba(6,40,90,0)");
+    ctx.beginPath(); ctx.arc(cx,cy,R*1.4,0,Math.PI*2); ctx.fillStyle=ag; ctx.fill();
+    const og=ctx.createRadialGradient(cx-R*.12,cy-R*.18,0,cx,cy,R);
+    og.addColorStop(0,"#0c2d44"); og.addColorStop(.65,"#061828"); og.addColorStop(1,"#020c18");
+    ctx.beginPath(); pathGen({type:"Sphere"}); ctx.fillStyle=og; ctx.fill();
+    ctx.beginPath(); pathGen(d3.geoGraticule()()); ctx.strokeStyle="rgba(20,55,95,.12)"; ctx.lineWidth=.24; ctx.stroke();
+    for(const f of countriesRef.current){
+      const id=String(parseInt(f.id,10)), ci=gc(id), C=CONT[ci];
+      const sd=sp[id], isH=id===hov, isS=id===sel;
+      ctx.beginPath(); pathGen(f);
+      if(isS) ctx.fillStyle="#1a4870";
+      else if(isH) ctx.fillStyle=C.hover;
+      else if(sd?.length){ if(sd.every(s=>s.done)) ctx.fillStyle="#0a2c18"; else if(sd.some(s=>s.done)) ctx.fillStyle="#2c1b04"; else ctx.fillStyle=C.active; }
+      else ctx.fillStyle=C.base;
+      ctx.fill();
+      const sw=(isH||isS||sd?.length)?(isS?1.8:isH?1.1:.9):.2;
+      const sc=isS?"#5ab0e8":sd?.length?(sd.every(s=>s.done)?"#22c55e":sd.some(s=>s.done)?"#f59e0b":CC[ci]):isH?"#2a6a9a":C.stroke;
+      ctx.beginPath(); pathGen(f); ctx.strokeStyle=sc; ctx.lineWidth=sw; ctx.stroke();
+    }
+    ctx.beginPath(); pathGen({type:"Sphere"}); ctx.strokeStyle="rgba(22,75,130,.28)"; ctx.lineWidth=1; ctx.stroke();
+    ctx.restore();
+  },[]);
+
+  useEffect(()=>{
+    if(!worldData||!canvasRef.current) return;
+    const canvas=canvasRef.current, parent=canvas.parentElement;
+    const dpr=Math.min(window.devicePixelRatio||1,2);
+    canvas._dpr=dpr;
+    const W=parent.offsetWidth, H=parent.offsetHeight;
+    canvas.width=W*dpr; canvas.height=H*dpr;
+    canvas.style.width=W+"px"; canvas.style.height=H+"px";
+    const R=Math.min(W,H)*.43;
+    projRef.current=d3.geoOrthographic().scale(R).translate([W/2,H/2]).rotate(rotateRef.current).clipAngle(90);
+    countriesRef.current=window.topojson.feature(worldData,worldData.objects.countries).features;
+    cancelAnimationFrame(animRef.current);
+    const loop=()=>{ if(autoSpinRef.current&&!draggingRef.current){ rotateRef.current=[rotateRef.current[0]+.06,rotateRef.current[1]]; projRef.current.rotate(rotateRef.current); } draw(); animRef.current=requestAnimationFrame(loop); };
+    animRef.current=requestAnimationFrame(loop);
+    const drag=d3.drag()
+      .on("start",e=>{ draggingRef.current=true; autoSpinRef.current=false; clearTimeout(resumeRef.current); const _st=e.sourceEvent; const _tx=(_st.touches&&_st.touches[0]?_st.touches[0].clientX:e.x); const _ty=(_st.touches&&_st.touches[0]?_st.touches[0].clientY:e.y); dragStartRef.current=[_tx,_ty]; dragMoveRef.current=[_tx,_ty]; })
+      .on("drag",e=>{ const _dm=e.sourceEvent; const _tx2=(_dm.touches&&_dm.touches[0]?_dm.touches[0].clientX:e.x); const _ty2=(_dm.touches&&_dm.touches[0]?_dm.touches[0].clientY:e.y); const dx=_tx2-dragMoveRef.current[0],dy=_ty2-dragMoveRef.current[1]; dragMoveRef.current=[_tx2,_ty2]; const sc=projRef.current?.scale()||R; const r=rotateRef.current; rotateRef.current=[r[0]+dx*65/sc,r[1]-dy*65/sc]; projRef.current?.rotate(rotateRef.current); })
+      .on("end",e=>{
+        draggingRef.current=false;
+        const _se=e.sourceEvent;
+        const _ex=_se.changedTouches&&_se.changedTouches[0]?_se.changedTouches[0].clientX:e.x;
+        const _ey=_se.changedTouches&&_se.changedTouches[0]?_se.changedTouches[0].clientY:e.y;
+        const dx=Math.abs(_ex-dragStartRef.current[0]),dy=Math.abs(_ey-dragStartRef.current[1]);
+        if(dx<(isMobile?20:6)&&dy<(isMobile?20:6)){ const rect=canvas.getBoundingClientRect(); const _s2=e.sourceEvent;const _cx=_s2.clientX||(_s2.changedTouches&&_s2.changedTouches[0]?_s2.changedTouches[0].clientX:0)||0;const _cy=_s2.clientY||(_s2.changedTouches&&_s2.changedTouches[0]?_s2.changedTouches[0].clientY:0)||0;const px=_cx-rect.left, py=_cy-rect.top; const coords=projRef.current?.invert([px,py]); if(coords&&!isNaN(coords[0])){ const c=countriesRef.current.find(f=>d3.geoContains(f,coords)); if(c){ const id=String(parseInt(c.id,10)); setSelectedCountry(id); setSelectedName(NM[id]||("#"+id)); setAnimKey(k=>k+1); }}}
+        resumeRef.current=setTimeout(()=>{ autoSpinRef.current=true; },3000);
+      });
+    d3.select(canvas).call(drag);
+    const onWheel=e=>{ e.preventDefault(); const sc=projRef.current?.scale()||R; projRef.current?.scale(Math.max(R*.6,Math.min(sc*(e.deltaY>0?0.88:1.14),R*6))); };
+    canvas.addEventListener("wheel",onWheel,{passive:false});
+    let hf=null;
+    const onMove=e=>{ if(draggingRef.current||hf) return; hf=requestAnimationFrame(()=>{ const proj=projRef.current; if(!proj){hf=null;return;} const rect=canvas.getBoundingClientRect(); const coords=proj.invert([e.clientX-rect.left,e.clientY-rect.top]); if(coords&&!isNaN(coords[0])){ const c=countriesRef.current.find(f=>d3.geoContains(f,coords)); const nh=c?String(parseInt(c.id,10)):null; if(nh!==hoveredRef.current){hoveredRef.current=nh;setHoveredCountry(nh);}} hf=null; }); };
+    canvas.addEventListener("mousemove",onMove);
+    return()=>{ cancelAnimationFrame(animRef.current); canvas.removeEventListener("wheel",onWheel); canvas.removeEventListener("mousemove",onMove); clearTimeout(resumeRef.current); };
+  },[worldData,draw]);
+
+  const toggleLike=(sid)=>setLiked(function(p){ var n=Object.assign({},p); if(n[sid]) delete n[sid]; else n[sid]=true; return n; });
+  const toggleVisited=(cid)=>setVisitedCountries(function(p){ var n=Object.assign({},p); if(n[cid]) delete n[cid]; else n[cid]=true; return n; });
+  const toggleDone=(cid,sid)=>setSpots(p=>({...p,[cid]:p[cid].map(s=>s.id===sid?{...s,done:!s.done}:s)}));
+  const deleteSpot=(cid,sid)=>setSpots(p=>{const n=p[cid].filter(s=>s.id!==sid);if(!n.length){const{[cid]:_,...r}=p;return r;}return{...p,[cid]:n};});
+  const addSpot=()=>{ if(!form.name.trim()||!selectedCountry) return; const id="u"+Date.now(); setSpots(p=>({...p,[selectedCountry]:[...(p[selectedCountry]||[]),{id,...form,done:false}].sort((a,b)=>a.name.localeCompare(b.name,undefined,{sensitivity:'base'}))})); setForm({name:"",category:"marine",desc:"",why:"",season:"",tip:"",photo:""}); setShowModal(false); };
+
+  const exportSpots=()=>{ const blob=new Blob([JSON.stringify(spots,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='mon-atlas.json'; a.click(); URL.revokeObjectURL(url); };
+  const importSpots=e=>{ const file=e.target.files[0]; if(!file) return; const reader=new FileReader(); reader.onload=ev=>{ try{ setSpots(JSON.parse(ev.target.result)); }catch{ alert('Fichier JSON invalide.'); }}; reader.readAsText(file); e.target.value=''; };
+
+  const allSpots=Object.values(spots).flat();
+  const totalDone=allSpots.filter(s=>s.done).length;
+  const nCountries=Object.keys(spots).length;
+  const sortedResults = React.useMemo(function(){
+    if(!globalQuery||globalQuery.length<2) return [];
+    var q=norm(globalQuery);
+    var res=[];
+    Object.keys(spots).forEach(function(cid){
+      (spots[cid]||[]).forEach(function(s){
+        if(norm(s.name+" "+s.desc+" "+(s.why||"")+" "+(s.category||"")).includes(q)) res.push({s:s,cid:cid});
+      });
+    });
+    res.sort(function(a,b){
+      var na=NM[a.cid]||a.cid; var nb=NM[b.cid]||b.cid;
+      if(na!==nb) return na<nb?-1:na>nb?1:0;
+      var x=norm(a.s.name),y=norm(b.s.name); return x<y?-1:x>y?1:0;
+    });
+    return res.slice(0,120);
+  },[globalQuery,spots]);
+  function goToCountry(cid){
+    setShowGlobalSearch(false);
+    setSelectedCountry(cid); setSelectedName(NM[cid]||"");
+    setAnimKey(function(k){return k+1;});
+    var coord=COORDS[cid];
+    if(coord&&projRef.current){
+      var pts=coord.split(",");
+      rotateRef.current=[-parseFloat(pts[1]),-parseFloat(pts[0])];
+      projRef.current.rotate(rotateRef.current);
+      autoSpinRef.current=false;
+      clearTimeout(resumeRef.current);
+      resumeRef.current=setTimeout(function(){autoSpinRef.current=true;},5000);
+    }
+  }
+  const allLikedSpots = filter==="liked" ? Object.entries(spots).reduce(function(acc,entry){
+    var cid=entry[0], cspots=entry[1];
+    cspots.forEach(function(s){ if(liked[s.id]) acc.push(Object.assign({},s,{_cid:cid})); });
+    return acc;
+  },[]) : [];
+  const sideSpots = filter==="liked" ? allLikedSpots : (selectedCountry?(spots[selectedCountry]||[]):[]);
+  const filtered=(filter==="all"?sideSpots:filter==="liked"?sideSpots.filter(s=>liked[s.id]):sideSpots.filter(s=>s.category===filter))
+    .filter(s=>!search||((s.name||"")+(s.desc||"")).toLowerCase().includes(search.toLowerCase()))
+    .filter(s=>{
+      if(!monthFilter) return true;
+      var se=(s.season||"").toLowerCase();
+      if(se.includes("toute")||se.includes("all year")||se.includes("year-round")) return true;
+      var FR=["jan","fev","mar","avr","mai","jun","jul","aou","sep","oct","nov","dec"];
+      var EN=["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
+      return se.includes(FR[monthFilter-1])||se.includes(EN[monthFilter-1]);
+    })
+    .slice().sort((a,b)=>a.name.localeCompare(b.name,undefined,{sensitivity:"base"}));
+  const ci=selectedCountry?gc(selectedCountry):0;
+
+  return (
+    <div style={{fontFamily:"'Outfit',sans-serif",background:"#020c1a",height:"100vh",display:"flex",flexDirection:"column",color:"#7aa8c4",overflow:"hidden"}}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+        *{box-sizing:border-box;margin:0;padding:0}
+        ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:#0c2a48;border-radius:2px}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes slid{from{opacity:0;transform:translateX(22px)}to{opacity:1;transform:translateX(0)}}
+        @keyframes pulse{0%,100%{opacity:.22}50%{opacity:.6}}
+        @keyframes modIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+        .rise{animation:rise .32s ease both}.slid{animation:slid .28s cubic-bezier(.4,0,.2,1) both}
+        .btn{transition:all .18s;cursor:pointer}.btn:hover{filter:brightness(1.1);transform:translateY(-1px)}.btn:active{transform:translateY(0)}
+        input,textarea{transition:border-color .2s}input:focus,textarea:focus{border-color:#0ea5e9!important;outline:none}
+        .sc{transition:all .2s;cursor:pointer}.sc:hover{background:#0a1e38!important;border-color:#1a4a7a!important}.sc:hover .del{opacity:1!important}
+        .del{opacity:0;transition:opacity .15s}
+        .chk{transition:all .2s;cursor:pointer}.chk:hover{transform:scale(1.15)}
+      `}</style>
+
+      {/* ── TOPBAR ── */}
+      {isMobile ? (
+        <div style={{background:"#020e1c",borderBottom:"1px solid #0b1e34",flexShrink:0}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 12px 4px"}}>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <span style={{fontSize:22,flexShrink:0}}>🌍</span>
+              <div>
+                <div style={{fontWeight:900,fontSize:15,color:"#8ecce8"}}>Mes Pokémons Rares</div>
+                <div style={{fontSize:10,color:"#4a80a8",fontWeight:500}}>
+                  <span style={{color:"#38bdf8",fontWeight:800}}>{nCountries}</span> pays · <span style={{color:"#38bdf8",fontWeight:800}}>{allSpots.length}</span> exp · <span style={{color:"#f43f5e",fontWeight:800}}>{Object.keys(liked).length}</span>♥
+                </div>
+              </div>
+            </div>
+            <div style={{display:"flex",gap:5}}>
+              <button onClick={()=>setShowBadges(true)} style={{background:"#06122a",border:"1px solid #0d2038",borderRadius:7,padding:"5px 8px",color:"#34d399",fontWeight:700,fontSize:11,cursor:"pointer"}}>🏅</button>
+              <button onClick={()=>setShowGlobalSearch(true)} style={{background:"#06122a",border:"1px solid #0d2038",borderRadius:7,padding:"5px 8px",color:"#e879f9",fontWeight:700,fontSize:11,cursor:"pointer"}}>🔍</button>
+              <button onClick={()=>setShowStats(true)} style={{background:"#06122a",border:"1px solid #0d2038",borderRadius:7,padding:"5px 8px",color:"#f59e0b",fontWeight:700,fontSize:11,cursor:"pointer"}}>📊</button>
+              <button onClick={()=>setShowCountryList(true)} style={{background:"#06122a",border:"1px solid #0d2038",borderRadius:7,padding:"5px 8px",color:"#a78bfa",fontWeight:700,fontSize:11,cursor:"pointer"}}>🌍</button>
+              <button onClick={()=>setShowGlobalMonth(true)} style={{background:"#06122a",border:"1px solid #0d2038",borderRadius:7,padding:"5px 8px",color:"#0ea5e9",fontWeight:700,fontSize:11,cursor:"pointer"}}>🗓</button>
+            </div>
+          </div>
+          <div style={{display:"flex",gap:6,padding:"4px 12px 10px",overflowX:"auto",WebkitOverflowScrolling:"touch",flexWrap:"nowrap",scrollbarWidth:"none",msOverflowStyle:"none"}}>
+            {CATS.map(c=>{ const a=filter===c.id; return(
+              <button key={c.id} className="btn" onClick={()=>setFilter(c.id)}
+                style={{background:a?c.color+"22":"#0b1e34",border:"1.5px solid "+(a?c.color+"88":"#1a3050"),borderRadius:20,padding:"6px 13px",color:a?c.color:"#4a7898",fontSize:12,fontWeight:a?800:600,display:"flex",alignItems:"center",gap:4,whiteSpace:"nowrap",flexShrink:0}}>
+                {c.icon} {c.label}
+              </button>
+            );})}
+          </div>
+        </div>
+      ) : (
+        <div style={{display:"flex",alignItems:"center",gap:0,padding:"0 24px",background:"#020e1c",borderBottom:"1px solid #0b1e34",flexShrink:0,height:64,overflow:"hidden"}}>
+          {/* Logo — fixe à gauche */}
+          <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0,marginRight:20}}>
+            <span style={{fontSize:28}}>🌍</span>
+            <div>
+              <div style={{fontWeight:900,fontSize:18,color:"#8ecce8",letterSpacing:".05em",lineHeight:1.1,whiteSpace:"nowrap"}}>Mes Pokémons Rares</div>
+              <div style={{fontSize:11,color:"#4a80a8",fontWeight:600,marginTop:1,whiteSpace:"nowrap"}}>
+                <span style={{color:"#38bdf8",fontWeight:800}}>{nCountries}</span> pays · <span style={{color:"#38bdf8",fontWeight:800}}>{allSpots.length}</span> exp. · <span style={{color:"#4ade80",fontWeight:800}}>{totalDone}</span> accomplies · <span style={{color:"#f43f5e",fontWeight:800}}>{Object.keys(liked).length}</span> ♥
+              </div>
+            </div>
+          </div>
+          {/* Catégories — scrollable au centre */}
+          <div style={{flex:1,display:"flex",gap:6,overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",alignItems:"center",padding:"0 4px"}}>
+            {CATS.map(c=>{ const a=filter===c.id; return(
+              <button key={c.id} className="btn" onClick={()=>setFilter(c.id)}
+                style={{background:a?c.color+"18":"transparent",border:"1px solid "+(a?c.color+"55":"#1a3a5a"),borderRadius:7,padding:"7px 13px",color:a?c.color:"#7aaccf",fontSize:13,fontWeight:a?700:600,display:"flex",alignItems:"center",gap:4,whiteSpace:"nowrap",flexShrink:0}}>
+                {c.icon} {c.label}
+              </button>
+            );})}
+          </div>
+          {/* Actions — fixe à droite */}
+          <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0,marginLeft:16}}>
+            <button className="btn" onClick={()=>setShowBadges(true)} style={{background:"#06122a",border:"1px solid #0d2038",borderRadius:8,padding:"7px 11px",color:"#34d399",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}>🏅 Badges</button>
+            <button className="btn" onClick={()=>setShowGlobalSearch(true)} style={{background:"#06122a",border:"1px solid #0d2038",borderRadius:8,padding:"7px 11px",color:"#e879f9",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}>🔍 Recherche</button>
+            <button className="btn" onClick={()=>setShowStats(true)} style={{background:"#06122a",border:"1px solid #0d2038",borderRadius:8,padding:"7px 11px",color:"#f59e0b",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}>📊 Stats</button>
+            <button className="btn" onClick={()=>setShowCountryList(true)} style={{background:"#06122a",border:"1px solid #0d2038",borderRadius:8,padding:"7px 11px",color:"#a78bfa",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}>🌍 Pays</button>
+            <button className="btn" onClick={()=>setShowGlobalMonth(true)} style={{background:"#06122a",border:"1px solid #0d2038",borderRadius:8,padding:"7px 11px",color:"#0ea5e9",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}>🗓 Meilleur mois</button>
+            <div style={{display:"flex",gap:3,marginLeft:4}}>{CN.map((n,i)=>(<div key={n} title={n} style={{width:11,height:11,borderRadius:"50%",background:CC[i],opacity:0.75}}/>))}</div>
+            <div style={{width:80,height:4,background:"#0b1e34",borderRadius:2,overflow:"hidden",marginLeft:2}}><div style={{width:pct(totalDone,allSpots.length),height:"100%",background:"linear-gradient(90deg,#0ea5e9,#22c55e)",transition:"width .6s"}}/></div>
+            <span style={{fontSize:12,color:"#4a90b0",fontWeight:700,whiteSpace:"nowrap"}}>{totalDone}/{allSpots.length}</span>
+          </div>
+        </div>
+      )}
+      {/* ── BODY ── */}
+      <div style={{flex:1,display:"flex",overflow:"hidden"}}>
+        {/* GLOBE */}
+        <div style={{flex:1,position:"relative",overflow:"hidden",background:"#020c1a"}}>
+          {loading&&(<div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:10,zIndex:10}}>
+            <div style={{width:28,height:28,border:"2px solid #0b1e34",borderTopColor:"#0ea5e9",borderRadius:"50%",animation:"spin .8s linear infinite"}}/>
+            <div style={{fontSize:9,color:"#1a3550",fontWeight:700,letterSpacing:".2em"}}>CHARGEMENT…</div>
+          </div>)}
+          <canvas ref={canvasRef} style={{width:"100%",height:"100%",display:"block",cursor:"grab"}}/>
+          {hoveredCountry&&NM[hoveredCountry]&&(
+            <div style={{position:"absolute",top:12,left:"50%",transform:"translateX(-50%)",background:"#020e1cf0",border:"1px solid #0e2a44",borderRadius:6,padding:"4px 14px",fontSize:11,fontWeight:700,color:"#8ecce8",pointerEvents:"none",backdropFilter:"blur(8px)",letterSpacing:".04em"}}>
+              {NM[hoveredCountry]}
+            </div>
+          )}
+          {!loading&&(<div style={{position:"absolute",bottom:14,left:14,background:"#020e1ce8",backdropFilter:"blur(12px)",border:"1px solid #0b1e34",borderRadius:10,padding:"10px 12px",fontSize:9}}>
+            <div style={{fontWeight:700,color:"#1a3a56",letterSpacing:".1em",marginBottom:7,fontSize:8}}>CONTINENTS</div>
+            {CN.map((n,i)=>(<div key={n} style={{display:"flex",alignItems:"center",gap:5,marginBottom:3}}><div style={{width:9,height:9,background:CONT[i].active,border:"1.5px solid "+CC[i],borderRadius:2}}/><span style={{color:"#1e3a56",fontWeight:500}}>{n}</span></div>))}
+            <div style={{borderTop:"1px solid #0b1e34",marginTop:7,paddingTop:6}}>
+              {[{bg:"#062338",st:"#0ea5e9",l:"Spots à explorer"},{bg:"#2c1b04",st:"#f59e0b",l:"En cours"},{bg:"#0a2c18",st:"#22c55e",l:"Accompli"}].map(x=>(
+                <div key={x.l} style={{display:"flex",alignItems:"center",gap:5,marginBottom:2.5}}><div style={{width:9,height:9,background:x.bg,border:"1.5px solid "+x.st,borderRadius:2}}/><span style={{color:"#1e3a56",fontWeight:400}}>{x.l}</span></div>
+              ))}
+            </div>
+            <div style={{color:"#0a1e30",marginTop:6,fontSize:8}}>Drag = tourner · Scroll = zoom</div>
+          </div>)}
+          {!selectedCountry&&!loading&&(<div style={{position:"absolute",bottom:"44%",left:"50%",transform:"translateX(-50%)",pointerEvents:"none"}}>
+            <div style={{fontSize:9,color:"#0d2540",fontWeight:700,letterSpacing:".3em",animation:"pulse 3s ease infinite"}}>CLIQUEZ SUR UN PAYS</div>
+          </div>)}
+        </div>
+
+        {/* ── SIDEBAR ── */}
+        <div style={{...(isMobile?{position:"fixed",bottom:0,left:0,right:0,width:"100%",height:selectedCountry?"75vh":"0px",borderTop:"2px solid #0d2540",borderRadius:"16px 16px 0 0",transition:"height .3s ease",zIndex:200}:{width:selectedCountry?420:0,transition:"width .28s ease"}),overflow:"hidden",background:"#020e1c",borderLeft:isMobile?"none":"1px solid #0b1e34",display:"flex",flexDirection:"column",flexShrink:0}}>
+          <div style={{width:isMobile?"100%":420,height:"100%",display:"flex",flexDirection:"column"}}>
+
+            {/* Country header */}
+            <div key={"h"+animKey} className="slid" style={{padding:"16px 16px 14px",borderBottom:"1px solid #0b1e34",background:"linear-gradient(160deg,#030e1c,#05182e)",flexShrink:0}}>
+              <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8,marginBottom:11}}>
+                <div>
+                  <div style={{fontWeight:900,fontSize:24,color:"#e4f0fc",letterSpacing:"-.02em",lineHeight:1.05}}>{filter==="liked"?"♥ Mes coups de coeur":selectedName}</div>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginTop:6}}>
+                    {selectedCountry&&<span style={{fontSize:9,fontWeight:800,padding:"2px 9px",borderRadius:4,background:CC[ci]+"15",color:CC[ci],border:"1px solid "+CC[ci]+"30",letterSpacing:".08em"}}>{CN[ci]}</span>}
+                    <span style={{fontSize:10,color:"#1e3a56",fontWeight:500}}>{sideSpots.length} exp.{sideSpots.length>0&&<span style={{color:sideSpots.filter(s=>s.done).length>0?"#22c55e":"#1e3a56"}}> · {sideSpots.filter(s=>s.done).length} accomplie{sideSpots.filter(s=>s.done).length!==1?"s":""}</span>}</span>
+                  </div>
+                </div>
+                <button onClick={()=>setSelectedCountry(null)} style={{background:"#0b1e34",border:"1px solid #142840",borderRadius:6,width:28,height:28,color:"#3a6080",cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontWeight:300}}>×</button>
+              </div>
+              {sideSpots.length>0&&(<div style={{marginBottom:11}}><div style={{height:3,background:"#0b1e34",borderRadius:2,overflow:"hidden"}}><div style={{width:pct(sideSpots.filter(function(s){return s.done;}).length,sideSpots.length),height:"100%",background:"linear-gradient(90deg,#0ea5e9,#22c55e)",transition:"width .5s",borderRadius:2}}/></div></div>)}
+              <div style={{display:"flex",gap:6}}>
+                <button className="btn" onClick={()=>setShowModal(true)} style={{flex:1,background:"linear-gradient(135deg,#0c4880,#072a56)",border:"1px solid #1060a840",borderRadius:8,padding:"10px",color:"#7ec8f0",fontWeight:800,fontSize:10,letterSpacing:".1em",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                  <span style={{fontSize:13,fontWeight:300}}>+</span> AJOUTER
+                </button>
+                <button className="btn" onClick={exportSpots} title="Exporter mes spots" style={{background:"#060f1e",border:"1px solid #0b2040",borderRadius:8,padding:"10px 12px",color:"#2a6080",fontWeight:700,fontSize:14,cursor:"pointer"}}>↓</button>
+                <button className="btn" onClick={()=>{ const inp=document.createElement('input'); inp.type='file'; inp.accept='.json'; inp.onchange=importSpots; inp.click(); }} title="Importer des spots" style={{background:"#060f1e",border:"1px solid #0b2040",borderRadius:8,padding:"10px 12px",color:"#2a6080",fontWeight:700,fontSize:14,cursor:"pointer"}}>↑</button>
+              </div>
+            </div>
+
+            {/* Spots */}
+            <div style={{padding:"8px 12px 0",borderBottom:"1px solid #0b1e34",flexShrink:0}}>
+              <div style={{display:"flex",gap:6,float:"right",marginTop:2}}>
+              <button onClick={()=>toggleVisited(selectedCountry)}
+                title={visitedCountries[selectedCountry]?"Pays visité — cliquer pour retirer":"Marquer ce pays comme visité"}
+                style={{background:visitedCountries[selectedCountry]?"#0a2c18":"#06122a",border:"1px solid "+(visitedCountries[selectedCountry]?"#22c55e":"#0d2038"),borderRadius:7,padding:"4px 9px",color:visitedCountries[selectedCountry]?"#22c55e":"#2a6080",fontWeight:700,fontSize:13,cursor:"pointer"}}>
+                {visitedCountries[selectedCountry]?"✓ Visité":"Visité?"}
+              </button>
+              <button onClick={()=>setShowWeather(true)} title="Météo détaillée" style={{background:"#06122a",border:"1px solid #0d2038",borderRadius:7,padding:"4px 9px",color:"#38bdf8",fontWeight:700,fontSize:13,cursor:"pointer"}}>🌤</button>
+            </div>
+              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Rechercher un spot..." style={{width:"100%",background:"#06122a",border:"1px solid #0d2038",borderRadius:8,padding:"8px 12px",color:"#c0d8f0",fontSize:13,marginBottom:8,marginTop:10,outline:"none"}}/>
+
+            </div>
+            <div style={{flex:1,overflowY:"auto",padding:"10px"}}>
+              {filtered.length===0?(
+                <div style={{textAlign:"center",marginTop:60}}>
+                  <div style={{fontSize:28,marginBottom:10,opacity:.2}}>◎</div>
+                  <div style={{fontWeight:800,fontSize:10,letterSpacing:".2em",color:"#0c2040"}}>{sideSpots.length===0?"TERRA INCOGNITA":"AUCUNE CORRESPONDANCE"}</div>
+                  <div style={{fontSize:10,color:"#0a1a2a",marginTop:6,fontWeight:400}}>Cliquez + pour ajouter une expérience</div>
+                </div>
+              ):(
+                filtered.map((spot,i)=>{
+                  const c=Cat(spot.category);
+                  return(
+                    <div key={spot.id} className="sc rise"
+                      onClick={()=>{ setDetailSpot(spot); setImgErr(false); }}
+                      style={{background:"#040e1e",border:"1px solid "+(spot.done?"#1a4428":"#0c1e34"),borderRadius:10,padding:"14px 14px 12px",marginBottom:9,opacity:spot.done?0.55:1,borderLeft:"4px solid "+(spot.done?"#22c55e80":c.color+"90"),animationDelay:""+(i*.04)+"s"}}>
+                      <div style={{display:"flex",alignItems:"flex-start",gap:10}}>
+                        <button className="chk" onClick={e=>{e.stopPropagation();toggleDone(selectedCountry,spot.id)}}
+                          style={{width:22,height:22,borderRadius:"50%",flexShrink:0,border:"2px solid "+(spot.done?"#22c55e":"#1a3a5a"),background:spot.done?"#22c55e":"transparent",display:"flex",alignItems:"center",justifyContent:"center",color:spot.done?"#020c1a":"transparent",fontSize:11,marginTop:2,fontWeight:900}}>✓</button>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{marginBottom:6}}><span style={{fontSize:8.5,fontWeight:700,background:c.color+"15",color:c.color,padding:"2.5px 8px",borderRadius:4,border:"1px solid "+c.color+"25",letterSpacing:".04em"}}>{c.icon} {c.label}</span></div>
+                          <div style={{fontSize:20,fontWeight:800,color:spot.done?"#1e3a56":"#d8eef8",lineHeight:1.2,textDecoration:spot.done?"line-through":"none",marginBottom:5,letterSpacing:"-.01em"}}>{spot.name}</div>
+                          {filter==="liked"&&spot._cid&&NM[spot._cid]&&<div style={{fontSize:11,color:"#2a5070",marginBottom:4,fontWeight:600}}>📍 {NM[spot._cid]}</div>}
+                          <div style={{fontSize:15,color:"#2a5070",fontWeight:400,lineHeight:1.55}}>{spot.desc}</div>
+                          {spot.season&&<div style={{marginTop:7,display:"flex",alignItems:"center",gap:5}}><span style={{fontSize:8.5,fontWeight:600,color:"#0d2840",background:"#0a1e30",padding:"2px 7px",borderRadius:4,border:"1px solid #0e2844"}}>🗓 {spot.season}</span></div>}
+                          <div style={{marginTop:6,fontSize:9,fontWeight:700,color:"#0d3050",letterSpacing:".06em"}}>VOIR LES DÉTAILS →</div>
+                        </div>
+                        <button className="del" onClick={e=>{e.stopPropagation();setDeleteConfirm({cid:selectedCountry,sid:spot.id,name:spot.name});}}
+                          style={{background:"rgba(248,113,113,.08)",border:"1px solid rgba(248,113,113,.2)",borderRadius:5,width:24,height:24,color:"#f87171",cursor:"pointer",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>×</button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── DETAIL MODAL ── */}
+      {detailSpot&&!modalErr&&detailSpot.id&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.88)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,backdropFilter:"blur(12px)",padding:"16px"}}
+          onClick={()=>setDetailSpot(null)}>
+          <div style={{background:"#030e1c",border:"1px solid #0d2540",borderRadius:16,width:"min(640px,96vw)",maxHeight:"88vh",overflow:"auto",boxShadow:"0 30px 80px rgba(0,0,0,.9)",animation:"modIn .22s ease both"}}
+            onClick={e=>e.stopPropagation()}>
+            <div style={{position:"relative",height:260,background:"#071424",overflow:"hidden",borderRadius:"16px 16px 0 0",flexShrink:0}}>
+              {!imgErr
+                ? <SpotImg
+                  spotName={detailSpot.name}
+                  photoKey={detailSpot.photo}
+                  countryName={selectedName}
+                  category={detailSpot.category}
+                  style={{width:"100%",height:"100%",objectFit:"cover",opacity:0.9}}/>
+                : <div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",background:"radial-gradient(circle at 40% 40%,#0c2a44,#020c1a)"}}><span style={{fontSize:64}}>{Cat(detailSpot.category).icon}</span></div>
+              }
+              <div style={{position:"absolute",inset:0,background:"linear-gradient(to top,#030e1c 0%,rgba(3,14,28,.2) 55%,transparent 100%)"}}/>
+              <div style={{position:"absolute",top:14,left:14,right:14,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                <span style={{fontSize:9,fontWeight:800,background:Cat(detailSpot.category).color+"22",color:Cat(detailSpot.category).color,padding:"4px 11px",borderRadius:5,border:"1px solid "+Cat(detailSpot.category).color+"38",letterSpacing:".07em"}}>{Cat(detailSpot.category).icon} {Cat(detailSpot.category).label}</span>
+                <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                <button onClick={function(e){ e.stopPropagation(); toggleLike(detailSpot.id); }}
+                  style={{background:liked[detailSpot.id]?"rgba(244,63,94,.15)":"rgba(2,12,26,.75)",border:"1px solid "+(liked[detailSpot.id]?"#f43f5e":"#0d2540"),borderRadius:7,width:36,height:36,color:liked[detailSpot.id]?"#f43f5e":"#5a90b8",cursor:"pointer",fontSize:20,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                  {liked[detailSpot.id]?"♥":"♡"}
+                </button>
+                <button onClick={()=>setDetailSpot(null)} style={{background:"rgba(2,12,26,.75)",border:"1px solid #0d2540",borderRadius:7,width:32,height:32,color:"#5a90b8",cursor:"pointer",fontSize:17,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:300}}>×</button>
+              </div>
+              </div>
+              <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"18px 22px 22px"}}>
+                <div style={{fontSize:8.5,fontWeight:800,color:CC[selectedCountry?gc(selectedCountry):0],letterSpacing:".12em",marginBottom:6}}>{selectedName} · {CN[selectedCountry?gc(selectedCountry):0]}</div>
+                <div style={{fontSize:22,fontWeight:900,color:"#e8f4fc",lineHeight:1.15,letterSpacing:"-.02em"}}>{detailSpot.name||""}</div>
+              </div>
+            </div>
+            <div style={{padding:"20px 22px 26px"}}>
+              {safeStr(detailSpot.desc)&&<div style={{fontSize:14,fontWeight:500,color:"#3a6a8a",marginBottom:16,lineHeight:1.55}}>{detailSpot.desc}</div>}
+              {safeStr(detailSpot.why)&&(
+                <div style={{background:"#06142a",border:"1px solid #0d2a44",borderLeft:"3px solid #0ea5e9",borderRadius:10,padding:"14px 16px",marginBottom:14}}>
+                  <div style={{fontSize:8,fontWeight:800,color:"#0ea5e9",letterSpacing:".16em",marginBottom:8}}>POURQUOI C'EST EXCEPTIONNEL</div>
+                  <div style={{fontSize:13,fontWeight:400,color:"#7aaccf",lineHeight:1.8}}>{detailSpot.why}</div>
+                </div>
+              )}
+              {(detailSpot.season||detailSpot.tip)&&(
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:18}}>
+                  {safeStr(detailSpot.season)&&(<div style={{background:"#050f1e",border:"1px solid #0d2038",borderRadius:8,padding:"12px 14px"}}><div style={{fontSize:8,fontWeight:800,color:"#0ea5e9",letterSpacing:".12em",marginBottom:6}}>🗓 MEILLEURE SAISON</div><div style={{fontSize:12,fontWeight:600,color:"#4a80a0",lineHeight:1.55}}>{detailSpot.season}</div></div>)}
+                  {safeStr(detailSpot.tip)&&(<div style={{background:"#050f1e",border:"1px solid #0d2038",borderRadius:8,padding:"12px 14px"}}><div style={{fontSize:8,fontWeight:800,color:"#0ea5e9",letterSpacing:".12em",marginBottom:6}}>💡 CONSEIL</div><div style={{fontSize:12,fontWeight:600,color:"#4a80a0",lineHeight:1.55}}>{detailSpot.tip}</div></div>)}
+                </div>
+              )}
+              <button className="btn" onClick={()=>{ toggleDone(selectedCountry,detailSpot.id); setDetailSpot(function(s){ return Object.assign({},s,{done:!s.done}); }); }}
+                style={{width:"100%",background:detailSpot.done?"linear-gradient(135deg,#0b2e1a,#062014)":"linear-gradient(135deg,#0c4880,#072a56)",border:"2px solid "+(detailSpot.done?"#22c55e40":"#1060a840"),borderRadius:10,padding:"14px",color:detailSpot.done?"#22c55e":"#7ec8f0",fontWeight:800,fontSize:12,letterSpacing:".1em",display:"flex",alignItems:"center",justifyContent:"center",gap:9}}>
+                {detailSpot.done?"✓ ACCOMPLI — CLIQUER POUR ANNULER":"○ MARQUER COMME ACCOMPLI"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── ADD MODAL ── */}
+      {showModal&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.8)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:999,backdropFilter:"blur(10px)",padding:"16px"}} onClick={()=>setShowModal(false)}>
+          <div className="rise" style={{background:"#030e1c",border:"1px solid #0d2540",borderRadius:14,padding:"22px",width:440,maxWidth:"96vw",maxHeight:"90vh",overflowY:"auto",boxShadow:"0 30px 80px rgba(0,0,0,.9)"}} onClick={e=>e.stopPropagation()}>
+            <div style={{marginBottom:18}}><div style={{fontWeight:900,fontSize:18,color:"#e4f0fc",letterSpacing:"-.01em"}}>Nouvelle expérience</div><div style={{fontSize:11,color:"#1e3a56",fontWeight:600,marginTop:3}}>{selectedName} · {CN[ci]}</div></div>
+            {[{k:"name",l:"NOM",req:true,ph:"Ex: Nager avec les raies mantas…",r:1},{k:"desc",l:"DESCRIPTION COURTE",ph:"Résumé accrocheur en une phrase",r:1},{k:"why",l:"POURQUOI C'EST EXCEPTIONNEL",ph:"Ce qui rend ce spot unique au monde…",r:3},{k:"season",l:"MEILLEURE SAISON",ph:"Ex: Juin–Octobre",r:1},{k:"tip",l:"CONSEIL PRATIQUE",ph:"Comment y accéder, opérateurs…",r:2},{k:"photo",l:"MOTS-CLÉS PHOTO (EN ANGLAIS)",ph:"Ex: whale shark ocean blue",r:1}].map(f=>(
+              <div key={f.k} style={{marginBottom:11}}>
+                <div style={{fontSize:8.5,fontWeight:700,color:f.req?"#0ea5e9":"#1e3a56",letterSpacing:".1em",marginBottom:4}}>{f.l}{f.req?" *":""}</div>
+                {f.r===1
+                  ?<input value={form[f.k]} onChange={e=>setForm(p=>({...p,[f.k]:e.target.value}))} placeholder={f.ph} style={{width:"100%",background:"#06122a",border:"1px solid #0d2038",borderRadius:7,padding:"9px 12px",color:"#c0d8f0",fontSize:13,fontWeight:500}}/>
+                  :<textarea value={form[f.k]} onChange={e=>setForm(p=>({...p,[f.k]:e.target.value}))} placeholder={f.ph} rows={f.r} style={{width:"100%",background:"#06122a",border:"1px solid #0d2038",borderRadius:7,padding:"9px 12px",color:"#c0d8f0",fontSize:12,fontWeight:400,resize:"vertical",lineHeight:1.55}}/>
+                }
+              </div>
+            ))}
+            <div style={{fontSize:8.5,fontWeight:700,color:"#1e3a56",letterSpacing:".1em",marginBottom:7}}>CATÉGORIE</div>
+            <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:18}}>
+              {CATS.filter(c=>c.id!=="all").map(c=>(
+                <button key={c.id} onClick={()=>setForm(p=>({...p,category:c.id}))} style={{background:form.category===c.id?c.color+"18":"transparent",border:"1px solid "+(form.category===c.id?c.color+"55":"#0d2038"),borderRadius:6,padding:"5px 10px",color:form.category===c.id?c.color:"#1e3a56",fontSize:10,fontWeight:form.category===c.id?800:500,cursor:"pointer",transition:"all .15s"}}>{c.icon} {c.label}</button>
+              ))}
+            </div>
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={()=>setShowModal(false)} style={{flex:1,background:"transparent",border:"1px solid #0d2038",borderRadius:7,padding:"10px",color:"#1e3a56",cursor:"pointer",fontSize:10,fontWeight:600,letterSpacing:".06em"}}>ANNULER</button>
+              <button className="btn" onClick={addSpot} disabled={!form.name.trim()} style={{flex:2,background:form.name.trim()?"linear-gradient(135deg,#0c4880,#072a56)":"#050f1e",border:"1px solid "+(form.name.trim()?"#1060a840":"#0a1e30"),borderRadius:7,padding:"10px",color:form.name.trim()?"#7ec8f0":"#0d2540",fontSize:10,fontWeight:800,letterSpacing:".1em",cursor:form.name.trim()?"pointer":"not-allowed"}}>AJOUTER À L'ATLAS</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      
+      
+      
+      
+            
+      {/* ── BADGES MODAL ── */}
+      {showBadges&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,backdropFilter:"blur(12px)",padding:"16px"}}
+          onClick={()=>setShowBadges(false)}>
+          <div style={{background:"#030e1c",border:"1px solid #0d2540",borderRadius:16,width:"min(700px,96vw)",maxHeight:"90vh",overflow:"auto",padding:"24px"}}
+            onClick={function(e){e.stopPropagation();}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+              <div>
+                <div style={{fontWeight:900,fontSize:22,color:"#e4f0fc"}}>🏅 Badges & Défis</div>
+                <div style={{fontSize:12,color:"#2a5070",marginTop:2}}>Accomplis des spots pour débloquer des badges</div>
+              </div>
+              <button onClick={()=>setShowBadges(false)} style={{background:"#0b1e34",border:"1px solid #142840",borderRadius:8,width:32,height:32,color:"#3a6080",cursor:"pointer",fontSize:18}}>×</button>
+            </div>
+            {BadgesContent({spots:spots,liked:liked,visitedCountries:visitedCountries})}
+          </div>
+        </div>
+      )}
+
+      {/* ── GLOBAL SEARCH MODAL ── */}
+      {showGlobalSearch&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,backdropFilter:"blur(12px)",padding:"16px"}}
+          onClick={()=>setShowGlobalSearch(false)}>
+          <div style={{background:"#030e1c",border:"1px solid #0d2540",borderRadius:16,width:"min(800px,96vw)",maxHeight:"90vh",display:"flex",flexDirection:"column",overflow:"hidden"}}
+            onClick={function(e){e.stopPropagation();}}>
+            <div style={{padding:"20px 24px 16px",borderBottom:"1px solid #0b1e34",flexShrink:0}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                <div style={{fontWeight:900,fontSize:22,color:"#e4f0fc"}}>🔍 Recherche globale</div>
+                <button onClick={()=>setShowGlobalSearch(false)} style={{background:"#0b1e34",border:"1px solid #142840",borderRadius:8,width:32,height:32,color:"#3a6080",cursor:"pointer",fontSize:18}}>×</button>
+              </div>
+              <input autoFocus value={globalQuery} onChange={e=>setGlobalQuery(e.target.value)}
+                placeholder="Ex: gorille, volcan, plongée, aurora..."
+                style={{width:"100%",background:"#06122a",border:"2px solid #e879f9",borderRadius:10,padding:"12px 16px",color:"#e4f0fc",fontSize:15,outline:"none"}}
+              />
+              {globalQuery.length>1&&<div style={{fontSize:12,color:"#4a90b0",marginTop:8}}>{sortedResults.length} spot{sortedResults.length>1?"s":""} trouvé{sortedResults.length>1?"s":""} dans tous les pays</div>}
+            </div>
+            <div style={{overflowY:"auto",padding:"12px 16px 20px"}}>
+              {globalQuery.length<2&&(
+                <div style={{textAlign:"center",padding:"40px 20px",color:"#1a3a56"}}>
+                  <div style={{fontSize:48,marginBottom:12}}>🌍</div>
+                  <div style={{fontSize:14}}>Tape au moins 2 caractères pour chercher dans les 9600+ spots</div>
+                  <div style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"center",marginTop:16}}>
+                    {["gorille","volcan","requin","aurora","desert","jungle","glacier","corail","temple","waterfall"].map(function(tag){return(
+                      <button key={tag} onClick={()=>setGlobalQuery(tag)}
+                        style={{background:"#06122a",border:"1px solid #0d2038",borderRadius:20,padding:"6px 14px",color:"#4a7898",fontSize:12,cursor:"pointer",fontWeight:600}}>
+                        {tag}
+                      </button>
+                    );})}
+                  </div>
+                </div>
+              )}
+              {globalQuery.length>=2&&sortedResults.length===0&&(
+                <div style={{textAlign:"center",padding:"40px",color:"#1a3a56"}}>
+                  <div style={{fontSize:32,marginBottom:8}}>😕</div>
+                  <div>Aucun résultat pour "{globalQuery}"</div>
+                  <div style={{fontSize:12,marginTop:8}}>Essaie en anglais ou avec un terme plus général</div>
+                </div>
+              )}
+              {globalQuery.length>=2&&sortedResults.length>0&&sortedResults.map(function(item){
+                var s=item.s; var cid=item.cid; var ci=gc(cid);
+                var cat=Cat(s.category);
+                var nm=norm(s.name).includes(norm(globalQuery));
+                return(
+                  <div key={(s.id||s.name)+cid} onClick={function(){goToCountry(cid);}}
+                    className="btn"
+                    style={{display:"flex",alignItems:"stretch",marginBottom:5,borderRadius:10,overflow:"hidden",border:"1px solid "+(nm?cat.color+"55":"#0c1e34"),cursor:"pointer"}}>
+                    <div style={{width:120,minWidth:120,background:CC[ci]+"1a",borderRight:"2px solid "+CC[ci]+"44",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"8px 6px",gap:3}}>
+                      <div style={{width:8,height:8,borderRadius:"50%",background:CC[ci]}}/>
+                      <div style={{fontSize:11,fontWeight:800,color:CC[ci],textAlign:"center",lineHeight:1.2}}>{NM[cid]||cid}</div>
+                      <div style={{fontSize:9,color:"#2a5070",textAlign:"center"}}>{CN[ci]}</div>
+                    </div>
+                    <div style={{flex:1,minWidth:0,padding:"10px 12px",background:nm?"#06112a":"#040e1e"}}>
+                      <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4}}>
+                        <span style={{background:cat.color+"22",color:cat.color,borderRadius:4,padding:"2px 7px",fontSize:10,fontWeight:700}}>{cat.icon} {cat.label}</span>
+                        {liked[s.id]&&<span style={{color:"#f43f5e",fontSize:12}}>♥</span>}
+                        {s.done&&<span style={{color:"#22c55e",fontSize:12}}>✓</span>}
+                      </div>
+                      <div style={{fontSize:13,fontWeight:nm?800:700,color:nm?"#e4f0fc":"#b8d0e8",marginBottom:3}}>{s.name}</div>
+                      <div style={{fontSize:11,color:"#2a5070",lineHeight:1.4,marginBottom:3}}>{s.desc}</div>
+                      {s.season&&<div style={{fontSize:10,color:"#1a3a56"}}>📅 {s.season}</div>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── STATS MODAL ── */}
+      {showStats&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,backdropFilter:"blur(12px)",padding:"16px"}}
+          onClick={()=>setShowStats(false)}>
+          <div style={{background:"#030e1c",border:"1px solid #0d2540",borderRadius:16,width:"min(700px,96vw)",maxHeight:"90vh",overflow:"auto",padding:"24px"}}
+            onClick={function(e){e.stopPropagation();}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
+              <div style={{fontWeight:900,fontSize:22,color:"#e4f0fc"}}>📊 Mes statistiques</div>
+              <button onClick={()=>setShowStats(false)} style={{background:"#0b1e34",border:"1px solid #142840",borderRadius:8,width:32,height:32,color:"#3a6080",cursor:"pointer",fontSize:18}}>×</button>
+            </div>
+            {React.createElement(function(){
+              var totalSpots = Object.values(spots).reduce(function(a,b){return a+b.length;},0);
+              var doneSpots = Object.values(spots).reduce(function(a,b){return a+b.filter(function(s){return s.done;}).length;},0);
+              var likedCount = Object.keys(liked).length;
+              var visitedCount = Object.keys(visitedCountries).length;
+              var totalCountries = Object.keys(spots).length;
+              var doneCountries = Object.keys(spots).filter(function(cid){ return spots[cid].every(function(s){return s.done;}); }).length;
+              var continentStats = CN.map(function(name,ci){
+                var cids = Object.keys(spots).filter(function(cid){ return gc(cid)===ci; });
+                var visited = cids.filter(function(cid){ return visitedCountries[cid]; }).length;
+                var done = cids.filter(function(cid){ return spots[cid] && spots[cid].every(function(s){return s.done;}); }).length;
+                return {name:name, ci:ci, total:cids.length, visited:visited, done:done};
+              });
+              return (
+                <div>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:12,marginBottom:24}}>
+                    {[
+                      {icon:"🌍",label:"Pays avec spots",val:totalCountries,total:195,color:"#a78bfa"},
+                      {icon:"✅",label:"Pays complétés",val:doneCountries,total:totalCountries,color:"#22c55e"},
+                      {icon:"✈️",label:"Pays visités",val:visitedCount,total:195,color:"#38bdf8"},
+                      {icon:"♥",label:"Spots likés",val:likedCount,total:totalSpots,color:"#f43f5e"},
+                      {icon:"⭐",label:"Spots accomplis",val:doneSpots,total:totalSpots,color:"#0ea5e9"},
+                      {icon:"🗺️",label:"Total spots",val:totalSpots,total:totalSpots,color:"#f59e0b"},
+                    ].map(function(stat,i){ return (
+                      <div key={i} style={{background:"#040e1e",border:"1px solid #0c1e34",borderRadius:12,padding:"16px"}}>
+                        <div style={{fontSize:22,marginBottom:6}}>{stat.icon}</div>
+                        <div style={{fontSize:28,fontWeight:900,color:stat.color}}>{stat.val}</div>
+                        <div style={{fontSize:11,color:"#2a5070",marginBottom:8}}>{stat.label}</div>
+                        <div style={{height:4,background:"#0b1e34",borderRadius:2,overflow:"hidden"}}>
+                          <div style={{width:pct(stat.val,stat.total),height:"100%",background:stat.color,transition:"width .6s",borderRadius:2}}/>
+                        </div>
+                        <div style={{fontSize:10,color:"#1a3a56",marginTop:4}}>{stat.total>0?Math.round(stat.val/stat.total*100):0}%</div>
+                      </div>
+                    ); })}
+                  </div>
+                  <div style={{fontSize:13,fontWeight:800,color:"#4a90b0",letterSpacing:".08em",marginBottom:12}}>PAR CONTINENT</div>
+                  {continentStats.map(function(cs){ return (
+                    <div key={cs.ci} style={{marginBottom:10}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                        <div style={{display:"flex",alignItems:"center",gap:8}}>
+                          <div style={{width:10,height:10,borderRadius:"50%",background:CC[cs.ci]}}/>
+                          <span style={{fontSize:13,fontWeight:700,color:"#d8eef8"}}>{cs.name}</span>
+                        </div>
+                        <span style={{fontSize:12,color:"#2a5070"}}><span style={{color:"#38bdf8",fontWeight:700}}>{cs.visited}</span> visités · <span style={{color:"#22c55e",fontWeight:700}}>{cs.done}</span> complétés / {cs.total} pays</span>
+                      </div>
+                      <div style={{height:8,background:"#0b1e34",borderRadius:4,overflow:"hidden",position:"relative"}}>
+                        <div style={{position:"absolute",left:0,top:0,height:"100%",width:pct(cs.visited,cs.total),background:CC[cs.ci],opacity:"0.5",transition:"width .6s"}}/>
+                        <div style={{position:"absolute",left:0,top:0,height:"100%",width:pct(cs.done,cs.total),background:CC[cs.ci],transition:"width .6s"}}/>
+                      </div>
+                    </div>
+                  ); })}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── COUNTRY LIST MODAL ── */}
+      {showCountryList&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,backdropFilter:"blur(12px)",padding:"16px"}}
+          onClick={()=>setShowCountryList(false)}>
+          <div style={{background:"#030e1c",border:"1px solid #0d2540",borderRadius:16,width:"min(900px,96vw)",maxHeight:"90vh",display:"flex",flexDirection:"column",overflow:"hidden"}}
+            onClick={function(e){e.stopPropagation();}}>
+            <div style={{padding:"20px 24px 12px",borderBottom:"1px solid #0b1e34",flexShrink:0}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                <div style={{fontWeight:900,fontSize:22,color:"#e4f0fc"}}>🌍 Tous les pays</div>
+                <button onClick={()=>setShowCountryList(false)} style={{background:"#0b1e34",border:"1px solid #142840",borderRadius:8,width:32,height:32,color:"#3a6080",cursor:"pointer",fontSize:18}}>×</button>
+              </div>
+              <input
+                value={countrySearch}
+                onChange={e=>setCountrySearch(e.target.value)}
+                placeholder="🔍 Rechercher un pays..."
+                style={{width:"100%",background:"#06122a",border:"1px solid #0d2038",borderRadius:8,padding:"8px 14px",color:"#c0d8f0",fontSize:13,outline:"none"}}
+              />
+            </div>
+            <div style={{overflowY:"auto",padding:"12px 24px 20px"}}>
+              {CN.map(function(contName, ci){
+                var countries = Object.keys(NM).filter(function(cid){
+                  return gc(cid)===ci && (
+                    !countrySearch ||
+                    NM[cid].toLowerCase().includes(countrySearch.toLowerCase())
+                  );
+                }).sort(function(a,b){ return NM[a].localeCompare(NM[b]); });
+                if(countries.length===0) return null;
+                return (
+                  <div key={ci} style={{marginBottom:16}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,paddingBottom:6,borderBottom:"1px solid #0d2038"}}>
+                      <div style={{width:10,height:10,borderRadius:"50%",background:CC[ci]}}/>
+                      <span style={{fontSize:12,fontWeight:800,color:CC[ci],letterSpacing:".1em"}}>{contName.toUpperCase()}</span>
+                      <span style={{fontSize:11,color:"#1a3a56"}}>{countries.length} pays</span>
+                    </div>
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:6}}>
+                      {countries.map(function(cid){
+                        var hasSpots = spots[cid] && spots[cid].length>0;
+                        var done = hasSpots ? spots[cid].filter(function(s){return s.done;}).length : 0;
+                        var total = hasSpots ? spots[cid].length : 0;
+                        var isSelected = selectedCountry===cid;
+                        return (
+                          <div key={cid}
+                            onClick={function(){
+                              setShowCountryList(false);
+                              setSelectedCountry(cid);
+                              setSelectedName(NM[cid]);
+                              setAnimKey(function(k){return k+1;});
+                              // Rotate globe to country
+                              var coord = COORDS[cid];
+                              if(coord && projRef.current){
+                                var parts = coord.split(",");
+                                var lat = parseFloat(parts[0]);
+                                var lon = parseFloat(parts[1]);
+                                rotateRef.current = [-lon, -lat];
+                                projRef.current.rotate(rotateRef.current);
+                                autoSpinRef.current = false;
+                                clearTimeout(resumeRef.current);
+                                resumeRef.current = setTimeout(function(){ autoSpinRef.current=true; }, 5000);
+                              }
+                            }}
+                            className="btn"
+                            style={{
+                              background:isSelected?"#0c2848":(visitedCountries[cid]?"#062318":(hasSpots?"#040e1e":"#020810")),
+                              border:"1px solid "+(isSelected?"#0ea5e9":(visitedCountries[cid]?"#22c55e55":(hasSpots?CC[ci]+"44":"#0a1828"))),
+                              borderRadius:8,padding:"10px 12px",cursor:"pointer",
+                              transition:"all .15s"
+                            }}>
+                            <div style={{fontSize:13,fontWeight:700,color:isSelected?"#38bdf8":(hasSpots?"#d8eef8":"#2a4060"),marginBottom:hasSpots?3:0}}>{NM[cid]}</div>
+                            {hasSpots&&(
+                              <div style={{display:"flex",alignItems:"center",gap:6}}>
+                                <div style={{flex:1,height:3,background:"#0b1e34",borderRadius:2,overflow:"hidden"}}>
+                                  <div style={{width:pct(done,total),height:"100%",background:done===total&&total>0?"#22c55e":"#0ea5e9",transition:"width .4s"}}/>
+                                </div>
+                                <span style={{fontSize:10,color:done>0?"#4ade80":"#1a3a56",fontWeight:600,flexShrink:0}}>{done}/{total}</span>
+                              </div>
+                            )}
+                            {!hasSpots&&<div style={{fontSize:10,color:"#0a1828"}}>Aucun spot</div>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── WEATHER MODAL ── */}
+      {showWeather&&selectedCountry&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.88)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,backdropFilter:"blur(12px)",padding:"16px"}}
+          onClick={()=>setShowWeather(false)}>
+          <div style={{background:"#030e1c",border:"1px solid #0d2540",borderRadius:16,width:"min(760px,96vw)",maxHeight:"90vh",overflow:"auto",padding:"24px"}}
+            onClick={function(e){e.stopPropagation();}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
+              <div>
+                <div style={{fontWeight:900,fontSize:22,color:"#e4f0fc"}}>{selectedName}</div>
+                <div style={{display:"flex",gap:4,marginTop:6,flexWrap:"wrap",alignItems:"center"}}>
+                  {(weatherCache[selectedCountry]?weatherCache[selectedCountry].scores:getWeather(selectedCountry)).map(function(sc,i){
+                    return sc>=4?<span key={i} style={{background:WC[sc],color:"#020c1a",borderRadius:4,padding:"2px 7px",fontSize:11,fontWeight:800}}>{MN[i]}</span>:null;
+                  })}
+                  <span style={{fontSize:11,color:"#2a5070",marginLeft:4}}>meilleurs mois</span>
+                  {weatherLoading&&<span style={{fontSize:11,color:"#0ea5e9",marginLeft:8}}>⟳ Chargement...</span>}
+                  {weatherCache[selectedCountry]&&<span style={{fontSize:10,color:"#22c55e",marginLeft:8}}>✓ Open-Meteo</span>}
+                </div>
+                <div style={{fontSize:12,color:"#2a5070",marginTop:4}}>Comparatif météo mensuel</div>
+              </div>
+              <button onClick={()=>setShowWeather(false)} style={{background:"#0b1e34",border:"1px solid #142840",borderRadius:8,width:32,height:32,color:"#3a6080",cursor:"pointer",fontSize:18,flexShrink:0}}>×</button>
+            </div>
+            <div style={{overflowX:"auto"}}>
+              <table style={{width:"100%",borderCollapse:"separate",borderSpacing:"3px"}}>
+                <thead><tr>
+                  <td style={{color:"#2a5070",fontSize:11,fontWeight:700,paddingBottom:8,width:110}}>Indicateur</td>
+                  {MN.map(function(m,i){ var sc=(weatherCache[selectedCountry]?weatherCache[selectedCountry].scores:getWeather(selectedCountry))[i]; return <th key={m} style={{color:WC[sc],fontSize:11,fontWeight:800,textAlign:"center",width:42,paddingBottom:8}}>{m}</th>; })}
+                </tr></thead>
+                <tbody>
+                  <tr>
+                    <td style={{color:"#2a5070",fontSize:11,paddingBottom:6}}>Météo globale</td>
+                    {(weatherCache[selectedCountry]?weatherCache[selectedCountry].scores:getWeather(selectedCountry)).map(function(sc,i){ return <td key={i} style={{textAlign:"center",paddingBottom:6}}><div style={{background:WC[sc],borderRadius:6,padding:"5px 2px",fontSize:10,fontWeight:800,color:"#020c1a"}}>{WL[sc].slice(0,4)}</div></td>; })}
+                  </tr>
+                  {React.createElement(function(){
+var live=weatherCache[selectedCountry];
+                    var rows=live?[
+                      {label:"🌡 Max (°C)",values:live.tmax.map(function(v){return v!=null?v+"°":"?"}),color:"#f97316"},
+                      {label:"❄ Min (°C)",values:live.tmin.map(function(v){return v!=null?v+"°":"?"}),color:"#38bdf8"},
+                      {label:"🌧 Pluie (mm)",values:live.rain.map(function(v){return v!=null?v:"?"}),color:"#60a5fa"},
+                      {label:"☀ Soleil (h)",values:live.sun.map(function(v){return v!=null?v+"h":"?"}),color:"#fbbf24"},
+                    ]:(WEATHER_DETAIL[selectedCountry]||WEATHER_DETAIL["default"]).map(function(r){ return {label:r.label,values:r.values.map(function(v){return v+(r.unit||"")}),color:r.color}; });
+                    return rows.map(function(row,ri){ return (
+                      <tr key={ri}>
+                        <td style={{color:"#2a5070",fontSize:11,paddingBottom:4,whiteSpace:"nowrap"}}>{row.label}</td>
+                        {row.values.map(function(v,i){ var sc=(weatherCache[selectedCountry]?weatherCache[selectedCountry].scores:getWeather(selectedCountry))[i]; return <td key={i} style={{textAlign:"center",paddingBottom:4}}><div style={{background:"#06122a",borderRadius:5,padding:"5px 2px",fontSize:11,fontWeight:700,color:row.color,border:"1px solid "+WC[sc]+"44"}}>{v}</div></td>; })}
+                      </tr>
+                    ); });
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div style={{marginTop:12,fontSize:10,color:"#1a3a56",textAlign:"center"}}>Données Open-Meteo 2020-2022. Cliquez sur un mois pour filtrer les spots.</div>
+          </div>
+        </div>
+      )}
+
+      {/* ── GLOBAL MONTH MODAL ── */}
+      {showGlobalMonth&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.92)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,backdropFilter:"blur(12px)",padding:"16px"}}
+          onClick={()=>setShowGlobalMonth(false)}>
+          <div style={{background:"#030e1c",border:"1px solid #0d2540",borderRadius:16,width:"min(960px,96vw)",maxHeight:"90vh",overflow:"auto",padding:"24px"}}
+            onClick={function(e){e.stopPropagation();}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+              <div>
+                <div style={{fontWeight:900,fontSize:22,color:"#e4f0fc"}}>🗓 Meilleur moment pour voyager</div>
+                <div style={{fontSize:12,color:"#2a5070",marginTop:2}}>Sélectionne un mois pour voir les meilleures destinations</div>
+              </div>
+              <button onClick={()=>setShowGlobalMonth(false)} style={{background:"#0b1e34",border:"1px solid #142840",borderRadius:8,width:32,height:32,color:"#3a6080",cursor:"pointer",fontSize:18}}>×</button>
+            </div>
+            <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:20}}>
+              {[0,1,2,3,4,5,6,7,8,9,10,11,12].map(function(m){
+                var act=globalMonth===m;
+                return <button key={m} onClick={()=>setGlobalMonth(m)} style={{background:act?"#0ea5e9":"#06122a",border:"1px solid "+(act?"#0ea5e9":"#0d2038"),borderRadius:8,padding:"8px 14px",color:act?"#020c1a":"#4a90b0",fontSize:13,fontWeight:act?800:600,cursor:"pointer"}}>{m===0?"Tous les mois":MN[m-1]}</button>;
+              })}
+            </div>
+            {globalMonth===0&&(
+              <div>
+                {CN.map(function(contName,ci){
+                  var items=WEATHER_KEYS.filter(function(k){return k!=="default"&&NM[k]&&gc(k)===ci;}).map(function(cid){
+                    var sc=getWeather(cid); var best=Math.max.apply(null,sc);
+                    var bm=sc.map(function(s,i){return s===best?MN[i]:null;}).filter(Boolean);
+                    return {cid:cid,name:NM[cid],best:best,bm:bm};
+                  }).sort(function(a,b){return a.name.localeCompare(b.name);});
+                  if(!items.length) return null;
+                  return <div key={ci}>
+                    <div style={{borderBottom:"1px solid #0d2038",paddingBottom:6,marginBottom:8,marginTop:ci>0?16:0}}>
+                      <span style={{fontSize:11,fontWeight:800,color:CC[ci],letterSpacing:".1em"}}>{contName.toUpperCase()}</span>
+                    </div>
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:8,marginBottom:8}}>
+                      {items.map(function(item){return(
+                        <div key={item.cid} onClick={function(){setShowGlobalMonth(false);setSelectedCountry(item.cid);setSelectedName(NM[item.cid]);setAnimKey(function(k){return k+1;});}}
+                          style={{background:"#040e1e",border:"1px solid #0c1e34",borderRadius:10,padding:"12px",cursor:"pointer",transition:"all .15s"}} className="btn">
+                          <div style={{fontSize:13,fontWeight:700,color:"#d8eef8",marginBottom:4}}>{item.name}</div>
+                          <div style={{display:"flex",gap:3,flexWrap:"wrap"}}>
+                            {item.bm.map(function(m){return <span key={m} style={{background:WC[item.best],color:"#020c1a",borderRadius:3,padding:"1px 5px",fontSize:10,fontWeight:800}}>{m}</span>;})}
+                          </div>
+                        </div>
+                      );})}
+                    </div>
+                  </div>;
+                })}
+              </div>
+            )}
+            {globalMonth>0&&(
+              <div>
+                <div style={{fontSize:12,color:"#2a5070",marginBottom:12,fontWeight:700,letterSpacing:".08em"}}>DESTINATIONS EN {MN[globalMonth-1].toUpperCase()} — PAR SCORE MÉTÉO</div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:8}}>
+                  {WEATHER_KEYS.filter(function(k){return k!=="default"&&NM[k];}).map(function(cid){
+                    return {cid:cid,name:NM[cid],sc:getWeather(cid)[globalMonth-1]};
+                  }).sort(function(a,b){return b.sc-a.sc||a.name.localeCompare(b.name);}).map(function(item){return(
+                    <div key={item.cid} onClick={function(){setShowGlobalMonth(false);setSelectedCountry(item.cid);setSelectedName(NM[item.cid]);setAnimKey(function(k){return k+1;});}}
+                      style={{background:"#040e1e",border:"1px solid "+WC[item.sc]+"55",borderRadius:10,padding:"12px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,transition:"all .15s"}} className="btn">
+                      <div style={{width:14,height:14,borderRadius:3,background:WC[item.sc],flexShrink:0}}/>
+                      <div style={{flex:1}}>
+                        <div style={{fontSize:13,fontWeight:700,color:"#d8eef8"}}>{item.name}</div>
+                        <div style={{fontSize:11,color:WC[item.sc],fontWeight:600}}>{WL[item.sc]}</div>
+                      </div>
+                      <div style={{fontSize:10,color:"#1a3a56",flexShrink:0}}>{spots[item.cid]?spots[item.cid].length+" →":"→"}</div>
+                    </div>
+                  );})}
+                </div>
+                <div style={{marginTop:14,padding:"10px 14px",background:"#06122a",borderRadius:8,fontSize:11,color:"#1a4060",borderLeft:"3px solid #0ea5e9"}}>
+                  Données climatiques indicatives. Cliquez sur un pays pour voir ses spots.
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+{/* ── DELETE CONFIRM ── */}
+      {deleteConfirm&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.88)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1001,backdropFilter:"blur(12px)"}} onClick={()=>setDeleteConfirm(null)}>
+          <div className="rise" style={{background:"#030e1c",border:"1px solid #2a1010",borderRadius:14,padding:"28px 24px",width:380,maxWidth:"92vw",textAlign:"center",boxShadow:"0 30px 80px rgba(0,0,0,.9)"}} onClick={e=>e.stopPropagation()}>
+            <div style={{width:52,height:52,background:"rgba(248,113,113,.1)",border:"1px solid rgba(248,113,113,.2)",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px",fontSize:22}}>🗑</div>
+            <div style={{fontWeight:900,fontSize:18,color:"#e4f0fc",marginBottom:9,letterSpacing:"-.01em"}}>Supprimer ce spot ?</div>
+            <div style={{fontWeight:700,fontSize:13,color:"#f87171",marginBottom:10}}>"{deleteConfirm.name}"</div>
+            <div style={{fontSize:12,color:"#1e3a56",fontWeight:400,marginBottom:24,lineHeight:1.65}}>Cette action est irréversible. Ce spot sera définitivement supprimé de votre atlas.</div>
+            <div style={{display:"flex",gap:10}}>
+              <button className="btn" onClick={()=>setDeleteConfirm(null)} style={{flex:1,background:"linear-gradient(135deg,#0c4880,#072a56)",border:"1px solid #1060a840",borderRadius:9,padding:"12px",color:"#7ec8f0",fontWeight:800,fontSize:11,letterSpacing:".06em"}}>NON, GARDER</button>
+              <button className="btn" onClick={()=>{ deleteSpot(deleteConfirm.cid,deleteConfirm.sid); if(detailSpot?.id===deleteConfirm.sid) setDetailSpot(null); setDeleteConfirm(null); }} style={{flex:1,background:"linear-gradient(135deg,#4a0e0e,#2e0808)",border:"1px solid rgba(248,113,113,.3)",borderRadius:9,padding:"12px",color:"#f87171",fontWeight:800,fontSize:11,letterSpacing:".06em"}}>OUI, SUPPRIMER</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<AtlasMerveilles />);
+</script>
+</body>
+</html>
