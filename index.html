@@ -36,12 +36,17 @@ const SB_HEADERS = {
 
 async function sbSave(spots, liked, visited) {
   try {
+    // Only save user progress (done status), not the full catalog
+    var doneMap = {};
+    Object.values(spots).forEach(function(arr){
+      arr.forEach(function(s){ if(s.done) doneMap[s.id]=true; });
+    });
     await fetch(SB_URL + "/rest/v1/atlas_data", {
       method: "POST",
       headers: SB_HEADERS,
       body: JSON.stringify({
         user_id: "default_user",
-        spots: JSON.stringify(spots),
+        spots: JSON.stringify(doneMap),
         liked: JSON.stringify(liked),
         visited: JSON.stringify(visited),
         updated_at: new Date().toISOString()
@@ -831,27 +836,64 @@ function AtlasMerveilles() {
   useEffect(()=>{ setModalErr(false); setImgErr(false); },[detailSpot]);
 
   useEffect(()=>{ (async()=>{
-    // 1. Try Supabase FIRST (cross-device sync)
+    // 1. Always load spots catalog from localStorage or world_spots.json
+    var baseSpots = null;
+    try{ const s=await window.storage.get("atlas-v14"); if(s&&s.value){ baseSpots=JSON.parse(s.value); } }catch(e){}
+    if(!baseSpots){
+      try{ const r=await fetch("world_spots.json"); baseSpots=await r.json(); }catch(e){}
+    }
+    if(!baseSpots) baseSpots={};
+
+    // 2. Try Supabase for user progress (done/liked/visited)
+    var doneMap={}, likedData={}, visitedData={};
     try{
       const sb = await sbLoad();
       if(sb){
-        if(sb.spots) setSpots(JSON.parse(sb.spots));
-        if(sb.liked) setLiked(JSON.parse(sb.liked));
-        if(sb.visited) setVisitedCountries(JSON.parse(sb.visited));
-        // Mirror to localStorage
-        try{ if(sb.spots) localStorage.setItem("atlas-v14", sb.spots); }catch(e){}
-        try{ if(sb.liked) localStorage.setItem("atlas-liked", sb.liked); }catch(e){}
-        try{ if(sb.visited) localStorage.setItem("atlas-visited", sb.visited); }catch(e){}
-        return;
+        // sb.spots is now a doneMap {spotId: true}
+        try{ doneMap = typeof sb.spots==="string"?JSON.parse(sb.spots):(sb.spots||{}); }catch(e){}
+        // Detect old format (had country arrays) - ignore if so
+        var isOldFormat = Object.keys(doneMap).some(function(k){ return Array.isArray(doneMap[k]); });
+        if(isOldFormat) doneMap={};
+        try{ likedData = typeof sb.liked==="string"?JSON.parse(sb.liked):(sb.liked||{}); }catch(e){}
+        try{ visitedData = typeof sb.visited==="string"?JSON.parse(sb.visited):(sb.visited||{}); }catch(e){}
       }
-    }catch(e){}
-    // 2. Fallback: localStorage
-    try{ const s=await window.storage.get("atlas-v14"); if(s&&s.value){ setSpots(JSON.parse(s.value)); return; } }catch(e){}
-    // 3. Load default spots from JSON
-    try{ const r=await fetch("world_spots.json"); const d=await r.json(); setSpots(d); }catch(e){}
-    // 4. Load liked/visited from localStorage
-    try{ const lk=await window.storage.get("atlas-liked"); if(lk&&lk.value) setLiked(JSON.parse(lk.value)); }catch(e){}
-    try{ const vc=await window.storage.get("atlas-visited"); if(vc&&vc.value) setVisitedCountries(JSON.parse(vc.value)); }catch(e){}
+    }catch(e){
+      // Fallback to localStorage for liked/visited
+      try{ const lk=await window.storage.get("atlas-liked"); if(lk&&lk.value) likedData=JSON.parse(lk.value); }catch(e){}
+      try{ const vc=await window.storage.get("atlas-visited"); if(vc&&vc.value) visitedData=JSON.parse(vc.value); }catch(e){}
+    }
+
+    // 3. Apply doneMap onto baseSpots
+    if(Object.keys(doneMap).length>0){
+      Object.keys(baseSpots).forEach(function(cid){
+        baseSpots[cid] = baseSpots[cid].map(function(s){
+          return doneMap[s.id] ? Object.assign({},s,{done:true}) : s;
+        });
+      });
+    } else {
+      // Try localStorage done status
+      try{
+        const ls=await window.storage.get("atlas-v14");
+        if(ls&&ls.value){
+          var lsSpots=JSON.parse(ls.value);
+          var lsDone={};
+          Object.values(lsSpots).forEach(function(arr){
+            arr.forEach(function(s){ if(s.done) lsDone[s.id]=true; });
+          });
+          if(Object.keys(lsDone).length>0){
+            Object.keys(baseSpots).forEach(function(cid){
+              baseSpots[cid]=baseSpots[cid].map(function(s){
+                return lsDone[s.id]?Object.assign({},s,{done:true}):s;
+              });
+            });
+          }
+        }
+      }catch(e){}
+    }
+
+    setSpots(baseSpots);
+    setLiked(likedData);
+    setVisitedCountries(visitedData);
   })(); },[]);
   useEffect(()=>{
     (async()=>{ try{ await window.storage.set("atlas-v14",JSON.stringify(spots)); }catch(e){} })();
@@ -1163,21 +1205,7 @@ function AtlasMerveilles() {
               <button onClick={()=>setShowWeather(true)} title="Météo détaillée" style={{background:"#06122a",border:"1px solid #0d2038",borderRadius:7,padding:"4px 9px",color:"#38bdf8",fontWeight:700,fontSize:13,cursor:"pointer"}}>🌤</button>
             </div>
               <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Rechercher un spot..." style={{width:"100%",background:"#06122a",border:"1px solid #0d2038",borderRadius:8,padding:"8px 12px",color:"#c0d8f0",fontSize:13,marginBottom:8,marginTop:10,outline:"none"}}/>
-              <div style={{display:"flex",gap:3,flexWrap:"wrap",marginBottom:6}}>
-                {[0,1,2,3,4,5,6,7,8,9,10,11,12].map(function(m){
-                  var liveScores = weatherCache[selectedCountry];
-                  var ws = m===0 ? null : (liveScores?liveScores.scores[m-1]:getWeather(selectedCountry||"default")[m-1]);
-                  var wc = ws ? WC[ws] : "#0ea5e9";
-                  var act = monthFilter===m;
-                  return (
-                    <button key={m} onClick={()=>setMonthFilter(m===monthFilter?0:m)}
-                      title={m>0&&ws?MN[m-1]+": "+WL[ws]:"Tous les mois"}
-                      style={{background:act?wc:(m===0?"transparent":wc+"33"),border:"2px solid "+(act?wc:(m===0?(monthFilter===0?"#0ea5e9":"#0d2038"):wc+"88")),borderRadius:6,padding:"5px 9px",color:act?"#020c1a":(m===0?(monthFilter===0?"#0ea5e9":"#4a7898"):wc),fontSize:12,fontWeight:act?900:700,cursor:"pointer",minWidth:36,textAlign:"center"}}>
-                      {m===0?"Tout":MN[m-1]}
-                    </button>
-                  );
-                })}
-              </div>
+
             </div>
             <div style={{flex:1,overflowY:"auto",padding:"10px"}}>
               {filtered.length===0?(
