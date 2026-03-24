@@ -103,104 +103,17 @@ const COORDS = {
 
 function getScores(cid) {
   var known = {
-    "124":[1,1,2,3,4,5,5,5,4,3,2,1],  "840":[
-{id:"us1",name:"Grand Canyon — 5 Millions d'Années",category:"geology",desc:"446 km de long, 1 800m de profondeur. Milliards d'années visibles.",why:"Grand Canyon : 2 milliards d'années de géologie visible sur 1 800m de parois. La rivière Colorado a tout creusé.",season:"Mars–Mai / Septembre–Novembre.",tip:"South Rim Trail. Lever du soleil depuis Mather Point.",photo:"Grand Canyon Arizona USA Colorado River sunrise colorful layers",done:false},
-    {id:"us2",name:"Yellowstone — Geysers et Bisons",category:"geology",desc:"Old Faithful toutes les 90 min. 300 geysers. 5 000 bisons.",why:"Yellowstone : le plus grand système géothermique du monde. 300 geysers, dont Old Faithful. Grand Prismatic Spring : couleurs psychédéliques.",season:"Mai–Septembre.",tip:"Grand Prismatic Spring vue d'en haut (overlook trail).",photo:"Yellowstone Grand Prismatic Spring geyser bison USA national park",done:false},
-    {id:"us3",name:"Yosemite — El Capitan et Half Dome",category:"geology",desc:"El Capitan (900m) : la plus haute falaise verticale. Half Dome.",why:"Yosemite : John Muir y a inventé le concept de parc national. El Capitan et Half Dome = sommets de la culture de l'escalade.",season:"Avril–Octobre.",tip:"Tunnel View au lever pour la photo légendaire.",photo:"Yosemite Half Dome El Capitan California USA valley waterfall",done:false},
-    {id:"us4",name:"Alaska — Ours et Saumons",category:"wildlife",desc:"Grizzly qui attrapent saumons à bout portant. Brooks Falls.",why:"Brooks Falls (Katmai) : ours bruns attrapent les saumons sautants. Jusqu'à 100 ours dans une zone. Spectacle de juillet.",season:"Juillet–Septembre.",tip:"Hydroplane Anchorage → King Salmon → Brooks Camp.",photo:"Alaska Brooks Falls bear salmon fishing USA Katmai grizzly",done:false},
-    {id:"us5",name:"New York — Skyline et Brooklyn Bridge",category:"famous",desc:"La skyline la plus photographiée du monde. 8 millions de cultures.",why:"New York : Central Park (340 ha au cœur), Empire State, Statue de la Liberté. Brooklyn Bridge à l'aube : 0 vélo.",season:"Toute l'année.",tip:"Brooklyn Bridge à 6h avant les cyclistes. High Line.",photo:"New York skyline Brooklyn Bridge Manhattan USA sunrise",done:false},
-    {id:"us6",name:"Hawaii — Lave et Surf",category:"geology",desc:"Big Island : lave qui entre dans l'océan en direct.",why:"Hawaii Volcanoes NP : lave du Kilauea entre dans l'océan créant des éruptions de vapeur. Pipeline surf à Oahu.",season:"Toute l'année.",tip:"Volcanoes NP : Chain of Craters Road pour lave fraîche.",photo:"Hawaii volcano lava ocean Big Island eruption surf USA",done:false},
-    {id:"us7",name:"Monument Valley — Far West Navajo",category:"geology",desc:"Buttes de grès de 300m. Décor de tous les westerns américains.",why:"Monument Valley (Navajo) : les mitten buttes filmées dans tous les westerns. La Terre sacrée du peuple Navajo.",season:"Toute l'année.",tip:"Lever du soleil depuis The View Hotel (bord du canyon).",photo:"Monument Valley Navajo Arizona USA buttes sunrise western road",done:false},
-    {id:"us8",name:"Glacier NP — Plaque Tectonique",category:"geology",desc:"Logan Pass (2 026m). Grizzly. Glaciers qui fondent à vue.",why:"Glacier National Park : Going-to-the-Sun Road, la plus belle route de montagne. 26 glaciers restants (il y en avait 150).",season:"Juillet–Septembre.",tip:"Going-to-the-Sun Road en voiture à l'aube (moins d'attente).",photo:"Glacier National Park Montana USA Going Sun Road grizzly",done:false},
-    {id:"us9",name:"New Orleans — Jazz et Creole",category:"unique",desc:"Le berceau du jazz. Mardi Gras. Cuisine créole unique.",why:"New Orleans : French Quarter, cuisine créole, jazz en direct 24h/24. Mardi Gras : 1 million de personnes.",season:"Toute l'année. Février (Mardi Gras).",tip:"Frenchmen Street (jazz authentique, pas Bourbon Street).",photo:"New Orleans French Quarter jazz Mardi Gras Louisiana USA",done:false},
-    {id:"us10",name:"Antelope Canyon — Lumière Laser",category:"geology",desc:"Canyon étroit où la lumière forme des faisceaux à midi.",why:"Lower Antelope Canyon : slotcanyon où le soleil crée des rayons de lumière à 11h-13h. Grès rose en spirales.",season:"Mars–Octobre. Mai = lumière max.",tip:"Guide Navajo obligatoire. 11h-13h pour la lumière.",photo:"Antelope Canyon Arizona USA slot canyon light beams Navajo",done:false},
-    {id:"us11",name:"Parc de Zion — Angels Landing",category:"geology",desc:"500m de falaises verticales. Angels Landing : chaîne au précipice.",why:"Zion NP : Angels Landing (chaînes d'escalade sur crête à 0,5m de largeur). Narrows : marcher dans la rivière en canyon.",season:"Mars–Novembre.",tip:"Narrows : bottes étanches à louer. Angels Landing tôt.",photo:"Zion National Park Angels Landing Utah USA hiking cliff chain",done:false},
-    {id:"us12",name:"Everglades — Crocodiles et Alligators",category:"wildlife",desc:"Le seul endroit au monde où crocodiles et alligators coexistent.",why:"Everglades : sawgrass prairies de 1 million d'ha. L'alligator américain + le crocodile américain coexistent uniquement ici.",season:"Novembre–Avril.",tip:"Airboat tour. Anhinga Trail : alligators à 1m du sentier.",photo:"Everglades Florida USA alligator crocodile sawgrass national park",done:false},
-    {id:"us13",name:"Denali — Le Toit de l'Amérique",category:"geology",desc:"6 194m. Le plus haut sommet d'Amérique du Nord. Grizzly.",why:"Denali NP : 0 route, 1 seul bus. Grizzly, caribous, loups à vue. Denali : 6 194m, le plus haut sommet du continent.",season:"Mai–Septembre.",tip:"Bus Wonder Lake pour vue sur Denali + grizzly.",photo:"Denali Alaska USA highest peak North America grizzly caribou",done:false},
-    {id:"us14",name:"Sequoia NP — Arbres de 2 700 ans",category:"nature",desc:"General Sherman : l'arbre le plus grand du monde. 2 700 ans.",why:"General Sherman Tree : 84m de haut, 11m de diamètre, 1 385 tonnes. L'organisme vivant le plus grand du monde.",season:"Mai–Octobre.",tip:"General Sherman Tree + Congress Trail (3 km dans les géants).",photo:"Sequoia General Sherman Tree California USA giant 2700 years",done:false},
-    {id:"us15",name:"Mesa Verde — Maisons dans les Falaises",category:"heritage",desc:"700 maisons cliff-dwellings construites par les Anasazi.",why:"Mesa Verde : les Anasazi ont construit 700 maisons dans les falaises vers 1200 ap. J.C. puis ont disparu en 25 ans.",season:"Mai–Octobre.",tip:"Cliff Palace tour avec ranger. Réserver en ligne.",photo:"Mesa Verde cliff dwellings Colorado USA Anasazi ancient pueblo",done:false},
-    {id:"840_f9",name:"Central Park",category:"famous",desc:"Un grand parc urbain au cœur de Manhattan, New York.",why:"Offre un espace vert paisible au milieu de la ville animée.",season:"Printemps",tip:"Louez un vélo pour explorer plus facilement.",photo:"park, New York, nature, urban",done:false},
-    {id:"840_r6",name:"Cérémonie de danse des Navajos",category:"unique",desc:"Participez à une cérémonie traditionnelle de danse des Navajos, riche en histoire et en signification culturelle.",why:"C'est une occasion rare de comprendre et de respecter les traditions autochtones.",season:"Automne",tip:"Respectez les coutumes locales et demandez la permission avant de prendre des photos.",photo:"Navajo dance ceremony",done:false},
-    {id:"840_f10",name:"Disneyland Resort",category:"famous",desc:"Un complexe de parcs à thème à Anaheim, Californie.",why:"Lieu magique et emblématique pour les familles et les fans de Disney.",season:"Été",tip:"Achetez des billets à l'avance pour éviter les files d'attente.",photo:"theme park, Disney, California, family",done:false},
-    {id:"840_r9",name:"Découverte des hoodoos de Bryce Canyon",category:"geology",desc:"Découvrez les formations de roche rouge uniques appelées hoodoos dans le parc national de Bryce Canyon.",why:"Ces formations naturelles sculptées par l'érosion sont époustouflantes.",season:"Printemps",tip:"Participez à une randonnée guidée pour en apprendre plus sur la géologie.",photo:"Bryce Canyon hoodoos",done:false},
-    {id:"840_r40",name:"Exploration de la forêt nationale de Ouachita",category:"nature",desc:"Découvrez les paysages variés et les forêts denses de la forêt nationale de Ouachita.",why:"C'est un terrain de jeu pour les amateurs de plein air, avec de nombreux sentiers et activités.",season:"Printemps",tip:"Apportez une carte et soyez prêt pour des randonnées dans des conditions variées.",photo:"Ouachita National Forest",done:false},
-    {id:"840_r34",name:"Exploration de la forêt nationale de Pisgah",category:"nature",desc:"Plongez dans la forêt luxuriante de Pisgah, connue pour ses cascades et ses sentiers de randonnée.",why:"C'est un havre de paix pour les amateurs de plein air et de nature.",season:"Été",tip:"Apportez une carte des sentiers et soyez prêt pour des randonnées accidentées.",photo:"Pisgah National Forest",done:false},
-    {id:"840_r4",name:"Exploration de la forêt nationale de Tongass",category:"nature",desc:"Découvrez l'immense forêt pluviale tempérée de Tongass, habitat de nombreuses espèces endémiques.",why:"C'est l'une des plus grandes forêts pluviales tempérées du monde, riche en biodiversité.",season:"Été",tip:"Marchez doucement pour apercevoir la faune discrète.",photo:"Tongass rainforest",done:false},
-    {id:"840_r28",name:"Exploration de la réserve naturelle de Big Bend",category:"nature",desc:"Découvrez les paysages désertiques et les montagnes de la réserve naturelle de Big Bend.",why:"C'est un des parcs les plus reculés et spectaculaires des États-Unis.",season:"Printemps",tip:"Préparez-vous à des températures extrêmes et apportez suffisamment d'eau.",photo:"Big Bend National Park",done:false},
-    {id:"840_r10",name:"Exploration de la réserve naturelle de Congaree",category:"nature",desc:"Parcourez la réserve de Congaree, célèbre pour ses imposants cyprès et sa biodiversité.",why:"C'est l'une des dernières grandes forêts de plaine de la région.",season:"Printemps",tip:"Apportez un insectifuge, les moustiques peuvent être nombreux.",photo:"Congaree National Park",done:false},
-    {id:"840_r22",name:"Exploration des Everglades en kayak",category:"nature",desc:"Naviguez en kayak à travers les mangroves et les marécages des Everglades.",why:"C'est un habitat unique pour de nombreuses espèces animales et végétales.",season:"Printemps",tip:"Apportez un insectifuge et de l'eau en abondance.",photo:"Everglades kayaking",done:false},
-    {id:"840_r16",name:"Exploration du parc d'État de Redwood",category:"nature",desc:"Marchez parmi les plus grands arbres du monde dans le parc d'État de Redwood.",why:"Les séquoias imposants sont un spectacle à voir au moins une fois dans sa vie.",season:"Printemps",tip:"Emportez une caméra pour capturer la grandeur des arbres.",photo:"Redwood State Park",done:false},
-    {id:"840_f5",name:"Golden Gate Bridge",category:"famous",desc:"Un pont suspendu emblématique reliant San Francisco et Marin.",why:"Reconnu pour son architecture et sa couleur unique.",season:"Printemps ou automne",tip:"Traversez à pied pour des vues imprenables.",photo:"bridge, San Francisco, architecture, landmark",done:false},
-    {id:"840_f2",name:"Grand Canyon",category:"famous",desc:"Un immense canyon en Arizona, célèbre pour ses paysages spectaculaires.",why:"C'est l'une des sept merveilles naturelles du monde.",season:"Printemps ou automne",tip:"Apportez beaucoup d'eau et portez des chaussures confortables.",photo:"canyon, Arizona, landscape, nature",done:false},
-    {id:"840_f6",name:"Las Vegas Strip",category:"famous",desc:"Une avenue célèbre pour ses casinos et ses hôtels de luxe.",why:"Capitale mondiale du divertissement, connue pour ses spectacles et sa vie nocturne.",season:"Printemps ou automne",tip:"Profitez des spectacles gratuits dans certains hôtels.",photo:"casinos, nightlife, lights, entertainment",done:false},
-    {id:"840_f7",name:"Maison Blanche",category:"famous",desc:"La résidence officielle et le bureau du président des États-Unis.",why:"Symbole du pouvoir exécutif américain.",season:"Printemps",tip:"Réservez une visite à l'avance via votre ambassade.",photo:"Washington, politics, government, mansion",done:false},
-    {id:"840_f8",name:"Monument national de Mount Rushmore",category:"famous",desc:"Sculptures monumentales des visages de quatre présidents américains.",why:"Représente l'histoire et le patrimoine des États-Unis.",season:"Été",tip:"Visitez tôt le matin pour de meilleures photos.",photo:"sculpture, presidents, history, South Dakota",done:false},
-    {id:"840_r13",name:"Observation des bisons dans le parc national de Badlands",category:"wildlife",desc:"Voyez de près les bisons d'Amérique dans le cadre sauvage du parc national de Badlands.",why:"Les bisons sont un symbole emblématique de la prairie américaine.",season:"Printemps",tip:"Restez à une distance sécuritaire pour ne pas déranger les animaux.",photo:"Badlands bison",done:false},
-    {id:"840_r31",name:"Observation des caribous dans l'Arctique National Wildlife Refuge",category:"wildlife",desc:"Voyez les troupeaux de caribous migrer à travers l'Arctique National Wildlife Refuge.",why:"C'est un spectacle naturel impressionnant de voir ces animaux dans leur migration annuelle.",season:"Été",tip:"Engagez un guide expérimenté pour maximiser vos chances d'observation.",photo:"Arctic Caribou migration",done:false},
-    {id:"840_r7",name:"Observation des grizzlis à Katmai",category:"wildlife",desc:"Observez les grizzlis pêcher le saumon dans le parc national de Katmai.",why:"Voir ces puissants animaux en action est un spectacle à couper le souffle.",season:"Été",tip:"Soyez accompagné d'un guide expérimenté pour votre sécurité.",photo:"Katmai grizzly bears",done:false},
-    {id:"840_r1",name:"Observation des loups dans le parc national de Yellowstone",category:"wildlife",desc:"Une opportunité rare d'observer des loups dans leur habitat naturel dans le parc national de Yellowstone.",why:"Les loups sont des créatures fascinantes et leur observation en milieu naturel est un spectacle inoubliable.",season:"Hiver",tip:"Apportez des jumelles et soyez prêt à marcher dans la neige.",photo:"Yellowstone wolves snow",done:false},
-    {id:"840_r37",name:"Observation des outardes dans le refuge faunique national de Bosque del Apache",category:"wildlife",desc:"Assistez au spectacle des outardes dans le refuge faunique national de Bosque del Apache.",why:"Le refuge est un lieu de rassemblement pour des milliers d'oiseaux migrateurs.",season:"Hiver",tip:"Apportez des jumelles et habillez-vous chaudement.",photo:"Bosque del Apache cranes",done:false},
-    {id:"840_r19",name:"Observation des pygargues à tête blanche sur la rivière Skagit",category:"wildlife",desc:"Assistez à la migration annuelle des pygargues à tête blanche sur la rivière Skagit.",why:"C'est une occasion rare de voir ces oiseaux majestueux en grand nombre.",season:"Hiver",tip:"Apportez des jumelles pour une meilleure observation.",photo:"Skagit River bald eagles",done:false},
-    {id:"840_r25",name:"Observation des élans dans le parc national de Grand Teton",category:"wildlife",desc:"Observez les majestueux élans dans le parc national de Grand Teton.",why:"Les élans sont un spectacle impressionnant dans leur habitat naturel.",season:"Automne",tip:"Visitez tôt le matin ou en fin de journée pour maximiser vos chances d'observation.",photo:"Grand Teton moose",done:false},
-    {id:"840_f3",name:"Parc National de Yellowstone",category:"famous",desc:"Le premier parc national au monde, connu pour ses geysers et sa faune.",why:"Célèbre pour Old Faithful et sa diversité écologique.",season:"Été",tip:"Arrivez tôt pour éviter les foules.",photo:"geysers, wildlife, nature, Yellowstone",done:false},
-    {id:"840_r18",name:"Participation à un atelier de tissage Navajo",category:"unique",desc:"Apprenez le tissage traditionnel Navajo lors d'un atelier pratique.",why:"Le tissage est une compétence ancestrale et une forme d'art culturel important.",season:"Printemps",tip:"Soyez respectueux et ouvert à l'apprentissage de nouvelles techniques.",photo:"Navajo weaving workshop",done:false},
-    {id:"840_r42",name:"Participation à un festival de cerf-volant hawaïen",category:"unique",desc:"Participez à un festival de cerf-volant traditionnel à Hawaii, une célébration colorée et joyeuse.",why:"C'est une occasion unique de découvrir une tradition hawaïenne populaire en plein air.",season:"Printemps",tip:"Apportez un cerf-volant ou fabriquez-en un sur place pour participer.",photo:"Hawaiian kite festival",done:false},
-    {id:"840_r12",name:"Participation à un pow-wow amérindien",category:"unique",desc:"Participez à un pow-wow, une célébration culturelle amérindienne avec danses et chants traditionnels.",why:"C'est une chance unique d'assister à une tradition vivante et dynamique.",season:"Été",tip:"Respectez les règles et coutumes, et demandez avant de prendre des photos.",photo:"Native American pow-wow",done:false},
-    {id:"840_r24",name:"Participation à une cérémonie de sudation Lakota",category:"unique",desc:"Vivez une cérémonie de sudation traditionnelle avec les Lakotas.",why:"C'est une expérience spirituelle unique qui offre une immersion dans la culture amérindienne.",season:"Été",tip:"Respectez les traditions et suivez les instructions des aînés.",photo:"Lakota sweat lodge",done:false},
-    {id:"840_r36",name:"Participation à une cérémonie du feu Cherokee",category:"unique",desc:"Participez à une cérémonie traditionnelle du feu Cherokee, riche en symbolisme et spiritualité.",why:"C'est une occasion unique de découvrir une tradition vivante et de se connecter avec la culture Cherokee.",season:"Automne",tip:"Soyez respectueux et suivez les instructions des aînés.",photo:"Cherokee fire ceremony",done:false},
-    {id:"840_r30",name:"Participation à une danse de l'aigle Hopi",category:"unique",desc:"Assistez à une danse de l'aigle traditionnelle Hopi, remplie de symbolisme et de spiritualité.",why:"C'est une chance unique de voir une tradition culturelle riche et ancienne.",season:"Printemps",tip:"Demandez la permission avant de photographier les danseurs.",photo:"Hopi eagle dance",done:false},
-    {id:"840_r14",name:"Plongée avec les requins-baleines à Isla Mujeres",category:"marine",desc:"Nagez aux côtés des requins-baleines près de Isla Mujeres.",why:"Rencontrer ces géants doux est une expérience inoubliable.",season:"Été",tip:"Réservez à l'avance et suivez les instructions du guide.",photo:"Isla Mujeres whale sharks",done:false},
-    {id:"840_r20",name:"Plongée dans les cenotes de Floride",category:"marine",desc:"Explorez les mystérieux cenotes de Floride, remplis d'eau cristalline.",why:"Ces formations naturelles offrent une plongée unique dans un monde souterrain.",season:"Été",tip:"Vérifiez les conditions locales avant de plonger.",photo:"Florida cenotes diving",done:false},
-    {id:"840_r32",name:"Plongée dans les grottes sous-marines de Ginnie Springs",category:"marine",desc:"Explorez le monde sous-marin des grottes de Ginnie Springs, célèbres pour leurs eaux cristallines.",why:"Les grottes offrent une plongée dans un cadre unique et fascinant.",season:"Printemps",tip:"Ayez une bonne lampe de plongée et suivez les consignes de sécurité.",photo:"Ginnie Springs caves diving",done:false},
-    {id:"840_r26",name:"Plongée dans les jardins de corail de Flower Garden Banks",category:"marine",desc:"Explorez les récifs coralliens colorés de Flower Garden Banks, un sanctuaire marin.",why:"Les récifs abritent une biodiversité étonnante et sont un plaisir pour les plongeurs.",season:"Été",tip:"Assurez-vous d'être bien préparé et suivez les consignes des guides de plongée.",photo:"Flower Garden Banks coral reefs",done:false},
-    {id:"840_r8",name:"Plongée dans les récifs de l'Île de San Miguel",category:"marine",desc:"Explorez les récifs colorés et la vie marine diversifiée de l'Île de San Miguel.",why:"Les récifs abritent une multitude de créatures marines fascinantes.",season:"Printemps",tip:"Vérifiez les conditions de plongée avant de partir.",photo:"San Miguel Island reefs",done:false},
-    {id:"840_r38",name:"Plongée en apnée à John Pennekamp Coral Reef State Park",category:"marine",desc:"Explorez les récifs coralliens colorés de John Pennekamp Coral Reef State Park.",why:"C'est le premier parc sous-marin des États-Unis, offrant une biodiversité marine exceptionnelle.",season:"Été",tip:"Apportez votre équipement de plongée en apnée pour profiter pleinement de l'expérience.",photo:"John Pennekamp snorkeling",done:false},
-    {id:"840_r2",name:"Plongée parmi les requins-marteaux dans les Îles Dry Tortugas",category:"marine",desc:"Explorez les eaux cristallines autour des Îles Dry Tortugas, où les requins-marteaux se rassemblent.",why:"Rencontrer ces majestueuses créatures sous l'eau est une expérience unique et palpitante.",season:"Été",tip:"Assurez-vous d'avoir une certification de plongée en eau libre.",photo:"Dry Tortugas hammerhead sharks",done:false},
-    {id:"840_r21",name:"Randonnée dans le désert de Painted Desert",category:"geology",desc:"Découvrez les couleurs vibrantes et les formations rocheuses uniques du Painted Desert.",why:"Les paysages multicolores sont un véritable régal pour les yeux.",season:"Automne",tip:"Portez de bonnes chaussures de randonnée pour les sentiers inégaux.",photo:"Painted Desert hiking",done:false},
-    {id:"840_r33",name:"Randonnée dans le parc national de Guadalupe Mountains",category:"geology",desc:"Explorez les paysages montagneux et les formations géologiques du parc national de Guadalupe Mountains.",why:"Le parc est un trésor de diversité géologique et biologique.",season:"Automne",tip:"Préparez-vous pour des randonnées difficiles avec des dénivelés importants.",photo:"Guadalupe Mountains hiking",done:false},
-    {id:"840_r27",name:"Randonnée dans les Badlands de South Dakota",category:"geology",desc:"Parcourez les formations érodées et les paysages lunaires des Badlands.",why:"Les Badlands offrent des paysages géologiques uniques et spectaculaires.",season:"Printemps",tip:"Portez des chaussures robustes et apportez beaucoup d'eau.",photo:"South Dakota Badlands",done:false},
-    {id:"840_r3",name:"Randonnée dans les grottes de Wind Cave",category:"geology",desc:"Explorez les formations souterraines spectaculaires de Wind Cave, l'une des grottes les plus complexes du monde.",why:"La complexité et la beauté de ces formations géologiques sont impressionnantes.",season:"Printemps",tip:"Portez des vêtements chauds, la température est fraîche à l'intérieur.",photo:"Wind Cave formations",done:false},
-    {id:"840_r39",name:"Randonnée dans les montagnes de Sangre de Cristo",category:"geology",desc:"Explorez les sommets majestueux et les vallées isolées des montagnes de Sangre de Cristo.",why:"La chaîne de montagnes offre des paysages à couper le souffle et une diversité géologique.",season:"Automne",tip:"Préparez-vous pour des changements climatiques rapides et des altitudes élevées.",photo:"Sangre de Cristo Mountains",done:false},
-    {id:"840_r15",name:"Randonnée sur le chemin des Appalaches",category:"geology",desc:"Parcourez une partie du célèbre chemin des Appalaches, riche en paysages variés.",why:"Le chemin offre une diversité géologique rare et des vues spectaculaires.",season:"Automne",tip:"Préparez-vous à des changements climatiques rapides.",photo:"Appalachian Trail",done:false},
-    {id:"840_f1",name:"Statue de la Liberté",category:"famous",desc:"Un symbole de la liberté et de la démocratie, situé à New York.",why:"Cadeau de la France aux États-Unis, elle est un symbole emblématique de l'Amérique.",season:"Printemps ou automne",tip:"Réservez vos billets pour la couronne à l'avance.",photo:"Liberty, statue, New York, freedom",done:false},
-    {id:"840_f4",name:"Times Square",category:"famous",desc:"Un carrefour animé au cœur de New York, célèbre pour ses panneaux lumineux.",why:"Centre culturel et commercial, surtout pendant le Nouvel An.",season:"Toute l'année",tip:"Visitez de nuit pour voir les lumières.",photo:"lights, New York, crowd, night",done:false},
-    {id:"840_r5",name:"Visite des pétroglyphes de Newspaper Rock",category:"heritage",desc:"Admirez les anciens pétroglyphes sur Newspaper Rock, qui témoignent des civilisations passées.",why:"Ces gravures offrent un aperçu fascinant des cultures anciennes.",season:"Toute l'année",tip:"Préférez une visite matinale pour éviter la foule.",photo:"Newspaper Rock petroglyphs",done:false},
-    {id:"840_r35",name:"Visite des pétroglyphes de Petroglyph National Monument",category:"heritage",desc:"Admirez les nombreux pétroglyphes de Petroglyph National Monument, qui racontent l'histoire des peuples autochtones.",why:"Ces gravures anciennes offrent un aperçu fascinant de la vie et des croyances des anciens habitants.",season:"Printemps",tip:"Visitez tôt le matin pour éviter la chaleur et la foule.",photo:"Petroglyph National Monument",done:false},
-    {id:"840_r41",name:"Visite des ruines de Bandelier",category:"heritage",desc:"Explorez les habitations troglodytes et les pétroglyphes des anciens Pueblos à Bandelier.",why:"Le site offre un regard fascinant sur la vie des peuples anciens dans le sud-ouest américain.",season:"Printemps",tip:"Portez des chaussures de randonnée pour explorer les sentiers escarpés.",photo:"Bandelier ruins",done:false},
-    {id:"840_r23",name:"Visite des ruines de Cahokia",category:"heritage",desc:"Explorez le site archéologique de Cahokia, ancien centre de la civilisation mississippienne.",why:"Cahokia est l'un des sites précolombiens les plus importants d'Amérique du Nord.",season:"Été",tip:"Participez à une visite guidée pour mieux comprendre le contexte historique.",photo:"Cahokia ruins",done:false},
-    {id:"840_r29",name:"Visite des ruines de Hovenweep",category:"heritage",desc:"Explorez les tours et les structures en pierre de Hovenweep, construites par les peuples ancestraux Pueblo.",why:"Ces ruines isolées témoignent de l'ingéniosité architecturale des anciens habitants.",season:"Automne",tip:"Visitez au lever ou au coucher du soleil pour de meilleures lumières photographiques.",photo:"Hovenweep ruins",done:false},
-    {id:"840_r11",name:"Visite des ruines de Mesa Verde",category:"heritage",desc:"Explorez les anciennes habitations troglodytes des Anasazis à Mesa Verde.",why:"Ces ruines offrent un aperçu de la vie des peuples autochtones il y a des siècles.",season:"Été",tip:"Réservez à l'avance, les visites sont limitées.",photo:"Mesa Verde cliff dwellings",done:false},
-    {id:"840_r17",name:"Visite du site ancestral de Chaco Canyon",category:"heritage",desc:"Explorez les ruines bien préservées de Chaco Canyon, un ancien centre de culture pueblo.",why:"Le site offre un aperçu fascinant de l'organisation sociale et architecturale des Anasazis.",season:"Printemps",tip:"Apportez de l'eau et un chapeau pour le soleil, il n'y a pas beaucoup d'ombre.",photo:"Chaco Canyon ruins",done:false},
-    {id:"us_wave",name:"The Wave — Arizona",category:"geology",desc:"Formation rocheuse ondulée aux couleurs psychédéliques dans le Coyote Buttes North.",why:"L'une des formations géologiques les plus photographiées au monde, accessible sur tirage au sort.",season:"Mars à Mai, Octobre à Novembre",tip:"Permis obligatoire, tirage au sort 4 mois à l'avance. Maximum 20 personnes par jour.",photo:"The Wave Arizona Coyote Buttes sandstone",done:false},
-    {id:"us_antelope",name:"Antelope Canyon — Arizona",category:"geology",desc:"Canyon de fente aux lumières et formes sculptées par l'eau.",why:"Les rayons de lumière filtrant créent des effets visuels uniques selon l'heure.",season:"Mars à Octobre",tip:"Visite guidée obligatoire, réservez des mois à l'avance pour les meilleures photos.",photo:"Antelope Canyon light beams Arizona",done:false},
-    {id:"us_horseshoe",name:"Horseshoe Bend — Arizona",category:"geology",desc:"Méandre en fer à cheval du Colorado River vu depuis 300m de hauteur.",why:"Vue vertigineuse sur l'un des plus beaux panoramas géologiques des USA.",season:"Toute l'année (éviter été caniculaire)",tip:"Lever ou coucher de soleil pour les meilleures photos, arrivez tôt pour garer.",photo:"Horseshoe Bend Colorado River Arizona",done:false},
-    {id:"us_deathvalley",name:"Vallée de la Mort — Badwater Basin",category:"geology",desc:"Point le plus bas d'Amérique du Nord à -86m, paysage lunaire de sel.",why:"Paysage extrême unique, contrastes saisissants entre sel blanc et montagnes noires.",season:"Octobre à Avril",tip:"Évitez absolument l'été (50°C+). Emportez 4L d'eau minimum.",photo:"Death Valley Badwater Basin salt flats",done:false},
-    {id:"us_zion",name:"Angels Landing — Zion",category:"geology",desc:"Randonnée vertigineuse avec chaînes dans le canyon de Zion.",why:"L'une des randonnées les plus spectaculaires des USA, vue à 360° sur Zion Canyon.",season:"Avril à Octobre",tip:"Permis requis depuis 2022, réservez sur recreation.gov.",photo:"Angels Landing Zion Canyon Utah",done:false},
-    {id:"us_biolum",name:"Lagune Bioluminescente de Puerto Rico",category:"marine",desc:"Eaux magiques qui brillent la nuit grâce aux dinoflagellés à Mosquito Bay.",why:"Classée lagune bioluminescente la plus lumineuse au monde par Guinness.",season:"Toute l'année (nuits sans lune)",tip:"Kayak de nuit recommandé, évitez les nuits de pleine lune.",photo:"bioluminescent bay Puerto Rico Mosquito Bay",done:false},
-    {id:"us_napali",name:"Côte Na Pali — Hawaï",category:"nature",desc:"Falaises verticales de 1200m plongeant dans l'océan sur l'île de Kauai.",why:"L'un des paysages côtiers les plus dramatiques de la planète, inaccessible par route.",season:"Mai à Septembre",tip:"Randonnée Kalalau Trail (11 miles) ou tour en bateau/hélicoptère.",photo:"Na Pali Coast Kauai Hawaii cliffs",done:false},
-    {id:"us_arches",name:"Arches National Park — Utah",category:"geology",desc:"Plus de 2000 arches naturelles en grès rouge dans le désert de l'Utah.",why:"Concentration d'arches naturelles la plus dense au monde, Delicate Arch est iconique.",season:"Mars à Mai, Septembre à Novembre",tip:"Entrée sur réservation d'avril à octobre, arrivez tôt.",photo:"Delicate Arch Utah Arches National Park",done:false},
-    {id:"us_monument",name:"Monument Valley — Navajo Nation",category:"geology",desc:"Mesas et buttes iconiques des westerns, symbole de l'Ouest américain.",why:"Paysage le plus photographié des USA, terre sacrée navajo peuplée de formations à 300m de hauteur.",season:"Mars à Novembre",tip:"Tour guidé Navajo obligatoire pour aller à l'intérieur de la vallée. Lever de soleil magique.",photo:"Monument Valley Navajo buttes Utah Arizona",done:false},
-    {id:"us_joshua",name:"Joshua Tree National Park",category:"geology",desc:"Désert de rochers en granit et forêts de josuas à la jonction de deux déserts.",why:"Paysage lunaire unique, paradis des grimpeurs et des astronomes (ciel noir exceptionnel).",season:"Octobre à Avril",tip:"Camping sous les étoiles — l'un des meilleurs ciels nocturnes des USA.",photo:"Joshua Tree National Park desert boulders",done:false},
-    {id:"us_olympic",name:"Hoh Rainforest — Olympic",category:"nature",desc:"Forêt pluviale tempérée couverte de mousse, l'une des plus denses au monde.",why:"Forêt enchantée avec des arbres millénaires recouverts de mousse d'un vert éclatant.",season:"Toute l'année (moins de pluie en été)",tip:"Sentier Hall of Mosses de 1.9 miles — incontournable.",photo:"Hoh Rainforest Olympic moss covered trees",done:false},
-    {id:"us_grandprismatic",name:"Grand Prismatic Spring — Yellowstone",category:"geology",desc:"Plus grande source chaude des USA, cerclée de bandes arc-en-ciel flamboyantes.",why:"Photo aérienne la plus spectaculaire de Yellowstone — bleu turquoise au centre, rouge/orange sur les bords.",season:"Juin à Septembre",tip:"Vue depuis Fairy Falls Trail en hauteur pour la photo aérienne parfaite.",photo:"Grand Prismatic Spring Yellowstone aerial rainbow colors",done:false},
-    {id:"us_wave2",name:"The Wave — Coyote Buttes North",category:"geology",desc:"Formation rocheuse ondulée aux couleurs psychédéliques, accessible sur tirage au sort.",why:"L'une des formations géologiques les plus photographiées au monde — 20 personnes max par jour.",season:"Mars à Mai, Octobre à Novembre",tip:"Permis obligatoire par tirage au sort 4 mois à l'avance sur recreation.gov.",photo:"The Wave Coyote Buttes Arizona sandstone swirling",done:false},
-    {id:"us_redwoods",name:"Forêt de Séquoias — Californie du Nord",category:"nature",desc:"Les arbres les plus grands et plus vieux du monde, certains atteignent 115m.",why:"Marcher sous des arbres de 2000 ans qui font 10m de diamètre — expérience spirituelle unique.",season:"Toute l'année",tip:"Avenue of the Giants (31 miles) entre Garberville et Fortuna. Gratuit.",photo:"Redwood forest California giant sequoia tall trees",done:false},
-    {id:"us_moraine",name:"Lac Moraine — Banff (frontière Canada)",category:"nature",desc:"Lac turquoise entouré de 10 sommets, photo la plus reproduite du Canada.",why:"Bleu irréel dû à la farine de roche glaciaire — image sur l'ancien billet de 20$ canadien.",season:"Juin à Septembre",tip:"Route fermée aux voitures depuis 2023 — navette obligatoire depuis Banff.",photo:"Moraine Lake Banff turquoise water mountains reflection",done:false},
-    {id:"us_lassen",name:"Parc Volcanique de Lassen — Californie",category:"geology",desc:"Seul endroit des USA avec les 4 types de volcans actifs et geysers en activité.",why:"Yellowstone de Californie — boue bouillonnante, vapeurs sulfureuses, lac de lave.",season:"Juillet à Octobre",tip:"Bumpass Hell Trail mène aux mares de boue bouillonnante les plus accessibles du monde.",photo:"Lassen Volcanic Park hydrothermal California bubbling mud",done:false},
-  ],
-  "250":[
-    {label:"🌡 Max (°C)",values:[8,9,13,16,20,24,26,26,22,17,11,8],color:"#f97316",unit:"°"},
-    {label:"❄ Min (°C)",values:[2,3,5,8,11,14,16,16,13,10,5,3],color:"#38bdf8",unit:"°"},
-    {label:"🌧 Pluie (mm)",values:[90,70,80,75,80,65,60,60,65,85,90,100],color:"#60a5fa",unit:""},
-    {label:"☀ Soleil (h)",values:[2,3,5,6,7,8,8,8,6,4,2,2],color:"#fbbf24",unit:"h"},
-  ],
-  "840":[
-    {label:"🌡 Max (°C)",values:[8,10,14,19,24,28,31,30,26,20,13,8],color:"#f97316",unit:"°"},
-    {label:"❄ Min (°C)",values:[-2,0,4,9,14,19,22,21,17,10,4,-1],color:"#38bdf8",unit:"°"},
-    {label:"🌧 Pluie (mm)",values:[80,70,80,80,85,75,65,65,70,75,85,85],color:"#60a5fa",unit:""},
-    {label:"☀ Soleil (h)",values:[4,5,6,7,8,9,10,9,7,6,4,4],color:"#fbbf24",unit:"h"},
-  ],
-};
+    "124":[1,1,2,3,4,5,5,5,4,3,2,1],
+    "840":[1,1,2,3,4,5,5,5,4,3,2,1],
+    "250":[
+      {label:"🌡 Max (°C)",values:[8,9,13,16,20,24,26,26,22,17,11,8],color:"#f97316",unit:"°"},
+      {label:"❄ Min (°C)",values:[2,3,5,8,11,14,16,16,13,10,5,3],color:"#38bdf8",unit:"°"},
+      {label:"🌧 Pluie (mm)",values:[90,70,80,75,80,65,60,60,65,85,90,100],color:"#60a5fa",unit:""},
+      {label:"☀ Soleil (h)",values:[2,3,5,6,7,8,8,8,6,4,2,2],color:"#fbbf24",unit:"h"},
+    ],
+  };
+  return known[cid] || null;
+}
 
 // ── CONTINENT MAP ─────────────────────────────────────────────────────────────
 const CM = {
@@ -1032,7 +945,6 @@ const DEFAULT_SPOTS = {
     {id:"au13",name:"Sydney — Opéra et Harbour Bridge",category:"famous",desc:"La ville la plus iconique d'Australie. Pont en arc le plus large du monde.",why:"Sydney Harbour : l'opéra (UNESCO) conçu par Jorn Utzon et le Harbour Bridge forment le skyline le plus célèbre du sud. BridgeClimb pour vue à 360°.",season:"Toute l'année.",tip:"BridgeClimb au coucher du soleil. Bondi Beach à 20 min.",photo:"Sydney Opera House Harbour Bridge Australia iconic",done:false},
     {id:"au14",name:"Ningaloo à Coral Bay — Manta Rays",category:"marine",desc:"Raies mantas géantes de 5m en plongée libre à 3m de profondeur.",why:"Coral Bay : raies mantas nettoyées par labres sur les bommies de corail. Certaines venues à 50cm du plongeur. Zéro bateau de plongée obligatoire.",season:"Mars–Août (mantas). Toute l'année (coraux).",tip:"Snorkeling depuis plage Coral Bay sans bateau.",photo:"Coral Bay manta ray cleaning station Western Australia snorkel",done:false},
     {id:"au15",name:"Outback — Uluru et Kings Canyon",category:"geology",desc:"Kings Canyon : murs de grès de 270m. Jardin d'Eden secret au fond du canyon.",why:"Watarrka National Park : le rim walk (6km) au bord du précipice. Au fond : jardin de fougères et cycas de 300 millions d'années. Piscine d'eau permanente.",season:"Avril–Septembre.",tip:"Rim walk à l'aube (fraîcheur + lumière). Démarrer avant 9h d'avril à oct.",photo:"Kings Canyon outback Australia rim walk sandstone",done:false},
-  ],
   ],
   "554":[
     {id:"nz1",name:"Milford Sound — Fjord Légendaire",category:"nature",desc:"15 km entre falaises de 1 200m. Cascades permanentes. Dauphins.",why:"Milford Sound : la 8e merveille (Kipling). 160 mm pluie/mois = cascades permanentes. Dauphins de Hector, orques, phoques.",season:"Toute l'année. Hiver = cascades pleines.",tip:"Croisière 2h à l'aube (2x moins de monde). Kayak de mer.",photo:"Milford Sound Fiordland New Zealand fjord waterfall dolphin",done:false},
@@ -3556,8 +3468,8 @@ const DEFAULT_SPOTS = {
     {id:"250_f1",name:"Tour Eiffel",category:"famous",desc:"Monument emblématique de Paris, construit par Gustave Eiffel pour l'Exposition universelle de 1889.",why:"Symbole de la France et offrant une vue panoramique spectaculaire sur Paris.",season:"Toute l'année",tip:"Visitez tôt le matin ou en soirée pour éviter les longues files d'attente.",photo:"Eiffel Tower Paris Landmark",done:false},
     {id:"250_r28",name:"Vallée de la Clarée",category:"nature",desc:"Randonnée dans l'une des vallées les plus sauvages et préservées des Alpes françaises.",why:"Pour ses paysages alpins intacts et ses nombreux sentiers de randonnée.",season:"Été",tip:"Apportez votre appareil photo pour capturer des panoramas à couper le souffle.",photo:"Clarée valley, Alps, hiking",done:false},
     {id:"250_r4",name:"Volcan du Cantal",category:"geology",desc:"Découvrez le plus grand volcan d'Europe, aujourd'hui recouvert de pâturages verdoyants.",why:"Pour ses paysages spectaculaires de monts et vallées façonnés par l'érosion.",season:"Printemps à automne",tip:"Empruntez les sentiers de randonnée balisés pour explorer les différentes facettes du massif.",photo:"Cantal volcano, Auvergne, mountains",done:false},
-  ,
     {id:"fr_nd",name:"Normandie — Plages du Débarquement D-Day",category:"heritage",desc:"6 juin 1944. Les plages qui ont changé l'histoire du monde. 156 000 soldats.",why:"Omaha Beach, Utah, Juno, Gold, Sword : 5 plages, 1 journée, le tournant de la guerre. Cimetière américain de Colleville : 9 388 croix blanches face à la mer. Pointe du Hoc.",season:"Toute l'année. 6 juin = commémoration.",tip:"Mémorial de Caen comme point de départ (2h). Omaha + Pointe du Hoc + Colleville en 1 jour.",photo:"Normandy D-Day beaches Omaha American cemetery France WWII memorial",done:false},
+  ],
   "262":[
     {id:"262_r9",name:"Balade sur le lac Assal",category:"geology",desc:"Marchez sur les rives salines du lac Assal, le point le plus bas d'Afrique.",why:"Un site spectaculaire aux eaux turquoise et aux cristaux de sel.",season:"Octobre à avril",tip:"Prévoyez des lunettes de soleil pour protéger vos yeux de la réverbération.",photo:"Lake Assal, salt flats, turquoise waters",done:false},
     {id:"262_f5",name:"Djibouti-ville",category:"famous",desc:"La capitale du pays, mélange de modernité et de traditions.",why:"C'est le centre culturel et économique de Djibouti.",season:"Octobre à avril",tip:"Explorez le marché central pour une expérience locale authentique.",photo:"city, market",done:false},
@@ -3814,9 +3726,9 @@ const DEFAULT_SPOTS = {
     {id:"276_r29",name:"Visite d'une brasserie artisanale en Franconie",category:"unique",desc:"Découverte des méthodes traditionnelles de brassage de la bière.",why:"Pour goûter des bières locales authentiques et uniques.",season:"Automne",tip:"Participer à une dégustation pour découvrir différents styles de bières.",photo:"franconia brewery beer",done:false},
     {id:"276_r11",name:"Volcan éteint de Vogelsberg",category:"geology",desc:"Un ancien volcan offrant des paysages lunaires et des sentiers de randonnée.",why:"Pour marcher sur les traces d'une activité volcanique ancienne.",season:"Printemps",tip:"Apporter une carte topographique pour bien naviguer dans la région.",photo:"vogelsberg volcano landscape",done:false},
     {id:"276_f7",name:"Île aux musées",category:"famous",desc:"Un complexe de musées situé au cœur de Berlin.",why:"Abrite certaines des collections d'art et d'antiquités les plus importantes au monde.",season:"Toute l'année",tip:"Achetez un billet combiné pour visiter plusieurs musées.",photo:"Museum Island, art, Berlin",done:false},
-  ,
     {id:"de_hh",name:"Hambourg — Speicherstadt et Port",category:"heritage",desc:"Le plus grand entrepôt portuaire du monde. Canaux entre briques rouges. UNESCO.",why:"Speicherstadt (1888) : 2 km d'entrepôts sur pilotis de chêne, classés UNESCO. Miniatur Wunderland (plus grand réseau de trains miniatures). HafenCity, nouveau quartier sur l'eau.",season:"Toute l'année.",tip:"Visite du port en bateau depuis Landungsbrücken (1h).",photo:"Hamburg Speicherstadt warehouse canal brick Germany UNESCO",done:false},
     {id:"de_rhn",name:"Vallée du Rhin — Châteaux et Lorelei",category:"heritage",desc:"65 km de vignes et châteaux médiévaux entre Coblence et Bingen. UNESCO.",why:"Vallée du Rhin Moyen (UNESCO) : 40 châteaux médiévaux, 100 km de vignes en pente. Le Rocher de la Lorelei (132m) inspire légendes depuis le 19e siècle.",season:"Avril–Octobre. Vendanges = septembre.",tip:"Croisière Cologne→Bingen (KD Line). Train Koblenz→Mainz côté rivière.",photo:"Rhine Valley castles Germany Lorelei river vineyards UNESCO",done:false},
+  ],
   "288":[
     {id:"288_r19",name:"Balade en pirogue sur le lac Volta",category:"nature",desc:"Découverte pittoresque du lac Volta en pirogue traditionnelle.",why:"C'est une manière sereine d'explorer l'un des plus grands lacs artificiels du monde.",season:"Octobre à mars",tip:"Apportez de la crème solaire et un chapeau pour vous protéger du soleil.",photo:"canoe lake scenic",done:false},
     {id:"288_f6",name:"Château d'Elmina",category:"famous",desc:"Le plus ancien bâtiment européen subsistant au sud du Sahara.",why:"Un site historique crucial dans l'histoire de la traite des esclaves.",season:"Toute l'année",tip:"Joignez-vous à une visite guidée pour des informations détaillées.",photo:"elmina castle, ghana",done:false},
@@ -4549,8 +4461,8 @@ const DEFAULT_SPOTS = {
     {id:"it_venice",name:"Venise — La Sérénissime",category:"heritage",desc:"Ville construite sur 118 îles reliées par 400 ponts, sans voiture.",why:"Unique au monde — gondoles, carnaval, architecture byzantine et gothique au milieu de la lagune.",season:"Novembre à Mars, Juin à Septembre",tip:"Perdez-vous dans les ruelles loin de la Piazza San Marco. Vaporetto la nuit pour la magie.",photo:"Venice canals gondola Italy bridges",done:false},
     {id:"it_pompeii",name:"Pompéi — Cité Engloutie",category:"heritage",desc:"Ville romaine conservée sous les cendres du Vésuve depuis 79 après J.-C.",why:"La meilleure fenêtre sur la vie romaine antique — rues, fresques, corps conservés dans les cendres.",season:"Mars à Mai, Septembre à Novembre",tip:"Arrivez à l'ouverture (9h) avant les groupes. Combiné avec l'ascension du Vésuve.",photo:"Pompeii ruins ancient Rome Vesuvius",done:false},
     {id:"it_dolomites_extra",name:"Lago di Braies — Dolomites",category:"nature",desc:"Lac émeraude encadré par les pics roses des Dolomites au lever du soleil.",why:"Photo la plus likée d'Italie — reflets roses des Tre Cime dans une eau irréelle.",season:"Juin à Septembre",tip:"Arrivez à 6h du matin pour le reflet et la tranquillité. Louer une barque.",photo:"Lago di Braies Dolomites Italy emerald lake",done:false},
-  ,
     {id:"it_tos",name:"Toscane — Val d'Orcia et Cyprès",category:"nature",desc:"Collines, cyprès, vignobles Chianti. Le paysage le plus peint de l'histoire de l'art.",why:"Val d'Orcia (UNESCO) : route SR146 serpentant entre les cyprès vers Pienza. Montalcino, San Gimignano. Le lever de soleil sur Podere Belvedere est l'image symbole de l'Italie.",season:"Avril–Mai (verts) ou Septembre–Octobre (vendanges, dorés).",tip:"Val d'Orcia : arriver à 6h depuis Pienza pour le brouillard matinal.",photo:"Tuscany Val d Orcia cypress trees hills vineyard Italy golden light",done:false},
+  ],
   "383":[
     {id:"383_r10",name:"Atelier de poterie traditionnelle à Prizren",category:"unique",desc:"Apprenez les techniques ancestrales de poterie avec des artisans locaux.",why:"Une manière unique d'appréhender le patrimoine culturel.",season:"Toute l'année",tip:"Portez des vêtements qui peuvent se salir.",photo:"Prizren pottery workshop",done:false},
     {id:"383_r19",name:"Cours de cuisine kosovare traditionnelle",category:"unique",desc:"Apprenez à préparer des plats locaux avec des chefs du cru.",why:"Une immersion gustative dans la culture locale.",season:"Toute l'année",tip:"Apportez un carnet pour noter les recettes.",photo:"Kosovo traditional cooking",done:false},
@@ -9208,6 +9120,72 @@ function BadgesContent(props) {
 }
 
 
+function SlideshowModal({slideshow,setSlideshow,liked,toggleLike,toggleDone,Cat,setDetailSpot,setImgErr,SpotImg,CC,gc}) {
+  var sp = slideshow.spots[slideshow.idx];
+  var total = slideshow.spots.length;
+  var ci = slideshow.cid ? gc(slideshow.cid) : 0;
+  var isLiked = sp && liked[sp.id];
+  var c = sp ? Cat(sp.category) : {color:"#0ea5e9",icon:"✦",label:""};
+  function prev(e){ e&&e.stopPropagation(); setSlideshow(function(s){return s?Object.assign({},s,{idx:(s.idx-1+s.spots.length)%s.spots.length}):null;}); }
+  function next(e){ e&&e.stopPropagation(); setSlideshow(function(s){return s?Object.assign({},s,{idx:(s.idx+1)%s.spots.length}):null;}); }
+  function close(){ setSlideshow(null); }
+  function like(e){ e.stopPropagation(); if(sp) toggleLike(sp.id); }
+  React.useEffect(function(){
+    function handleKey(e){
+      if(e.key==="ArrowRight"||e.key==="ArrowDown") next();
+      else if(e.key==="ArrowLeft"||e.key==="ArrowUp") prev();
+      else if(e.key==="Escape") close();
+      else if(e.key==="h"||e.key==="H") like(e);
+    }
+    window.addEventListener("keydown",handleKey);
+    return function(){ window.removeEventListener("keydown",handleKey); };
+  },[slideshow]);
+  return (
+    <div style={{position:"fixed",inset:0,zIndex:2000,background:"rgba(0,0,0,.97)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}} onClick={close}>
+      <div style={{position:"absolute",top:0,left:0,right:0,padding:"14px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",background:"linear-gradient(to bottom,rgba(0,0,0,.8),transparent)",zIndex:10}} onClick={e=>e.stopPropagation()}>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <span style={{fontSize:10,fontWeight:700,color:CC[ci],letterSpacing:".12em"}}>{slideshow.cname}</span>
+          <span style={{fontSize:9,color:"#1e4060",fontWeight:500}}>·</span>
+          <span style={{fontSize:10,color:"#2a6080",fontWeight:600}}>{slideshow.idx+1} / {total}</span>
+        </div>
+        <div style={{display:"flex",gap:8}}>
+          <button onClick={like} style={{background:isLiked?"rgba(244,63,94,.18)":"rgba(255,255,255,.07)",border:"1px solid "+(isLiked?"#f43f5e":"rgba(255,255,255,.15)"),borderRadius:8,width:38,height:38,color:isLiked?"#f43f5e":"#5a90b8",cursor:"pointer",fontSize:20,display:"flex",alignItems:"center",justifyContent:"center"}}>{isLiked?"♥":"♡"}</button>
+          <button onClick={close} style={{background:"rgba(255,255,255,.07)",border:"1px solid rgba(255,255,255,.15)",borderRadius:8,width:38,height:38,color:"#5a90b8",cursor:"pointer",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+        </div>
+      </div>
+      <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:"rgba(255,255,255,.06)",zIndex:11}}>
+        <div style={{height:"100%",background:"linear-gradient(90deg,#0ea5e9,#5ab4d4)",width:((slideshow.idx+1)/total*100)+"%",transition:"width .3s",borderRadius:2}}/>
+      </div>
+      <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",width:"100%",padding:"70px 80px 130px",position:"relative"}} onClick={e=>e.stopPropagation()}>
+        {sp&&<SpotImg key={sp.id} spotName={sp.name} photoKey={sp.photo} countryName={slideshow.cname} category={sp.category} style={{maxWidth:"100%",maxHeight:"100%",width:"auto",height:"auto",objectFit:"contain",borderRadius:12,boxShadow:"0 20px 60px rgba(0,0,0,.8)"}}/>}
+        <button onClick={prev} style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",background:"rgba(0,0,0,.6)",border:"1px solid rgba(255,255,255,.12)",borderRadius:12,width:52,height:52,color:"#cde8f8",cursor:"pointer",fontSize:24,display:"flex",alignItems:"center",justifyContent:"center"}}>❮</button>
+        <button onClick={next} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"rgba(0,0,0,.6)",border:"1px solid rgba(255,255,255,.12)",borderRadius:12,width:52,height:52,color:"#cde8f8",cursor:"pointer",fontSize:24,display:"flex",alignItems:"center",justifyContent:"center"}}>❯</button>
+      </div>
+      {sp&&(
+        <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"20px 28px 24px",background:"linear-gradient(to top,rgba(0,0,0,.92) 60%,transparent)"}} onClick={e=>e.stopPropagation()}>
+          <div style={{maxWidth:700,margin:"0 auto"}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+              <span style={{fontSize:9,fontWeight:700,background:c.color+"18",color:c.color,padding:"3px 9px",borderRadius:4,border:"1px solid "+c.color+"30"}}>{c.icon} {c.label}</span>
+              {sp.season&&<span style={{fontSize:9,color:"#1a4060",fontWeight:600,background:"#061018",padding:"3px 9px",borderRadius:4,border:"1px solid #0a2030"}}>🗓 {sp.season}</span>}
+            </div>
+            <div style={{fontSize:22,fontWeight:900,color:"#e8f4fc",lineHeight:1.2,marginBottom:6}}>{sp.name}</div>
+            <div style={{fontSize:14,color:"#3a7090",lineHeight:1.6,marginBottom:8}}>{sp.desc}</div>
+            {sp.tip&&<div style={{fontSize:12,color:"#1a5070",fontStyle:"italic"}}>💡 {sp.tip}</div>}
+            <div style={{marginTop:14,display:"flex",gap:8}}>
+              <button onClick={function(e){e.stopPropagation();setDetailSpot(sp);setImgErr(false);setSlideshow(null);}} style={{background:"rgba(14,165,233,.1)",border:"1px solid rgba(14,165,233,.25)",borderRadius:7,padding:"7px 16px",color:"#0ea5e9",cursor:"pointer",fontSize:11,fontWeight:700}}>VOIR DÉTAILS</button>
+              <button onClick={function(e){e.stopPropagation();toggleDone(slideshow.cid,sp.id);}} style={{background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:7,padding:"7px 16px",color:"#3a6080",cursor:"pointer",fontSize:11,fontWeight:700}}>{sp.done?"✓ ACCOMPLI":"MARQUER ACCOMPLI"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+      <div style={{position:"absolute",bottom:8,left:"50%",transform:"translateX(-50%)",fontSize:9,color:"#0d2540",fontWeight:600,letterSpacing:".06em",whiteSpace:"nowrap"}}>
+        ← → NAVIGUER · H ♥ FAVORI · ESC FERMER
+      </div>
+    </div>
+  );
+}
+
+
 function AtlasMerveilles() {
   const canvasRef    = useRef(null);
   const projRef      = useRef(null);
@@ -9686,15 +9664,6 @@ function AtlasMerveilles() {
                   <div style={{fontSize:10,color:"#0a1a2a",marginTop:6,fontWeight:400}}>Cliquez + pour ajouter une expérience</div>
                 </div>
               ):(
-                React.createElement(React.Fragment,null,
-                filtered.length>1&&React.createElement("div",{style:{display:"flex",justifyContent:"flex-end",marginBottom:8}},
-                  React.createElement("button",{
-                    onClick:function(){ openSlideshow(filtered,0,selectedCountry,selectedName); },
-                    title:"Diaporama — voir les spots en photos",
-                    style:{background:"linear-gradient(135deg,#071828,#0a2240)",border:"1px solid #0d3060",borderRadius:8,padding:"7px 14px",color:"#5ab4d4",cursor:"pointer",fontSize:11,fontWeight:700,letterSpacing:".06em",display:"flex",alignItems:"center",gap:6,transition:"all .2s"}
-                  },"📷 DIAPORAMA (",filtered.length,")")
-                ),
-                React.createElement(React.Fragment,null,
                 filtered.map((spot,i)=>{
                   const c=Cat(spot.category);
                   return(
@@ -9718,7 +9687,6 @@ function AtlasMerveilles() {
                     </div>
                   );
                 })
-                ))
               )}
             </div>
           </div>
@@ -9726,111 +9694,7 @@ function AtlasMerveilles() {
       </div>
 
       {/* ── SLIDESHOW MODAL ── */}
-      {slideshow&&(function(){
-        var sp=slideshow.spots[slideshow.idx];
-        var total=slideshow.spots.length;
-        var ci=slideshow.cid?gc(slideshow.cid):0;
-        var isLiked=sp&&liked[sp.id];
-        function prev(e){ e&&e.stopPropagation(); setSlideshow(function(s){return s?Object.assign({},s,{idx:(s.idx-1+s.spots.length)%s.spots.length}):null;}); }
-        function next(e){ e&&e.stopPropagation(); setSlideshow(function(s){return s?Object.assign({},s,{idx:(s.idx+1)%s.spots.length}):null;}); }
-        function close(){ setSlideshow(null); }
-        function like(e){ e.stopPropagation(); if(sp) toggleLike(sp.id); }
-        var c=sp?Cat(sp.category):{color:"#0ea5e9",icon:"✦",label:""};
-        return(
-          <div style={{position:"fixed",inset:0,zIndex:2000,background:"rgba(0,0,0,.97)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}
-            onClick={close}>
-
-            {/* Top bar */}
-            <div style={{position:"absolute",top:0,left:0,right:0,padding:"14px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",background:"linear-gradient(to bottom,rgba(0,0,0,.8),transparent)",zIndex:10}}
-              onClick={e=>e.stopPropagation()}>
-              <div style={{display:"flex",alignItems:"center",gap:10}}>
-                <span style={{fontSize:10,fontWeight:700,color:CC[ci],letterSpacing:".12em"}}>{slideshow.cname}</span>
-                <span style={{fontSize:9,color:"#1e4060",fontWeight:500}}>·</span>
-                <span style={{fontSize:10,color:"#2a6080",fontWeight:600}}>{slideshow.idx+1} / {total}</span>
-              </div>
-              <div style={{display:"flex",gap:8}}>
-                <button onClick={like}
-                  style={{background:isLiked?"rgba(244,63,94,.18)":"rgba(255,255,255,.07)",border:"1px solid "+(isLiked?"#f43f5e":"rgba(255,255,255,.15)"),borderRadius:8,width:38,height:38,color:isLiked?"#f43f5e":"#5a90b8",cursor:"pointer",fontSize:20,display:"flex",alignItems:"center",justifyContent:"center",transition:"all .2s"}}
-                  title={isLiked?"Retirer des favoris":"Ajouter aux favoris"}>
-                  {isLiked?"♥":"♡"}
-                </button>
-                <button onClick={close}
-                  style={{background:"rgba(255,255,255,.07)",border:"1px solid rgba(255,255,255,.15)",borderRadius:8,width:38,height:38,color:"#5a90b8",cursor:"pointer",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
-              </div>
-            </div>
-
-            {/* Progress bar */}
-            <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:"rgba(255,255,255,.06)",zIndex:11}}>
-              <div style={{height:"100%",background:"linear-gradient(90deg,#0ea5e9,#5ab4d4)",width:((slideshow.idx+1)/total*100)+"%",transition:"width .3s ease",borderRadius:2}}/>
-            </div>
-
-            {/* Main image */}
-            <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",width:"100%",padding:"70px 80px 130px",position:"relative"}}
-              onClick={e=>e.stopPropagation()}>
-              {sp&&<SpotImg
-                key={sp.id}
-                spotName={sp.name}
-                photoKey={sp.photo}
-                countryName={slideshow.cname}
-                category={sp.category}
-                style={{maxWidth:"100%",maxHeight:"100%",width:"auto",height:"auto",objectFit:"contain",borderRadius:12,boxShadow:"0 20px 60px rgba(0,0,0,.8)",animation:"modIn .25s ease both"}}
-              />}
-
-              {/* Nav arrows */}
-              <button onClick={prev}
-                style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",background:"rgba(0,0,0,.6)",border:"1px solid rgba(255,255,255,.12)",borderRadius:12,width:52,height:52,color:"#cde8f8",cursor:"pointer",fontSize:24,display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(6px)",transition:"all .18s"}}
-                title="Précédent (←)">❮</button>
-              <button onClick={next}
-                style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"rgba(0,0,0,.6)",border:"1px solid rgba(255,255,255,.12)",borderRadius:12,width:52,height:52,color:"#cde8f8",cursor:"pointer",fontSize:24,display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(6px)",transition:"all .18s"}}
-                title="Suivant (→)">❯</button>
-            </div>
-
-            {/* Bottom info panel */}
-            {sp&&(
-              <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"20px 28px 24px",background:"linear-gradient(to top,rgba(0,0,0,.92) 60%,transparent)",backdropFilter:"blur(0px)"}}
-                onClick={e=>e.stopPropagation()}>
-                <div style={{maxWidth:700,margin:"0 auto"}}>
-                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-                    <span style={{fontSize:9,fontWeight:700,background:c.color+"18",color:c.color,padding:"3px 9px",borderRadius:4,border:"1px solid "+c.color+"30",letterSpacing:".06em"}}>{c.icon} {c.label}</span>
-                    {sp.season&&<span style={{fontSize:9,color:"#1a4060",fontWeight:600,background:"#061018",padding:"3px 9px",borderRadius:4,border:"1px solid #0a2030"}}>🗓 {sp.season}</span>}
-                    {isLiked&&<span style={{fontSize:11,color:"#f43f5e"}}>♥</span>}
-                  </div>
-                  <div style={{fontSize:22,fontWeight:900,color:"#e8f4fc",lineHeight:1.2,letterSpacing:"-.02em",marginBottom:6}}>{sp.name}</div>
-                  <div style={{fontSize:14,color:"#3a7090",lineHeight:1.6,marginBottom:sp.tip?8:0}}>{sp.desc}</div>
-                  {sp.tip&&<div style={{fontSize:12,color:"#1a5070",fontStyle:"italic"}}>💡 {sp.tip}</div>}
-                  <div style={{marginTop:14,display:"flex",gap:8,flexWrap:"wrap"}}>
-                    <button onClick={function(e){ e.stopPropagation(); setDetailSpot(sp); setImgErr(false); setSlideshow(null); }}
-                      style={{background:"rgba(14,165,233,.1)",border:"1px solid rgba(14,165,233,.25)",borderRadius:7,padding:"7px 16px",color:"#0ea5e9",cursor:"pointer",fontSize:11,fontWeight:700,letterSpacing:".05em"}}>VOIR DÉTAILS</button>
-                    <button onClick={function(e){ e.stopPropagation(); toggleDone(slideshow.cid,sp.id); }}
-                      style={{background:sp.done?"rgba(34,197,94,.1)":"rgba(255,255,255,.04)",border:"1px solid "+(sp.done?"rgba(34,197,94,.3)":"rgba(255,255,255,.1)"),borderRadius:7,padding:"7px 16px",color:sp.done?"#22c55e":"#3a6080",cursor:"pointer",fontSize:11,fontWeight:700,letterSpacing:".05em"}}>{sp.done?"✓ ACCOMPLI":"MARQUER ACCOMPLI"}</button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Thumbnail strip */}
-            <div style={{position:"absolute",bottom:sp?180:20,left:"50%",transform:"translateX(-50%)",display:"flex",gap:5,maxWidth:"min(90vw,600px)",overflow:"hidden",padding:"0 4px"}}
-              onClick={e=>e.stopPropagation()}>
-              {slideshow.spots.slice(Math.max(0,slideshow.idx-4),Math.min(total,slideshow.idx+5)).map(function(ts,ti){
-                var realIdx=Math.max(0,slideshow.idx-4)+ti;
-                var active=realIdx===slideshow.idx;
-                return(
-                  <div key={ts.id} onClick={function(){ setSlideshow(function(s){return s?Object.assign({},s,{idx:realIdx}):null;}); }}
-                    style={{width:active?42:32,height:active?42:32,borderRadius:6,border:"2px solid "+(active?"#5ab4d4":"rgba(255,255,255,.1)"),overflow:"hidden",cursor:"pointer",flexShrink:0,opacity:active?1:0.5,transition:"all .2s",background:"#0a1a2a"}}>
-                    <SpotImg spotName={ts.name} photoKey={ts.photo} countryName={slideshow.cname} category={ts.category}
-                      style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Keyboard hint */}
-            <div style={{position:"absolute",bottom:8,left:"50%",transform:"translateX(-50%)",fontSize:9,color:"#0d2540",fontWeight:600,letterSpacing:".06em",whiteSpace:"nowrap"}}>
-              ← → NAVIGUER &nbsp;·&nbsp; H ♥ FAVORI &nbsp;·&nbsp; ESC FERMER
-            </div>
-          </div>
-        );
-      })()}
+      {slideshow&&<SlideshowModal slideshow={slideshow} setSlideshow={setSlideshow} liked={liked} toggleLike={toggleLike} toggleDone={toggleDone} Cat={Cat} setDetailSpot={setDetailSpot} setImgErr={setImgErr} SpotImg={SpotImg} CC={CC} gc={gc}/>}
 
       {/* ── DETAIL MODAL ── */}
       {detailSpot&&!modalErr&&detailSpot.id&&(
