@@ -56,16 +56,20 @@ async function sbSave(spots, liked, visited) {
 }
 
 async function sbLoad() {
+  console.log("🔵 sbLoad called");
   try {
-    const r = await fetch(SB_URL + "/rest/v1/atlas_data?user_id=eq.default_user&select=*", {
-      headers: SB_HEADERS
+    var url = "https://ssvzbebxxpxbiukygakt.supabase.co/rest/v1/atlas_data?user_id=eq.default_user&select=*";
+    var key = "sb_publishable__nbX40W9sepCY21NiAG--w_6HRqqjBz";
+    var r = await fetch(url, {
+      headers: { "apikey": key, "Authorization": "Bearer " + key }
     });
-    const d = await r.json();
-    console.log("🔵 sbLoad raw:", JSON.stringify(d).slice(0,200));
-    if(d && d[0]) return d[0];
+    console.log("🔵 sbLoad status:", r.status);
+    var d = await r.json();
+    console.log("🔵 sbLoad data:", JSON.stringify(d).slice(0,300));
+    if(Array.isArray(d) && d[0]) return d[0];
     return null;
   } catch(e) {
-    console.log("🔴 sbLoad fetch error:", e.message);
+    console.log("🔴 sbLoad ERROR:", e.message);
     return null;
   }
 }
