@@ -9290,6 +9290,8 @@ function AtlasMerveilles() {
   useEffect(()=>{ const fn=()=>setIsMobile(window.innerWidth<=768); window.addEventListener('resize',fn); return()=>window.removeEventListener('resize',fn); },[]);
   const [importRef]                          = useState(()=>({ current:null }));
   const [form,setForm] = useState({name:"",category:"marine",desc:"",why:"",season:"",tip:"",photo:""});
+  const [isOwner, setIsOwner] = useState(false);
+  const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
 
   useEffect(()=>{ spotsRef.current=spots; },[spots]);
   useEffect(()=>{ hoveredRef.current=hoveredCountry; },[hoveredCountry]);
@@ -9375,6 +9377,8 @@ function AtlasMerveilles() {
         setLiked(likedData);
         setVisitedCountries(visitedData);
         setTimeout(function(){ isInitialized.current = true; }, 200);
+    // Check owner password
+    if(sessionStorage.getItem("atlas_owner") === "true") setIsOwner(true);
 
       } catch(e) { console.log("🔴 INIT CRASH", e); }
     })();
@@ -9484,7 +9488,7 @@ function AtlasMerveilles() {
     return()=>{ cancelAnimationFrame(animRef.current); canvas.removeEventListener("wheel",onWheel); canvas.removeEventListener("mousemove",onMove); clearTimeout(resumeRef.current); };
   },[worldData,draw]);
 
-  const toggleLike=(sid)=>setLiked(function(p){ var n=Object.assign({},p); if(n[sid]) delete n[sid]; else n[sid]=true; return n; });
+  const toggleLike=(sid)=>{ if(!isOwner) return; setLiked(function(p){ var n=Object.assign({},p); if(n[sid]) delete n[sid]; else n[sid]=true; return n; }); };
 
   // Slideshow helpers
   const openSlideshow = React.useCallback(function(spotsList, startIdx, cid, cname){
@@ -9508,10 +9512,10 @@ function AtlasMerveilles() {
     window.addEventListener("keydown", handleKey);
     return function(){ window.removeEventListener("keydown", handleKey); };
   }, [slideshow]);
-  const toggleVisited=(cid)=>setVisitedCountries(function(p){ var n=Object.assign({},p); if(n[cid]) delete n[cid]; else n[cid]=true; return n; });
-  const toggleDone=(cid,sid)=>setSpots(p=>({...p,[cid]:p[cid].map(s=>s.id===sid?{...s,done:!s.done}:s)}));
-  const deleteSpot=(cid,sid)=>setSpots(p=>{const n=p[cid].filter(s=>s.id!==sid);if(!n.length){const{[cid]:_,...r}=p;return r;}return{...p,[cid]:n};});
-  const addSpot=()=>{ if(!form.name.trim()||!selectedCountry) return; const id="u"+Date.now(); setSpots(p=>({...p,[selectedCountry]:[...(p[selectedCountry]||[]),{id,...form,done:false}].sort((a,b)=>a.name.localeCompare(b.name,undefined,{sensitivity:'base'}))})); setForm({name:"",category:"marine",desc:"",why:"",season:"",tip:"",photo:""}); setShowModal(false); };
+  const toggleVisited=(cid)=>{ if(!isOwner){ setShowPasswordPrompt(true); return; } setVisitedCountries(function(p){ var n=Object.assign({},p); if(n[cid]) delete n[cid]; else n[cid]=true; return n; }); };
+  const toggleDone=(cid,sid)=>{ if(!isOwner) return; setSpots(p=>({...p,[cid]:p[cid].map(s=>s.id===sid?{...s,done:!s.done}:s)})); };
+  const deleteSpot=(cid,sid)=>{ if(!isOwner) return; setSpots(p=>{const n=p[cid].filter(s=>s.id!==sid);if(!n.length){const{[cid]:_,...r}=p;return r;}return{...p,[cid]:n};}); };
+  const addSpot=()=>{ if(!isOwner) return; if(!form.name.trim()||!selectedCountry) return; const id="u"+Date.now(); setSpots(p=>({...p,[selectedCountry]:[...(p[selectedCountry]||[]),{id,...form,done:false}].sort((a,b)=>a.name.localeCompare(b.name,undefined,{sensitivity:'base'}))})); setForm({name:"",category:"marine",desc:"",why:"",season:"",tip:"",photo:""}); setShowModal(false); };
 
   const exportSpots=()=>{ const blob=new Blob([JSON.stringify(spots,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='mon-atlas.json'; a.click(); URL.revokeObjectURL(url); };
   const importSpots=e=>{ const file=e.target.files[0]; if(!file) return; const reader=new FileReader(); reader.onload=ev=>{ try{ setSpots(JSON.parse(ev.target.result)); }catch{ alert('Fichier JSON invalide.'); }}; reader.readAsText(file); e.target.value=''; };
@@ -9601,6 +9605,7 @@ function AtlasMerveilles() {
               </div>
             </div>
             <div style={{display:"flex",gap:5}}>
+              <button onClick={()=>setShowPasswordPrompt(true)} style={{background:isOwner?"rgba(34,197,94,.15)":"rgba(255,255,255,.05)",border:"1px solid "+(isOwner?"#22c55e":"#0d2540"),borderRadius:7,padding:"5px 8px",color:isOwner?"#22c55e":"#4a80a8",cursor:"pointer",fontSize:14}}>{isOwner?"🔓":"🔒"}</button>
               <button onClick={()=>setShowBadges(true)} style={{background:"#06122a",border:"1px solid #0d2038",borderRadius:7,padding:"5px 8px",color:"#34d399",fontWeight:700,fontSize:11,cursor:"pointer"}}>🏅</button>
               <button onClick={()=>setShowGlobalSearch(true)} style={{background:"#06122a",border:"1px solid #0d2038",borderRadius:7,padding:"5px 8px",color:"#e879f9",fontWeight:700,fontSize:11,cursor:"pointer"}}>🔍</button>
               <button onClick={()=>setShowStats(true)} style={{background:"#06122a",border:"1px solid #0d2038",borderRadius:7,padding:"5px 8px",color:"#f59e0b",fontWeight:700,fontSize:11,cursor:"pointer"}}>📊</button>
@@ -9754,6 +9759,43 @@ function AtlasMerveilles() {
       </div>
 
       {/* ── SLIDESHOW MODAL ── */}
+      {/* ── PASSWORD MODAL ── */}
+      {showPasswordPrompt&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:3000}} onClick={()=>setShowPasswordPrompt(false)}>
+          <div style={{background:"#030e1c",border:"1px solid #0d2540",borderRadius:14,padding:"28px 32px",minWidth:280,textAlign:"center"}} onClick={e=>e.stopPropagation()}>
+            <div style={{fontSize:32,marginBottom:12}}>🔐</div>
+            <div style={{fontWeight:800,fontSize:16,color:"#8ecce8",marginBottom:6}}>Mode édition</div>
+            <div style={{fontSize:12,color:"#2a5070",marginBottom:16}}>Entre ton mot de passe pour modifier</div>
+            <input type="password" id="ownerPwd" placeholder="Mot de passe..." autoFocus
+              style={{width:"100%",background:"#061220",border:"1px solid #0d2540",borderRadius:8,padding:"10px 14px",color:"#cde8f8",fontSize:14,marginBottom:14,outline:"none"}}
+              onKeyDown={function(e){
+                if(e.key==="Enter"){
+                  if(e.target.value==="dudu"){
+                    setIsOwner(true);
+                    sessionStorage.setItem("atlas_owner","true");
+                    setShowPasswordPrompt(false);
+                  } else {
+                    e.target.style.borderColor="#f87171";
+                    setTimeout(()=>{ e.target.style.borderColor="#0d2540"; e.target.value=""; },1000);
+                  }
+                }
+              }}
+            />
+            <button onClick={function(){
+              var pwd=document.getElementById("ownerPwd").value;
+              if(pwd==="dudu"){
+                setIsOwner(true);
+                sessionStorage.setItem("atlas_owner","true");
+                setShowPasswordPrompt(false);
+              }
+            }} style={{background:"linear-gradient(135deg,#0ea5e9,#0284c7)",border:"none",borderRadius:8,padding:"10px 24px",color:"#fff",fontWeight:700,cursor:"pointer",width:"100%"}}>
+              Déverrouiller
+            </button>
+            {isOwner&&<button onClick={function(){ setIsOwner(false); sessionStorage.removeItem("atlas_owner"); setShowPasswordPrompt(false); }} style={{background:"transparent",border:"1px solid #1a3a5a",borderRadius:8,padding:"8px 16px",color:"#f87171",fontWeight:600,cursor:"pointer",width:"100%",marginTop:8,fontSize:12}}>Se déconnecter</button>}
+          </div>
+        </div>
+      )}
+
       {slideshow&&<SlideshowModal slideshow={slideshow} setSlideshow={setSlideshow} liked={liked} toggleLike={toggleLike} toggleDone={toggleDone} Cat={Cat} setDetailSpot={setDetailSpot} setImgErr={setImgErr} SpotImg={SpotImg} CC={CC} gc={gc}/>}
 
       {/* ── DETAIL MODAL ── */}
