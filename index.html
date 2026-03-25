@@ -9461,8 +9461,8 @@ function AtlasMerveilles() {
         // All done but not visited: bright emerald
         ctx.fillStyle="#061f10";
       } else if(someDone){
-        // Partially done: amber tint
-        ctx.fillStyle="#1a1205";
+        // Partially done: deep violet
+        ctx.fillStyle="#120818";
       } else if(isH){
         ctx.fillStyle=C.hover;
       } else if(sd?.length){
@@ -9483,7 +9483,7 @@ function AtlasMerveilles() {
       } else if(allDone){
         sw=2.0; sc="#00ff88";
       } else if(someDone){
-        sw=1.0; sc="#f59e0b";
+        sw=1.8; sc="#a855f7";
       } else if(sd?.length){
         sw=0.9; sc=CC[ci];
       } else if(isH){
@@ -9493,12 +9493,13 @@ function AtlasMerveilles() {
       }
       ctx.beginPath(); pathGen(f); ctx.strokeStyle=sc; ctx.lineWidth=sw; ctx.stroke();
 
-      // Extra glow for visited + allDone countries
-      if((isVisited || allDone) && !isS){
+      // Extra glow for special countries
+      if((isVisited || allDone || someDone) && !isS){
         ctx.beginPath(); pathGen(f);
-        if(isVisited && allDone) ctx.strokeStyle="rgba(0,255,136,0.30)";
-        else if(isVisited)       ctx.strokeStyle="rgba(6,214,196,0.25)";
-        else                     ctx.strokeStyle="rgba(0,255,136,0.20)";
+        if(isVisited && allDone)  ctx.strokeStyle="rgba(0,255,136,0.30)";
+        else if(isVisited)        ctx.strokeStyle="rgba(6,214,196,0.25)";
+        else if(allDone)          ctx.strokeStyle="rgba(0,255,136,0.20)";
+        else if(someDone)         ctx.strokeStyle="rgba(168,85,247,0.20)";
         ctx.lineWidth=5; ctx.stroke();
       }
     }
