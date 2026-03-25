@@ -9278,6 +9278,7 @@ function AtlasMerveilles() {
   const sbSpotsRef = useRef(spots);
   const sbLikedRef = useRef(liked);
   const sbVisitedRef = useRef(visitedCountries);
+  const isInitialized = useRef(false);
   useEffect(()=>{ sbSpotsRef.current=spots; },[spots]);
   useEffect(()=>{ sbLikedRef.current=liked; },[liked]);
   useEffect(()=>{ sbVisitedRef.current=visitedCountries; },[visitedCountries]);
@@ -9368,8 +9369,10 @@ function AtlasMerveilles() {
     setSpots(baseSpots);
     setLiked(likedData);
     setVisitedCountries(visitedData);
+    setTimeout(function(){ isInitialized.current = true; }, 100);
   })(); },[]);
   useEffect(()=>{
+    if(!isInitialized.current) return;
     try{ localStorage.setItem("atlas-v14",JSON.stringify(spots)); }catch(e){}
     clearTimeout(window._sbTimer);
     window._sbTimer = setTimeout(()=>{
@@ -9377,14 +9380,15 @@ function AtlasMerveilles() {
     }, 1500);
   },[spots]);
   useEffect(()=>{
+    if(!isInitialized.current) return;
     try{ localStorage.setItem("atlas-liked",JSON.stringify(liked)); }catch(e){}
-    // Sync to Supabase
     clearTimeout(window._sbTimer);
     window._sbTimer = setTimeout(()=>{
       try{ sbSave(sbSpotsRef.current, sbLikedRef.current, sbVisitedRef.current); }catch(e){}
     }, 1500);
   },[liked]);
   useEffect(()=>{
+    if(!isInitialized.current) return;
     try{ localStorage.setItem("atlas-visited",JSON.stringify(visitedCountries)); }catch(e){}
     clearTimeout(window._sbTimer);
     window._sbTimer = setTimeout(()=>{
