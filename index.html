@@ -67,6 +67,31 @@ async function sbLoad() {
 }
 
 const{useState,useEffect,useRef,useCallback}=React;
+
+// ── Utility functions (global scope) ─────────────────────────────────────────
+
+function getScores(cid) {
+  var known = {
+    "124":[1,1,2,3,4,5,5,5,4,3,2,1],
+    "840":[1,1,2,3,4,5,5,5,4,3,2,1],
+    "250":[
+      {label:"🌡 Max",values:[8,9,13,16,20,24,26,26,22,17,11,8],color:"#f97316",unit:"°"},
+      {label:"❄ Min",values:[2,3,5,8,11,14,16,16,13,10,5,3],color:"#38bdf8",unit:"°"},
+      {label:"🌧 Pluie",values:[90,70,80,75,80,65,60,60,65,85,90,100],color:"#60a5fa",unit:""},
+      {label:"☀ Soleil",values:[2,3,5,6,7,8,8,8,6,4,2,2],color:"#fbbf24",unit:"h"},
+    ],
+  };
+  return known[cid] || null;
+}
+
+var pct = function(v,t){ return t>0 ? Math.round(v/t*100)+"%" : "0%"; };
+
+function fetchWeather(cid, callback) {
+  var data = getScores(cid);
+  if(data && Array.isArray(data)) { callback(data); return; }
+  callback(null);
+}
+
 </script>
 <script type="text/babel">
 var pct = function(v,t){ return t>0 ? Math.round(v/t*100)+"%" : "0%"; };
@@ -101,19 +126,6 @@ const COORDS = {
   "858":"-32.5,-55.8","862":"6.4,-66.6","887":"15.6,48.5","894":"-13.1,27.8"
 };
 
-function getScores(cid) {
-  var known = {
-    "124":[1,1,2,3,4,5,5,5,4,3,2,1],
-    "840":[1,1,2,3,4,5,5,5,4,3,2,1],
-    "250":[
-      {label:"🌡 Max (°C)",values:[8,9,13,16,20,24,26,26,22,17,11,8],color:"#f97316",unit:"°"},
-      {label:"❄ Min (°C)",values:[2,3,5,8,11,14,16,16,13,10,5,3],color:"#38bdf8",unit:"°"},
-      {label:"🌧 Pluie (mm)",values:[90,70,80,75,80,65,60,60,65,85,90,100],color:"#60a5fa",unit:""},
-      {label:"☀ Soleil (h)",values:[2,3,5,6,7,8,8,8,6,4,2,2],color:"#fbbf24",unit:"h"},
-    ],
-  };
-  return known[cid] || null;
-}
 
 // ── CONTINENT MAP ─────────────────────────────────────────────────────────────
 const CM = {
@@ -9121,14 +9133,6 @@ function BadgesContent(props) {
 
 
 // ── Supabase sync ──────────────────────────────────────────────────────────
-const SB_URL = "https://ssvzbebxxpxbiukygakt.supabase.co";
-const SB_KEY = "sb_publishable__nbX40W9sepCY21NiAG--w_6HRqqjBz";
-const SB_HEADERS = {
-  "Content-Type": "application/json",
-  "apikey": SB_KEY,
-  "Authorization": "Bearer " + SB_KEY,
-  "Prefer": "resolution=merge-duplicates"
-};
 
 async function sbSave(spots, liked, visited) {
   try {
@@ -9152,26 +9156,12 @@ async function sbSave(spots, liked, visited) {
 
 async function sbLoad() {
   try {
-    const r = await fetch(SB_URL + "/rest/v1/atlas_data?user_id=eq.default_user&select=*", {
-      headers: SB_HEADERS
-    });
-    const d = await r.json();
-    if(d && d[0]) return d[0];
+            if(d && d[0]) return d[0];
   } catch(e) {}
   return null;
 }
 
 
-function fetchWeather(cid, callback) {
-  // Try to get local weather data first
-  var data = getScores ? getScores(cid) : null;
-  if (data && Array.isArray(data)) {
-    callback(data);
-    return;
-  }
-  // No data available
-  callback(null);
-}
 
 
 function SlideshowModal({slideshow,setSlideshow,liked,toggleLike,toggleDone,Cat,setDetailSpot,setImgErr,SpotImg,CC,gc}) {
@@ -9241,7 +9231,6 @@ function SlideshowModal({slideshow,setSlideshow,liked,toggleLike,toggleDone,Cat,
 
 
 function AtlasMerveilles() {
-  const pct = function(v,t){ return t>0?Math.round(v/t*100)+"%":"0%"; };
   const canvasRef    = useRef(null);
   const projRef      = useRef(null);
   const animRef      = useRef(null);
