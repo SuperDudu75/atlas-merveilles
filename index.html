@@ -9120,6 +9120,60 @@ function BadgesContent(props) {
 }
 
 
+// ── Supabase sync ──────────────────────────────────────────────────────────
+const SB_URL = "https://ssvzbebxxpxbiukygakt.supabase.co";
+const SB_KEY = "sb_publishable__nbX40W9sepCY21NiAG--w_6HRqqjBz";
+const SB_HEADERS = {
+  "Content-Type": "application/json",
+  "apikey": SB_KEY,
+  "Authorization": "Bearer " + SB_KEY,
+  "Prefer": "resolution=merge-duplicates"
+};
+
+async function sbSave(spots, liked, visited) {
+  try {
+    var doneMap = {};
+    Object.values(spots).forEach(function(arr){
+      arr.forEach(function(s){ if(s.done) doneMap[s.id]=true; });
+    });
+    await fetch(SB_URL + "/rest/v1/atlas_data", {
+      method: "POST",
+      headers: SB_HEADERS,
+      body: JSON.stringify({
+        user_id: "default_user",
+        spots: JSON.stringify(doneMap),
+        liked: JSON.stringify(liked),
+        visited: JSON.stringify(visited),
+        updated_at: new Date().toISOString()
+      })
+    });
+  } catch(e) {}
+}
+
+async function sbLoad() {
+  try {
+    const r = await fetch(SB_URL + "/rest/v1/atlas_data?user_id=eq.default_user&select=*", {
+      headers: SB_HEADERS
+    });
+    const d = await r.json();
+    if(d && d[0]) return d[0];
+  } catch(e) {}
+  return null;
+}
+
+
+function fetchWeather(cid, callback) {
+  // Try to get local weather data first
+  var data = getScores ? getScores(cid) : null;
+  if (data && Array.isArray(data)) {
+    callback(data);
+    return;
+  }
+  // No data available
+  callback(null);
+}
+
+
 function SlideshowModal({slideshow,setSlideshow,liked,toggleLike,toggleDone,Cat,setDetailSpot,setImgErr,SpotImg,CC,gc}) {
   var sp = slideshow.spots[slideshow.idx];
   var total = slideshow.spots.length;
