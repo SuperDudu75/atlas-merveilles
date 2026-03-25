@@ -69,7 +69,7 @@ async function sbLoad() {
 const{useState,useEffect,useRef,useCallback}=React;
 </script>
 <script type="text/babel">
-
+var pct = function(v,t){ return t>0 ? Math.round(v/t*100)+"%" : "0%"; };
 const WC = ["","#ef4444","#f97316","#eab308","#22c55e","#06b6d4"];
 const WL = ["","Éviter","Correct","Bon","Très bon","Parfait"];
 const MN = ["Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc"];
@@ -166,7 +166,6 @@ const CATS = [
   { id:"liked",    label:"Mes coups de ♥",     icon:"♥", color:"#f43f5e" },
 ];
 const safeStr = function(v){ return v ? String(v) : ""; };
-const pct = function(val, total){ return total > 0 ? Math.round(val/total*100)+"%" : "0%"; };
 const UNSPLASH_KEY = "E8CzwpYEHukJpmdfhJLiJTzJvgW9_lr1ECoJbIeGKs8";
 // 🔑 Pexels gratuit: https://www.pexels.com/api/
 const IMG_CACHE3 = {};
