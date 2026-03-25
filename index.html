@@ -9421,6 +9421,7 @@ function AtlasMerveilles() {
     })();
   },[]);
 
+  const visitedRef   = useRef({});
   const draw = useCallback(()=>{
     const canvas=canvasRef.current, proj=projRef.current;
     if(!canvas||!proj) return;
