@@ -9327,10 +9327,14 @@ function AtlasMerveilles() {
         try{ likedData = typeof sb.liked==="string"?JSON.parse(sb.liked):(sb.liked||{}); }catch(e){}
         try{ visitedData = typeof sb.visited==="string"?JSON.parse(sb.visited):(sb.visited||{}); }catch(e){}
       }
-    }catch(e){
-      // Fallback to localStorage for liked/visited
-      try{ const lk=await window.storage.get("atlas-liked"); if(lk&&lk.value) likedData=JSON.parse(lk.value); }catch(e){}
-      try{ const vc=await window.storage.get("atlas-visited"); if(vc&&vc.value) visitedData=JSON.parse(vc.value); }catch(e){}
+    }catch(e){}
+
+    // Always fallback to localStorage if Supabase returned nothing
+    if(Object.keys(likedData).length===0){
+      try{ var lk=localStorage.getItem("atlas-liked"); if(lk) likedData=JSON.parse(lk); }catch(e){}
+    }
+    if(Object.keys(visitedData).length===0){
+      try{ var vc=localStorage.getItem("atlas-visited"); if(vc) visitedData=JSON.parse(vc); }catch(e){}
     }
 
     // 3. Apply doneMap onto baseSpots
@@ -9366,14 +9370,14 @@ function AtlasMerveilles() {
     setVisitedCountries(visitedData);
   })(); },[]);
   useEffect(()=>{
-    (async()=>{ try{ await window.storage.set("atlas-v14",JSON.stringify(spots)); }catch(e){} })();
+    try{ localStorage.setItem("atlas-v14",JSON.stringify(spots)); }catch(e){}
     clearTimeout(window._sbTimer);
     window._sbTimer = setTimeout(()=>{
       try{ sbSave(sbSpotsRef.current, sbLikedRef.current, sbVisitedRef.current); }catch(e){}
     }, 1500);
   },[spots]);
   useEffect(()=>{
-    (async()=>{ try{ await window.storage.set("atlas-liked",JSON.stringify(liked)); }catch(e){} })();
+    try{ localStorage.setItem("atlas-liked",JSON.stringify(liked)); }catch(e){}
     // Sync to Supabase
     clearTimeout(window._sbTimer);
     window._sbTimer = setTimeout(()=>{
@@ -9381,7 +9385,7 @@ function AtlasMerveilles() {
     }, 1500);
   },[liked]);
   useEffect(()=>{
-    (async()=>{ try{ await window.storage.set("atlas-visited",JSON.stringify(visitedCountries)); }catch(e){} })();
+    try{ localStorage.setItem("atlas-visited",JSON.stringify(visitedCountries)); }catch(e){}
     clearTimeout(window._sbTimer);
     window._sbTimer = setTimeout(()=>{
       try{ sbSave(sbSpotsRef.current, sbLikedRef.current, sbVisitedRef.current); }catch(e){}
