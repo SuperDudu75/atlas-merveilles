@@ -9642,6 +9642,7 @@ function AtlasMerveilles() {
             );})}
           </div>
           <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+            <button className="btn" onClick={()=>setShowPasswordPrompt(true)} style={{background:isOwner?"rgba(34,197,94,.15)":"#06122a",border:"1px solid "+(isOwner?"#22c55e":"#0d2038"),borderRadius:7,padding:"5px 8px",color:isOwner?"#22c55e":"#4a80a8",cursor:"pointer",fontSize:14}}>{isOwner?"🔓":"🔒"}</button>
             <button className="btn" onClick={()=>setShowBadges(true)} style={{background:"#06122a",border:"1px solid #0d2038",borderRadius:8,padding:"8px 12px",color:"#34d399",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}>🏅 Badges</button>
             <button className="btn" onClick={()=>setShowGlobalSearch(true)} style={{background:"#06122a",border:"1px solid #0d2038",borderRadius:8,padding:"8px 12px",color:"#e879f9",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}>🔍 Recherche</button>
             <button className="btn" onClick={()=>setShowStats(true)} style={{background:"#06122a",border:"1px solid #0d2038",borderRadius:8,padding:"8px 12px",color:"#f59e0b",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap"}}>📊 Stats</button>
