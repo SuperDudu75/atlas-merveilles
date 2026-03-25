@@ -75,6 +75,8 @@ async function sbLoad() {
 }
 
 const{useState,useEffect,useRef,useCallback}=React;
+window.sbLoad = sbLoad;
+window.sbSave = sbSave;
 
 // ── Utility functions (global scope) ─────────────────────────────────────────
 
@@ -9142,32 +9144,9 @@ function BadgesContent(props) {
 
 // ── Supabase sync ──────────────────────────────────────────────────────────
 
-async function sbSave(spots, liked, visited) {
-  try {
-    var doneMap = {};
-    Object.values(spots).forEach(function(arr){
-      arr.forEach(function(s){ if(s.done) doneMap[s.id]=true; });
-    });
-    await fetch(SB_URL + "/rest/v1/atlas_data", {
-      method: "POST",
-      headers: SB_HEADERS,
-      body: JSON.stringify({
-        user_id: "default_user",
-        spots: JSON.stringify(doneMap),
-        liked: JSON.stringify(liked),
-        visited: JSON.stringify(visited),
-        updated_at: new Date().toISOString()
-      })
-    });
-  } catch(e) {}
-}
+// sbSave defined in regular script
 
-async function sbLoad() {
-  try {
-            if(d && d[0]) return d[0];
-  } catch(e) {}
-  return null;
-}
+// sbLoad defined in regular script
 
 
 
@@ -9344,7 +9323,7 @@ function AtlasMerveilles() {
         // 2. Load liked/visited from Supabase
         var likedData = {}, visitedData = {};
         try {
-          var sb = await sbLoad();
+          var sb = await window.sbLoad();
           console.log("🔵 sbLoad result:", JSON.stringify(sb).slice(0,200));
           if(sb) {
             // Apply done spots from Supabase
@@ -9389,7 +9368,7 @@ function AtlasMerveilles() {
     try{ localStorage.setItem("atlas-v14",JSON.stringify(spots)); }catch(e){}
     clearTimeout(window._sbTimer);
     window._sbTimer = setTimeout(()=>{
-      try{ sbSave(sbSpotsRef.current, sbLikedRef.current, sbVisitedRef.current); }catch(e){}
+      try{ window.sbSave(sbSpotsRef.current, sbLikedRef.current, sbVisitedRef.current); }catch(e){}
     }, 1500);
   },[spots]);
   useEffect(()=>{
@@ -9397,7 +9376,7 @@ function AtlasMerveilles() {
     try{ localStorage.setItem("atlas-liked",JSON.stringify(liked)); }catch(e){}
     clearTimeout(window._sbTimer);
     window._sbTimer = setTimeout(()=>{
-      try{ sbSave(sbSpotsRef.current, sbLikedRef.current, sbVisitedRef.current); }catch(e){}
+      try{ window.sbSave(sbSpotsRef.current, sbLikedRef.current, sbVisitedRef.current); }catch(e){}
     }, 1500);
   },[liked]);
   useEffect(()=>{
@@ -9405,7 +9384,7 @@ function AtlasMerveilles() {
     try{ localStorage.setItem("atlas-visited",JSON.stringify(visitedCountries)); }catch(e){}
     clearTimeout(window._sbTimer);
     window._sbTimer = setTimeout(()=>{
-      try{ sbSave(sbSpotsRef.current, sbLikedRef.current, sbVisitedRef.current); }catch(e){}
+      try{ window.sbSave(sbSpotsRef.current, sbLikedRef.current, sbVisitedRef.current); }catch(e){}
     }, 1500);
   },[visitedCountries]);
 
