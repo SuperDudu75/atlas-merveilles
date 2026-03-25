@@ -9306,70 +9306,76 @@ function AtlasMerveilles() {
   },[showWeather,selectedCountry]);
   useEffect(()=>{ setModalErr(false); setImgErr(false); },[detailSpot]);
 
-  useEffect(()=>{ (async()=>{
-    // 1. Load spots catalog from localStorage (with DEFAULT_SPOTS as base)
-    var baseSpots = null;
-    try{ const s=localStorage.getItem("atlas-v14"); if(s){ baseSpots=JSON.parse(s); } }catch(e){}
-    // Always start from DEFAULT_SPOTS to ensure all spots exist
-    if(!baseSpots || Object.keys(baseSpots).length === 0) baseSpots = JSON.parse(JSON.stringify(DEFAULT_SPOTS));
+  useEffect(()=>{
+    (async()=>{
+      try {
+        console.log("🔵 INIT START");
 
-    // 2. Try Supabase for user progress (done/liked/visited)
-    var doneMap={}, likedData={}, visitedData={};
-    try{
-      const sb = await sbLoad();
-      if(sb){
-        // sb.spots is now a doneMap {spotId: true}
-        try{ doneMap = typeof sb.spots==="string"?JSON.parse(sb.spots):(sb.spots||{}); }catch(e){}
-        // Detect old format (had country arrays) - ignore if so
-        var isOldFormat = Object.keys(doneMap).some(function(k){ return Array.isArray(doneMap[k]); });
-        if(isOldFormat) doneMap={};
-        try{ likedData = typeof sb.liked==="string"?JSON.parse(sb.liked):(sb.liked||{}); }catch(e){}
-        try{ visitedData = typeof sb.visited==="string"?JSON.parse(sb.visited):(sb.visited||{}); }catch(e){}
-      }
-    }catch(e){}
+        // 1. Base = DEFAULT_SPOTS (always fresh)
+        var baseSpots = JSON.parse(JSON.stringify(DEFAULT_SPOTS));
 
-    // Always fallback to localStorage if Supabase returned nothing
-    if(Object.keys(likedData).length===0){
-      try{ var lk=localStorage.getItem("atlas-liked"); if(lk) likedData=JSON.parse(lk); }catch(e){}
-    }
-    if(Object.keys(visitedData).length===0){
-      try{ var vc=localStorage.getItem("atlas-visited"); if(vc) visitedData=JSON.parse(vc); }catch(e){}
-    }
-
-    // 3. Apply doneMap onto baseSpots
-    if(Object.keys(doneMap).length>0){
-      Object.keys(baseSpots).forEach(function(cid){
-        baseSpots[cid] = baseSpots[cid].map(function(s){
-          return doneMap[s.id] ? Object.assign({},s,{done:true}) : s;
-        });
-      });
-    } else {
-      // Try localStorage done status
-      try{
-        var _lsv = localStorage.getItem("atlas-v14");
-        var ls = _lsv ? {value: _lsv} : null;
-        if(ls&&ls.value){
-          var lsSpots=JSON.parse(ls.value);
-          var lsDone={};
-          Object.values(lsSpots).forEach(function(arr){
-            arr.forEach(function(s){ if(s.done) lsDone[s.id]=true; });
-          });
-          if(Object.keys(lsDone).length>0){
-            Object.keys(baseSpots).forEach(function(cid){
-              baseSpots[cid]=baseSpots[cid].map(function(s){
-                return lsDone[s.id]?Object.assign({},s,{done:true}):s;
-              });
+        // Merge any localStorage done-status on top
+        try {
+          var lsRaw = localStorage.getItem("atlas-v14");
+          if(lsRaw) {
+            var lsData = JSON.parse(lsRaw);
+            Object.keys(lsData).forEach(function(cid) {
+              if(baseSpots[cid]) {
+                lsData[cid].forEach(function(s) {
+                  if(s.done) {
+                    baseSpots[cid] = baseSpots[cid].map(function(b) {
+                      return b.id === s.id ? Object.assign({},b,{done:true}) : b;
+                    });
+                  }
+                });
+              }
             });
           }
-        }
-      }catch(e){}
-    }
+        } catch(e) { console.log("🔴 ls spots error", e); }
 
-    setSpots(baseSpots);
-    setLiked(likedData);
-    setVisitedCountries(visitedData);
-    setTimeout(function(){ isInitialized.current = true; }, 100);
-  })(); },[]);
+        // 2. Load liked/visited from Supabase
+        var likedData = {}, visitedData = {};
+        try {
+          var sb = await sbLoad();
+          console.log("🔵 sbLoad result:", JSON.stringify(sb).slice(0,200));
+          if(sb) {
+            // Apply done spots from Supabase
+            try {
+              var doneMap = typeof sb.spots === "string" ? JSON.parse(sb.spots) : (sb.spots || {});
+              Object.keys(doneMap).forEach(function(spotId) {
+                Object.keys(baseSpots).forEach(function(cid) {
+                  baseSpots[cid] = baseSpots[cid].map(function(s) {
+                    return s.id === spotId ? Object.assign({},s,{done:true}) : s;
+                  });
+                });
+              });
+            } catch(e) { console.log("🔴 doneMap error", e); }
+
+            // Liked
+            try { likedData = typeof sb.liked === "string" ? JSON.parse(sb.liked) : (sb.liked || {}); } catch(e) {}
+
+            // Visited
+            try { visitedData = typeof sb.visited === "string" ? JSON.parse(sb.visited) : (sb.visited || {}); } catch(e) {}
+          }
+        } catch(e) { console.log("🔴 sbLoad error", e); }
+
+        // Fallback to localStorage for liked/visited if Supabase empty
+        if(!Object.keys(likedData).length) {
+          try { var lk = localStorage.getItem("atlas-liked"); if(lk) likedData = JSON.parse(lk); } catch(e) {}
+        }
+        if(!Object.keys(visitedData).length) {
+          try { var vc = localStorage.getItem("atlas-visited"); if(vc) visitedData = JSON.parse(vc); } catch(e) {}
+        }
+
+        console.log("🔵 DONE: visited="+JSON.stringify(visitedData)+" liked="+JSON.stringify(likedData).slice(0,50));
+        setSpots(baseSpots);
+        setLiked(likedData);
+        setVisitedCountries(visitedData);
+        setTimeout(function(){ isInitialized.current = true; }, 200);
+
+      } catch(e) { console.log("🔴 INIT CRASH", e); }
+    })();
+  },[]);
   useEffect(()=>{
     if(!isInitialized.current) return;
     try{ localStorage.setItem("atlas-v14",JSON.stringify(spots)); }catch(e){}
