@@ -61,9 +61,13 @@ async function sbLoad() {
       headers: SB_HEADERS
     });
     const d = await r.json();
+    console.log("🔵 sbLoad raw:", JSON.stringify(d).slice(0,200));
     if(d && d[0]) return d[0];
-  } catch(e) {}
-  return null;
+    return null;
+  } catch(e) {
+    console.log("🔴 sbLoad fetch error:", e.message);
+    return null;
+  }
 }
 
 const{useState,useEffect,useRef,useCallback}=React;
