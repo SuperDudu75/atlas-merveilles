@@ -9290,6 +9290,7 @@ function AtlasMerveilles() {
   useEffect(()=>{ const fn=()=>setIsMobile(window.innerWidth<=768); window.addEventListener('resize',fn); return()=>window.removeEventListener('resize',fn); },[]);
   const [importRef]                          = useState(()=>({ current:null }));
   const [form,setForm] = useState({name:"",category:"marine",desc:"",why:"",season:"",tip:"",photo:""});
+  const [doneTab, setDoneTab] = useState(0); // 0=À faire, 1=Accomplis
   const [isOwner, setIsOwner] = useState(false);
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
 
@@ -9722,22 +9723,30 @@ function AtlasMerveilles() {
               <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Rechercher un spot..." style={{width:"100%",background:"#06122a",border:"1px solid #0d2038",borderRadius:8,padding:"8px 12px",color:"#c0d8f0",fontSize:13,marginBottom:8,marginTop:10,outline:"none"}}/>
 
             </div>
+            <div style={{display:"flex",borderBottom:"1px solid #0b1e34",marginBottom:0,flexShrink:0}}>
+              <button onClick={()=>setDoneTab(0)} style={{flex:1,padding:"8px 4px",background:"transparent",border:"none",borderBottom:doneTab===0?"2px solid #0ea5e9":"2px solid transparent",color:doneTab===0?"#0ea5e9":"#2a5070",cursor:"pointer",fontSize:11,fontWeight:700,letterSpacing:".04em"}}>
+                À FAIRE <span style={{background:doneTab===0?"#0ea5e920":"#0a1e30",color:doneTab===0?"#0ea5e9":"#1a4060",borderRadius:10,padding:"1px 6px",fontSize:10,marginLeft:4}}>{filtered.filter(s=>!s.done).length}</span>
+              </button>
+              <button onClick={()=>setDoneTab(1)} style={{flex:1,padding:"8px 4px",background:"transparent",border:"none",borderBottom:doneTab===1?"2px solid #22c55e":"2px solid transparent",color:doneTab===1?"#22c55e":"#2a5070",cursor:"pointer",fontSize:11,fontWeight:700,letterSpacing:".04em"}}>
+                ACCOMPLIS ✓ <span style={{background:doneTab===1?"#22c55e20":"#0a1e30",color:doneTab===1?"#22c55e":"#1a4060",borderRadius:10,padding:"1px 6px",fontSize:10,marginLeft:4}}>{filtered.filter(s=>s.done).length}</span>
+              </button>
+            </div>
             <div style={{flex:1,overflowY:"auto",padding:"10px"}}>
               {filtered.length===0?(
                 <div style={{textAlign:"center",marginTop:60}}>
                   <div style={{fontSize:28,marginBottom:10,opacity:.2}}>◎</div>
-                  <div style={{fontWeight:800,fontSize:10,letterSpacing:".2em",color:"#0c2040"}}>{sideSpots.length===0?"TERRA INCOGNITA":"AUCUNE CORRESPONDANCE"}</div>
+                  <div style={{fontWeight:800,fontSize:10,letterSpacing:".2em",color:"#0c2040"}}>{sideSpots.length===0?"TERRA INCOGNITA":doneTab===1?"AUCUN ACCOMPLI":"AUCUNE CORRESPONDANCE"}</div>
                   <div style={{fontSize:10,color:"#0a1a2a",marginTop:6,fontWeight:400}}>Cliquez + pour ajouter une expérience</div>
                 </div>
               ):(
-                filtered.map((spot,i)=>{
+                filtered.filter(s=>doneTab===0?!s.done:s.done).map((spot,i)=>{
                   const c=Cat(spot.category);
                   return(
                     <div key={spot.id} className="sc rise"
                       onClick={()=>{ setDetailSpot(spot); setImgErr(false); }}
                       style={{background:"#040e1e",border:"1px solid "+(spot.done?"#1a4428":"#0c1e34"),borderRadius:10,padding:"14px 14px 12px",marginBottom:9,opacity:spot.done?0.55:1,borderLeft:"4px solid "+(spot.done?"#22c55e80":c.color+"90"),animationDelay:""+(i*.04)+"s"}}>
                       <div style={{display:"flex",alignItems:"flex-start",gap:10}}>
-                        <button className="chk" onClick={e=>{e.stopPropagation();toggleDone(selectedCountry,spot.id)}}
+                        <button className="chk" onClick={e=>{e.stopPropagation();toggleDone(selectedCountry,spot.id)}} title={spot.done?"Marquer comme non accompli":"Marquer comme accompli"}
                           style={{width:22,height:22,borderRadius:"50%",flexShrink:0,border:"2px solid "+(spot.done?"#22c55e":"#1a3a5a"),background:spot.done?"#22c55e":"transparent",display:"flex",alignItems:"center",justifyContent:"center",color:spot.done?"#020c1a":"transparent",fontSize:11,marginTop:2,fontWeight:900}}>✓</button>
                         <div style={{flex:1,minWidth:0}}>
                           <div style={{marginBottom:6}}><span style={{fontSize:8.5,fontWeight:700,background:c.color+"15",color:c.color,padding:"2.5px 8px",borderRadius:4,border:"1px solid "+c.color+"25",letterSpacing:".04em"}}>{c.icon} {c.label}</span></div>
@@ -9746,6 +9755,7 @@ function AtlasMerveilles() {
                           <div style={{fontSize:15,color:"#2a5070",fontWeight:400,lineHeight:1.55}}>{spot.desc}</div>
                           {spot.season&&<div style={{marginTop:7,display:"flex",alignItems:"center",gap:5}}><span style={{fontSize:8.5,fontWeight:600,color:"#0d2840",background:"#0a1e30",padding:"2px 7px",borderRadius:4,border:"1px solid #0e2844"}}>🗓 {spot.season}</span></div>}
                           <div style={{marginTop:6,fontSize:9,fontWeight:700,color:"#0d3050",letterSpacing:".06em"}}>VOIR LES DÉTAILS →</div>
+                          {spot.done&&<div style={{fontSize:9,color:"#1a5030",marginTop:3,fontWeight:600}}>✓ Accompli · cliquer ◎ pour annuler</div>}
                         </div>
                         <button className="del" onClick={e=>{e.stopPropagation();setDeleteConfirm({cid:selectedCountry,sid:spot.id,name:spot.name});}}
                           style={{background:"rgba(248,113,113,.08)",border:"1px solid rgba(248,113,113,.2)",borderRadius:5,width:24,height:24,color:"#f87171",cursor:"pointer",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>×</button>
